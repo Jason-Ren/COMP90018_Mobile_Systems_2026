@@ -14,10 +14,14 @@ sealed interface GuestSlot {
     data object Empty : GuestSlot
 
     /** A team has asked to join and the host has not answered. */
-    data class Pending(val teamName: String) : GuestSlot
+    data class Pending(
+        val teamName: String,
+    ) : GuestSlot
 
     /** The host accepted this team. */
-    data class Joined(val teamName: String) : GuestSlot
+    data class Joined(
+        val teamName: String,
+    ) : GuestSlot
 }
 
 data class LobbyUiState(

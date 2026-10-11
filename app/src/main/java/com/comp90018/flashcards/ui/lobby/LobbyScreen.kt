@@ -83,125 +83,164 @@ fun LobbyScreen(
 
     Scaffold(
         modifier = modifier,
-        topBar = {
-            TopAppBar(
-                title = { Text("2v2") },
-                navigationIcon = {
-                    IconButton(onClick = { requestLeave() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        },
+        topBar = { LobbyTopBar(onBack = { requestLeave() }) },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            // The middle scrolls if the screen is short, so Start and Cancel never get pushed off.
-            Column(
-                modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                Text(
-                    text = summary.deckName.ifBlank { "Deck" },
-                    style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-
-                MyTeamSlot(name = state.teamName, onReroll = lobbyViewModel::rerollName)
-
-                VersusDivider()
-
-                when (val guest = state.guest) {
-                    GuestSlot.Empty -> {
-                        WaitingSlot()
-                        // DEBUG ONLY: delete with debugSimulateRequest() in the ViewModel.
-                        OutlinedButton(
-                            onClick = lobbyViewModel::debugSimulateRequest,
-                            modifier = Modifier.fillMaxWidth(),
-                        ) { Text("DEBUG: simulate join request") }
-                    }
-                    is GuestSlot.Pending ->
-                        PendingSlot(
-                            teamName = guest.teamName,
-                            onAccept = lobbyViewModel::accept,
-                            onDecline = lobbyViewModel::decline,
-                        )
-                    is GuestSlot.Joined ->
-                        JoinedSlot(
-                            teamName = guest.teamName,
-                            onRemove = { showRemoveConfirm = true },
-                        )
-                }
-            }
-
-            Button(
-                onClick = {
-                    lobbyViewModel.start()
-                    // Placeholder until the game screen exists.
-                    scope.launch { snackbarHostState.showSnackbar("Game screen not built yet") }
-                },
-                enabled = state.canStart,
-                modifier = Modifier.fillMaxWidth().height(BUTTON_HEIGHT),
-            ) {
-                Text("Start", style = MaterialTheme.typography.titleLarge)
-            }
-
-            TextButton(
-                onClick = { requestLeave() },
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text("Cancel", color = MaterialTheme.colorScheme.error)
-            }
-        }
+        LobbyBody(
+            deckName = summary.deckName.ifBlank { "Deck" },
+            state = state,
+            actions =
+                LobbyActions(
+                    onReroll = lobbyViewModel::rerollName,
+                    onSimulateRequest = lobbyViewModel::debugSimulateRequest,
+                    onAccept = lobbyViewModel::accept,
+                    onDecline = lobbyViewModel::decline,
+                    onRemove = { showRemoveConfirm = true },
+                    onStart = {
+                        lobbyViewModel.start()
+                        // Placeholder until the game screen exists.
+                        scope.launch { snackbarHostState.showSnackbar("Game screen not built yet") }
+                    },
+                    onCancel = { requestLeave() },
+                ),
+            modifier = Modifier.padding(padding),
+        )
     }
 
     if (showRemoveConfirm) {
-        val name = (state.guest as? GuestSlot.Joined)?.teamName ?: "this team"
-        AlertDialog(
-            onDismissRequest = { showRemoveConfirm = false },
-            title = { Text("Remove $name?") },
-            text = { Text("They will be disconnected and would need to ask to join again.") },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        lobbyViewModel.removeGuest()
-                        showRemoveConfirm = false
-                    },
-                ) { Text("Remove") }
+        RemoveGuestDialog(
+            name = (state.guest as? GuestSlot.Joined)?.teamName ?: "this team",
+            onConfirm = {
+                lobbyViewModel.removeGuest()
+                showRemoveConfirm = false
             },
-            dismissButton = {
-                TextButton(onClick = { showRemoveConfirm = false }) { Text("Keep") }
-            },
+            onDismiss = { showRemoveConfirm = false },
         )
     }
 
     if (showCancelConfirm) {
-        AlertDialog(
-            onDismissRequest = { showCancelConfirm = false },
-            title = { Text("End this session?") },
-            text = { Text("The other team will be disconnected.") },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showCancelConfirm = false
-                        lobbyViewModel.cancel()
-                        onNavigateBack()
-                    },
-                ) { Text("End session") }
+        EndSessionDialog(
+            onConfirm = {
+                showCancelConfirm = false
+                lobbyViewModel.cancel()
+                onNavigateBack()
             },
-            dismissButton = {
-                TextButton(onClick = { showCancelConfirm = false }) { Text("Stay") }
-            },
+            onDismiss = { showCancelConfirm = false },
         )
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun LobbyTopBar(onBack: () -> Unit) {
+    TopAppBar(
+        title = { Text("2v2") },
+        navigationIcon = {
+            IconButton(onClick = onBack) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+            }
+        },
+    )
+}
+
+/** Everything the lobby body can ask the screen to do. */
+private class LobbyActions(
+    val onReroll: () -> Unit,
+    val onSimulateRequest: () -> Unit,
+    val onAccept: () -> Unit,
+    val onDecline: () -> Unit,
+    val onRemove: () -> Unit,
+    val onStart: () -> Unit,
+    val onCancel: () -> Unit,
+)
+
+@Composable
+private fun LobbyBody(
+    deckName: String,
+    state: LobbyUiState,
+    actions: LobbyActions,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.fillMaxSize().padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        // The middle scrolls if the screen is short, so Start and Cancel never get pushed off.
+        Column(
+            modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Text(
+                text = deckName,
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            MyTeamSlot(name = state.teamName, onReroll = actions.onReroll)
+
+            VersusDivider()
+
+            when (val guest = state.guest) {
+                GuestSlot.Empty -> {
+                    WaitingSlot()
+                    // DEBUG ONLY: delete with debugSimulateRequest() in the ViewModel.
+                    OutlinedButton(
+                        onClick = actions.onSimulateRequest,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text("DEBUG: simulate join request") }
+                }
+                is GuestSlot.Pending ->
+                    PendingSlot(
+                        teamName = guest.teamName,
+                        onAccept = actions.onAccept,
+                        onDecline = actions.onDecline,
+                    )
+                is GuestSlot.Joined -> JoinedSlot(teamName = guest.teamName, onRemove = actions.onRemove)
+            }
+        }
+
+        Button(
+            onClick = actions.onStart,
+            enabled = state.canStart,
+            modifier = Modifier.fillMaxWidth().height(BUTTON_HEIGHT),
+        ) {
+            Text("Start", style = MaterialTheme.typography.titleLarge)
+        }
+
+        TextButton(onClick = actions.onCancel, modifier = Modifier.fillMaxWidth()) {
+            Text("Cancel", color = MaterialTheme.colorScheme.error)
+        }
+    }
+}
+
+@Composable
+private fun RemoveGuestDialog(
+    name: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Remove $name?") },
+        text = { Text("They will be disconnected and would need to ask to join again.") },
+        confirmButton = { Button(onClick = onConfirm) { Text("Remove") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Keep") } },
+    )
+}
+
+@Composable
+private fun EndSessionDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("End this session?") },
+        text = { Text("The other team will be disconnected.") },
+        confirmButton = { Button(onClick = onConfirm) { Text("End session") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Stay") } },
+    )
 }
 
 @Composable
