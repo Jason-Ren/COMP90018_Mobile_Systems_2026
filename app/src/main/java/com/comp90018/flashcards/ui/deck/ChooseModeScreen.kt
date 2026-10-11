@@ -40,11 +40,11 @@ private enum class PlayMode(
 ) {
     SOLO("Solo", "Study the deck on your own, at your own pace", 1, isAvailable = true),
     DUO("Duo", "One describes, one guesses, and a tilt marks each answer right or wrong", 2, isAvailable = true),
-    TWO_V_TWO("2v2", "Two teams of two race through the deck together", 4, isAvailable = true),
+    TEAM_MODE("Team Mode", "Two teams of two race through the deck together", 4, isAvailable = true),
 }
 
 /**
- * Choose-mode page: pick how to play the deck. Only Solo works for now, and Duo and 2v2 are
+ * Choose-mode page: pick how to play the deck. Only Solo works for now, and Duo and team mode are
  * shown disabled until those modes exist.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -53,7 +53,7 @@ fun ChooseModeScreen(
     onNavigateBack: () -> Unit,
     onPlaySolo: (String) -> Unit,
     onPlayDuo: (String) -> Unit,
-    onPlay2v2: (String) -> Unit,
+    onPlayTeamMode: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DeckSummaryViewModel = hiltViewModel(),
 ) {
@@ -94,7 +94,7 @@ fun ChooseModeScreen(
                         when (mode) {
                             PlayMode.SOLO -> onPlaySolo(viewModel.deckId)
                             PlayMode.DUO -> onPlayDuo(viewModel.deckId)
-                            PlayMode.TWO_V_TWO -> onPlay2v2(viewModel.deckId)
+                            PlayMode.TEAM_MODE -> onPlayTeamMode(viewModel.deckId)
                         }
                     },
                 )

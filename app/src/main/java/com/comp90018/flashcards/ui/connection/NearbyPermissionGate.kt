@@ -92,7 +92,7 @@ fun NearbyPermissionGate(
         ) {
             Text("Nearby access needed", style = MaterialTheme.typography.headlineSmall)
             Text(
-                text = "2v2 needs bluetooth and nearby devices access to find the other phone",
+                text = "Team Mode needs bluetooth and nearby devices access to find the other phone",
                 textAlign = TextAlign.Center,
             )
             Button(onClick = { launcher.launch(nearbyPermissions()) }, modifier = Modifier.fillMaxWidth()) {

@@ -13,9 +13,9 @@ import com.google.android.gms.nearby.connection.PayloadCallback
 import com.google.android.gms.nearby.connection.Strategy
 import kotlinx.serialization.json.Json
 
-private const val SERVICE_ID = "com.comp90018.flashcards.2v2"
+private const val SERVICE_ID = "com.comp90018.flashcards.team"
 
-// 2v2 is strictly two phones, so point to point
+// team mode is strictly two phones, so point to point
 private val STRATEGY = Strategy.P2P_POINT_TO_POINT
 
 // the name shown to the other phone is "id|team" so the id rides along for reconnecting

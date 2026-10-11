@@ -20,8 +20,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -29,7 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -40,23 +38,22 @@ import com.comp90018.flashcards.data.p2p.DiscoveredHost
 import com.comp90018.flashcards.ui.connection.ConnectionOverlay
 
 /**
- * The guest's side of 2v2: list the hosts nearby, ask to join one, then wait for the host to start.
+ * The guest's side of team mode: list the hosts nearby, ask to join one, then wait for the host to start.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun JoinGameScreen(
     onNavigateBack: () -> Unit,
+    onGameStart: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: JoinGameViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
-    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) { viewModel.begin() }
-    // placeholder until the game screen exists
-    LaunchedEffect(state.hostStarted) {
-        if (state.hostStarted) snackbarHostState.showSnackbar("Game screen not built yet")
-    }
+    // the host pressed Start, so open the game
+    val openGame by rememberUpdatedState(onGameStart)
+    LaunchedEffect(state.hostStarted) { if (state.hostStarted) openGame() }
 
     // back, the top bar arrow and Cancel all leave the same way
     val leave = {
@@ -77,7 +74,6 @@ fun JoinGameScreen(
                 },
             )
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         JoinBody(
             state = state,

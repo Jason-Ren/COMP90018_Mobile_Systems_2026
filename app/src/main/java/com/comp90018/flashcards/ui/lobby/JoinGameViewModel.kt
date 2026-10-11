@@ -2,10 +2,14 @@ package com.comp90018.flashcards.ui.lobby
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.comp90018.flashcards.data.local.entity.CardEntity
 import com.comp90018.flashcards.data.p2p.ConnectionController
 import com.comp90018.flashcards.data.p2p.ConnectionState
 import com.comp90018.flashcards.data.p2p.DiscoveredHost
 import com.comp90018.flashcards.data.p2p.GameMessage
+import com.comp90018.flashcards.data.p2p.GameSession
+import com.comp90018.flashcards.data.p2p.GameSetup
+import com.comp90018.flashcards.data.p2p.toSetup
 import com.comp90018.flashcards.debug.DebugSettings
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -32,6 +36,7 @@ class JoinGameViewModel
     constructor(
         private val connection: ConnectionController,
         private val debugSettings: DebugSettings,
+        private val session: GameSession,
     ) : ViewModel() {
         private val teamName = MutableStateFlow(randomTeamName())
 
@@ -70,7 +75,9 @@ class JoinGameViewModel
 
         init {
             viewModelScope.launch {
-                connection.messages.collect { if (it is GameMessage.Start) hostStarted.value = true }
+                connection.messages.collect {
+                    if (it is GameMessage.Start) startGame(it.toSetup())
+                }
             }
         }
 
@@ -94,6 +101,12 @@ class JoinGameViewModel
             connection.endSession()
         }
 
+        // keep the setup where the game screen can find it, then tell the screen to open the game
+        private fun startGame(setup: GameSetup) {
+            session.setup = setup
+            hostStarted.value = true
+        }
+
         // DEBUG ONLY: the fake host accepts after a moment, then starts the game a bit later
         private fun simulateJoin(host: DiscoveredHost) {
             viewModelScope.launch {
@@ -101,13 +114,24 @@ class JoinGameViewModel
                 delay(DEBUG_ACCEPT_MS)
                 debugLink.value = ConnectionState.Connected(host.teamName)
                 delay(DEBUG_START_MS)
-                hostStarted.value = true
+                startGame(DEBUG_SETUP)
             }
         }
     }
 
 // DEBUG ONLY: the fake host shown in emulator mode
 private val DEBUG_HOST = DiscoveredHost(endpointId = "debug-host", teamName = "Team Plum")
+
+// DEBUG ONLY: the cards the fake host starts the game with
+private val DEBUG_SETUP =
+    GameSetup(
+        deckName = "Debug deck",
+        secondsPerCard = 10,
+        cards =
+            List(
+                5,
+            ) { CardEntity(cardId = "debug-$it", deckId = "", front = "Card ${it + 1}", back = "Answer ${it + 1}") },
+    )
 private const val DEBUG_ACCEPT_MS = 1_500L
 private const val DEBUG_START_MS = 3_000L
 

@@ -25,8 +25,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -36,7 +34,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,23 +48,21 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.comp90018.flashcards.ui.connection.ConnectionOverlay
 import com.comp90018.flashcards.ui.deck.DeckSummaryViewModel
-import kotlinx.coroutines.launch
 
 /**
- * The host's 2v2 lobby: my team on top, the opponent's slot below, Start and Cancel at the bottom.
+ * The host's team mode lobby: my team on top, the opponent's slot below, Start and Cancel at the bottom.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LobbyScreen(
     onNavigateBack: () -> Unit,
+    onStart: () -> Unit,
     modifier: Modifier = Modifier,
     lobbyViewModel: LobbyViewModel = hiltViewModel(),
     summaryViewModel: DeckSummaryViewModel = hiltViewModel(),
 ) {
     val state by lobbyViewModel.state.collectAsState()
     val summary by summaryViewModel.uiState.collectAsState()
-    val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
 
     // start advertising once, the permission gate has already made sure we are allowed to
     LaunchedEffect(Unit) { lobbyViewModel.begin() }
@@ -89,7 +84,6 @@ fun LobbyScreen(
     Scaffold(
         modifier = modifier,
         topBar = { LobbyTopBar(onBack = { requestLeave() }) },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         LobbyBody(
             deckName = summary.deckName.ifBlank { "Deck" },
@@ -101,11 +95,7 @@ fun LobbyScreen(
                     onAccept = lobbyViewModel::accept,
                     onDecline = lobbyViewModel::decline,
                     onRemove = { showRemoveConfirm = true },
-                    onStart = {
-                        lobbyViewModel.start()
-                        // Placeholder until the game screen exists.
-                        scope.launch { snackbarHostState.showSnackbar("Game screen not built yet") }
-                    },
+                    onStart = onStart,
                     onCancel = { requestLeave() },
                 ),
             modifier = Modifier.padding(padding),
@@ -140,7 +130,7 @@ fun LobbyScreen(
 @Composable
 private fun LobbyTopBar(onBack: () -> Unit) {
     TopAppBar(
-        title = { Text("2v2") },
+        title = { Text("Team Mode") },
         navigationIcon = {
             IconButton(onClick = onBack) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")

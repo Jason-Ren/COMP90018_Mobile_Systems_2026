@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.comp90018.flashcards.data.p2p.ConnectionController
 import com.comp90018.flashcards.data.p2p.ConnectionState
-import com.comp90018.flashcards.data.p2p.GameMessage
 import com.comp90018.flashcards.debug.DebugSettings
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,7 +12,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
-import kotlin.random.Random
 
 /** What is in the opponent's half of the lobby. */
 sealed interface GuestSlot {
@@ -47,7 +45,7 @@ data class LobbyUiState(
 }
 
 /**
- * ViewModel for the host's 2v2 lobby.
+ * ViewModel for the host's team mode lobby.
  *
  * The connection itself lives in [ConnectionController]. This only turns its state into what the
  * lobby shows and passes the host's taps on to it.
@@ -113,8 +111,6 @@ class LobbyViewModel
         }
 
         fun reconnect() = connection.reconnect()
-
-        fun start() = connection.send(GameMessage.Start(seed = Random.nextLong()))
 
         fun cancel() {
             debugGuest.value = null

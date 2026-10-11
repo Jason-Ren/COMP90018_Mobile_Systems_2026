@@ -21,6 +21,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.comp90018.flashcards.data.local.entity.DeckEntity
+import com.comp90018.flashcards.debug.DEBUG_TOOLS_ENABLED
 
 /**
  * Shows list of users decks
@@ -179,9 +180,11 @@ private fun DeckListTopBar(
     TopAppBar(
         title = {},
         actions = {
-            // DEBUG ONLY: lets the 2v2 lobby show a fake join request when testing on an emulator
-            Checkbox(checked = emulatorMode, onCheckedChange = onEmulatorModeChange)
-            Text("[DEBUG] Emulator mode", style = MaterialTheme.typography.labelSmall)
+            // DEBUG ONLY: lets team mode be tried on an emulator, hide it with DEBUG_TOOLS_ENABLED
+            if (DEBUG_TOOLS_ENABLED) {
+                Checkbox(checked = emulatorMode, onCheckedChange = onEmulatorModeChange)
+                Text("[DEBUG] Emulator mode", style = MaterialTheme.typography.labelSmall)
+            }
             TextButton(onClick = onSignOut) {
                 Text("Log out")
             }

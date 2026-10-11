@@ -69,14 +69,14 @@ fun DuoScreen(
 }
 
 @Composable
-private fun LoadingContent() {
+internal fun LoadingContent() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         CircularProgressIndicator()
     }
 }
 
 @Composable
-private fun ReadyContent(
+internal fun ReadyContent(
     uiState: DuoUiState,
     onStart: () -> Unit,
 ) {
@@ -100,7 +100,7 @@ private fun ReadyContent(
 
 /** The front of the card. Tapping anywhere reveals the back early. */
 @Composable
-private fun FrontContent(
+internal fun FrontContent(
     uiState: DuoUiState,
     onReveal: () -> Unit,
 ) {
@@ -140,7 +140,7 @@ private fun FrontContent(
  * (wrong) and the bottom for tilting down (right), until the tilt sensor is connected.
  */
 @Composable
-private fun BackContent(
+internal fun BackContent(
     uiState: DuoUiState,
     onGesture: (TiltGesture) -> Unit,
 ) {
@@ -229,7 +229,7 @@ private fun FinishedContent(
 }
 
 @Composable
-private fun MissedCards(
+internal fun MissedCards(
     cards: List<CardEntity>,
     modifier: Modifier = Modifier,
 ) {
@@ -277,7 +277,7 @@ private fun MissedCardRow(card: CardEntity) {
 
 /** Fills the space where the missed cards would be when there are none. */
 @Composable
-private fun PerfectRound(
+internal fun PerfectRound(
     hasCards: Boolean,
     modifier: Modifier = Modifier,
 ) {
