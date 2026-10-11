@@ -26,9 +26,11 @@ import com.comp90018.flashcards.data.auth.AuthState
 import com.comp90018.flashcards.ui.auth.LoginScreen
 import com.comp90018.flashcards.ui.auth.SessionViewModel
 import com.comp90018.flashcards.ui.card.AddEditCardScreen
+import com.comp90018.flashcards.ui.connection.NearbyPermissionGate
 import com.comp90018.flashcards.ui.deck.ChooseModeScreen
 import com.comp90018.flashcards.ui.deck.DeckListScreen
 import com.comp90018.flashcards.ui.deck.DeckPageScreen
+import com.comp90018.flashcards.ui.lobby.JoinGameScreen
 import com.comp90018.flashcards.ui.lobby.LobbyScreen
 import com.comp90018.flashcards.ui.play.ChooseTimerScreen
 import com.comp90018.flashcards.ui.play.DuoScreen
@@ -83,6 +85,7 @@ private fun FlashcardNavHost(
                 onNavigateToDeck = { deckId ->
                     navController.navigate("deck/$deckId")
                 },
+                onJoinGame = { navController.navigate("join") },
             )
         }
         deckPlayRoutes(navController)
@@ -189,9 +192,18 @@ private fun NavGraphBuilder.twoVTwoRoutes(navController: NavHostController) {
         route = "lobby/{deckId}",
         arguments = listOf(navArgument("deckId") { type = NavType.StringType }),
     ) {
-        LobbyScreen(
-            onNavigateBack = { navController.popBackStack() },
-        )
+        NearbyPermissionGate(onNavigateBack = { navController.popBackStack() }) {
+            LobbyScreen(
+                onNavigateBack = { navController.popBackStack() },
+            )
+        }
+    }
+    composable(route = "join") {
+        NearbyPermissionGate(onNavigateBack = { navController.popBackStack() }) {
+            JoinGameScreen(
+                onNavigateBack = { navController.popBackStack() },
+            )
+        }
     }
 }
 

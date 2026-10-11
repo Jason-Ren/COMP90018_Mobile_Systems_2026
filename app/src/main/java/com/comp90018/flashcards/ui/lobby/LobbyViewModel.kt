@@ -1,12 +1,19 @@
 package com.comp90018.flashcards.ui.lobby
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.comp90018.flashcards.data.p2p.ConnectionController
+import com.comp90018.flashcards.data.p2p.ConnectionState
+import com.comp90018.flashcards.data.p2p.GameMessage
+import com.comp90018.flashcards.debug.DebugSettings
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
+import kotlin.random.Random
 
 /** What is in the opponent's half of the lobby. */
 sealed interface GuestSlot {
@@ -27,69 +34,107 @@ sealed interface GuestSlot {
 data class LobbyUiState(
     val teamName: String,
     val guest: GuestSlot = GuestSlot.Empty,
+    // raw link state, the screen uses it for the reconnecting and lost connection screens
+    val connection: ConnectionState = ConnectionState.Idle,
+    // DEBUG ONLY: true when emulator mode is ticked on the main screen, shows the fake join request button
+    val showDebugButton: Boolean = false,
 ) {
     // Later: also require that the deck has finished syncing to the guest.
     val canStart: Boolean get() = guest is GuestSlot.Joined
+
+    // the name is already advertised to the guest, so it is locked once someone asks to join
+    val canReroll: Boolean get() = guest is GuestSlot.Empty
 }
 
 /**
  * ViewModel for the host's 2v2 lobby.
  *
- * Nothing here talks to the network yet. Each TODO(p2p) marks the place where the Nearby
- * Connections code should be attached.
+ * The connection itself lives in [ConnectionController]. This only turns its state into what the
+ * lobby shows and passes the host's taps on to it.
  */
 @HiltViewModel
 class LobbyViewModel
     @Inject
-    constructor() : ViewModel() {
-        private val _state = MutableStateFlow(LobbyUiState(teamName = randomTeamName()))
-        val state: StateFlow<LobbyUiState> = _state.asStateFlow()
+    constructor(
+        private val connection: ConnectionController,
+        private val debugSettings: DebugSettings,
+    ) : ViewModel() {
+        private val teamName = MutableStateFlow(randomTeamName())
 
-        init {
-            // TODO(p2p): start advertising the session (mode, deck name, team name, card count).
+        // the controller is app wide, so ignore its state until this lobby has started hosting
+        private val started = MutableStateFlow(false)
+
+        // DEBUG ONLY: a fake guest so the lobby can be tried on an emulator, where nearby cannot connect
+        private val debugGuest = MutableStateFlow<GuestSlot?>(null)
+
+        val state: StateFlow<LobbyUiState> =
+            combine(
+                teamName,
+                connection.state,
+                started,
+                debugGuest,
+                debugSettings.emulatorMode,
+            ) { name, link, hasStarted, fake, emulator ->
+                // in emulator mode nearby is never started, so ignore whatever state it is left in
+                val current = if (hasStarted && !emulator) link else ConnectionState.Idle
+                LobbyUiState(
+                    teamName = name,
+                    guest = fake ?: guestSlotOf(current),
+                    connection = current,
+                    showDebugButton = emulator,
+                )
+            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), LobbyUiState(teamName.value))
+
+        // called once permissions are granted, and only once so rotating does not drop the guest
+        fun begin() {
+            if (started.value) return
+            started.value = true
+            if (!debugSettings.emulatorMode.value) connection.startHosting(teamName.value)
         }
 
         fun rerollName() {
-            _state.update { it.copy(teamName = randomTeamName()) }
-            // TODO(p2p): update the advertised team name.
+            if (!state.value.canReroll) return
+            teamName.value = randomTeamName()
+            // advertise again so new guests see the new name, but leave a connected guest alone
+            if (connection.state.value is ConnectionState.Advertising) connection.startHosting(teamName.value)
         }
 
         fun accept() {
-            // TODO(p2p): acceptConnection(endpointId), then send the deck to the guest.
-            _state.update { s ->
-                val pending = s.guest as? GuestSlot.Pending ?: return@update s
-                s.copy(guest = GuestSlot.Joined(pending.teamName))
-            }
+            val fake = debugGuest.value
+            if (fake is GuestSlot.Pending) debugGuest.value = GuestSlot.Joined(fake.teamName) else connection.accept()
         }
 
         fun decline() {
-            // TODO(p2p): rejectConnection(endpointId).
-            _state.update { it.copy(guest = GuestSlot.Empty) }
+            if (debugGuest.value != null) debugGuest.value = null else connection.reject()
         }
 
         fun removeGuest() {
-            // TODO(p2p): tell the guest they were removed, disconnectFromEndpoint, resume advertising.
-            _state.update { it.copy(guest = GuestSlot.Empty) }
+            if (debugGuest.value != null) debugGuest.value = null else connection.removePeer()
         }
 
-        fun start() {
-            // TODO(p2p): send Start (with the card-order seed) to the guest and open the game screen.
-        }
+        fun reconnect() = connection.reconnect()
+
+        fun start() = connection.send(GameMessage.Start(seed = Random.nextLong()))
 
         fun cancel() {
-            // TODO(p2p): stop advertising and disconnect from the guest if there is one.
+            debugGuest.value = null
+            connection.endSession()
         }
 
-        // DEBUG ONLY: delete this once the real connection code sets the guest slot.
+        // DEBUG ONLY: pretend a team asked to join
         fun debugSimulateRequest() {
-            _state.update { it.copy(guest = GuestSlot.Pending("Team Kiwi")) }
+            debugGuest.value = GuestSlot.Pending("Team Kiwi")
         }
-
-        // TODO(p2p): when a join request arrives, call
-        //   _state.update { it.copy(guest = GuestSlot.Pending(requesterTeamName)) }
     }
 
-private val TEAM_WORDS =
-    listOf("Mango", "Kiwi", "Plum", "Otter", "Comet", "Pixel", "Maple", "Falcon", "Cactus", "Lemon")
+private const val STOP_TIMEOUT_MS = 5_000L
 
-private fun randomTeamName(): String = "Team ${TEAM_WORDS.random()}"
+// a dropped guest stays in the slot while we try to get them back
+private fun guestSlotOf(link: ConnectionState): GuestSlot =
+    when (link) {
+        is ConnectionState.Requested -> GuestSlot.Pending(link.peerName)
+        is ConnectionState.Connected -> GuestSlot.Joined(link.peerName)
+        is ConnectionState.Reconnecting -> GuestSlot.Joined(link.peerName)
+        is ConnectionState.Lost -> GuestSlot.Joined(link.peerName)
+        else -> GuestSlot.Empty
+    }

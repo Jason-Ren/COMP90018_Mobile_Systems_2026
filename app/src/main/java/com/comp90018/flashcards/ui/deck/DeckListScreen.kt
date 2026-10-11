@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,26 +29,26 @@ import com.comp90018.flashcards.data.local.entity.DeckEntity
 @Composable
 fun DeckListScreen(
     onNavigateToDeck: (String) -> Unit,
+    onJoinGame: () -> Unit,
     viewModel: DeckListViewModel = hiltViewModel(),
 ) {
     val decks by viewModel.decks.collectAsState()
     val displayName by viewModel.displayName.collectAsState()
+    val emulatorMode by viewModel.emulatorMode.collectAsState()
     var showDialog by remember { mutableStateOf(false) }
     var newDeckName by remember { mutableStateOf("") }
     var newDeckDescription by remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
-            DeckListTopBar(onSignOut = viewModel::signOut)
+            DeckListTopBar(
+                onSignOut = viewModel::signOut,
+                emulatorMode = emulatorMode,
+                onEmulatorModeChange = viewModel::setEmulatorMode,
+            )
         },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = { showDialog = true },
-                icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                text = { Text("Create Deck", style = MaterialTheme.typography.titleMedium) },
-                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-            )
+            DeckListButtons(onJoinGame = onJoinGame, onCreateDeck = { showDialog = true })
         },
     ) { padding ->
         DeckListBody(
@@ -77,6 +78,30 @@ fun DeckListScreen(
                 newDeckDescription = ""
                 showDialog = false
             },
+        )
+    }
+}
+
+/** Join Game sits above Create Deck. */
+@Composable
+private fun DeckListButtons(
+    onJoinGame: () -> Unit,
+    onCreateDeck: () -> Unit,
+) {
+    Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        ExtendedFloatingActionButton(
+            onClick = onJoinGame,
+            icon = { Icon(Icons.Default.PlayArrow, contentDescription = null) },
+            text = { Text("Join Game", style = MaterialTheme.typography.titleMedium) },
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        )
+        ExtendedFloatingActionButton(
+            onClick = onCreateDeck,
+            icon = { Icon(Icons.Default.Add, contentDescription = null) },
+            text = { Text("Create Deck", style = MaterialTheme.typography.titleMedium) },
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
         )
     }
 }
@@ -146,10 +171,17 @@ private fun DeckListBody(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DeckListTopBar(onSignOut: () -> Unit) {
+private fun DeckListTopBar(
+    onSignOut: () -> Unit,
+    emulatorMode: Boolean,
+    onEmulatorModeChange: (Boolean) -> Unit,
+) {
     TopAppBar(
         title = {},
         actions = {
+            // DEBUG ONLY: lets the 2v2 lobby show a fake join request when testing on an emulator
+            Checkbox(checked = emulatorMode, onCheckedChange = onEmulatorModeChange)
+            Text("[DEBUG] Emulator mode", style = MaterialTheme.typography.labelSmall)
             TextButton(onClick = onSignOut) {
                 Text("Log out")
             }

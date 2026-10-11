@@ -31,6 +31,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,6 +49,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.comp90018.flashcards.ui.connection.ConnectionOverlay
 import com.comp90018.flashcards.ui.deck.DeckSummaryViewModel
 import kotlinx.coroutines.launch
 
@@ -67,17 +69,20 @@ fun LobbyScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
+    // start advertising once, the permission gate has already made sure we are allowed to
+    LaunchedEffect(Unit) { lobbyViewModel.begin() }
+
     var showRemoveConfirm by remember { mutableStateOf(false) }
     var showCancelConfirm by remember { mutableStateOf(false) }
 
+    val endSession = {
+        lobbyViewModel.cancel()
+        onNavigateBack()
+    }
+
     // Back, the top-bar arrow and Cancel all do the same thing.
     fun requestLeave() {
-        if (state.guest is GuestSlot.Joined) {
-            showCancelConfirm = true
-        } else {
-            lobbyViewModel.cancel()
-            onNavigateBack()
-        }
+        if (state.guest is GuestSlot.Joined) showCancelConfirm = true else endSession()
     }
     BackHandler { requestLeave() }
 
@@ -107,6 +112,8 @@ fun LobbyScreen(
         )
     }
 
+    ConnectionOverlay(state.connection, onReconnect = lobbyViewModel::reconnect, onEnd = endSession)
+
     if (showRemoveConfirm) {
         RemoveGuestDialog(
             name = (state.guest as? GuestSlot.Joined)?.teamName ?: "this team",
@@ -122,8 +129,7 @@ fun LobbyScreen(
         EndSessionDialog(
             onConfirm = {
                 showCancelConfirm = false
-                lobbyViewModel.cancel()
-                onNavigateBack()
+                endSession()
             },
             onDismiss = { showCancelConfirm = false },
         )
@@ -177,18 +183,20 @@ private fun LobbyBody(
                 modifier = Modifier.fillMaxWidth(),
             )
 
-            MyTeamSlot(name = state.teamName, onReroll = actions.onReroll)
+            MyTeamSlot(name = state.teamName, canReroll = state.canReroll, onReroll = actions.onReroll)
 
             VersusDivider()
 
             when (val guest = state.guest) {
                 GuestSlot.Empty -> {
                     WaitingSlot()
-                    // DEBUG ONLY: delete with debugSimulateRequest() in the ViewModel.
-                    OutlinedButton(
-                        onClick = actions.onSimulateRequest,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) { Text("DEBUG: simulate join request") }
+                    // DEBUG ONLY: emulator mode only, delete with debugSimulateRequest() in the ViewModel.
+                    if (state.showDebugButton) {
+                        OutlinedButton(
+                            onClick = actions.onSimulateRequest,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) { Text("DEBUG: simulate join request") }
+                    }
                 }
                 is GuestSlot.Pending ->
                     PendingSlot(
@@ -246,6 +254,7 @@ private fun EndSessionDialog(
 @Composable
 private fun MyTeamSlot(
     name: String,
+    canReroll: Boolean,
     onReroll: () -> Unit,
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
@@ -258,7 +267,7 @@ private fun MyTeamSlot(
                 style = MaterialTheme.typography.headlineSmall,
                 modifier = Modifier.weight(1f),
             )
-            IconButton(onClick = onReroll) {
+            IconButton(onClick = onReroll, enabled = canReroll) {
                 Icon(Icons.Default.Refresh, contentDescription = "Pick another team name")
             }
         }

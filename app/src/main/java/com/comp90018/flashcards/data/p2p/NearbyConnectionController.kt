@@ -1,6 +1,7 @@
 package com.comp90018.flashcards.data.p2p
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
@@ -32,6 +33,8 @@ private const val RECONNECT_GRACE_MS = 8_000L
 
 // small wait so a goodbye payload is sent before we cut the link
 private const val FLUSH_MS = 300L
+
+private const val TAG = "NearbyConnection"
 
 private enum class Role { Host, Guest }
 
@@ -77,8 +80,10 @@ class NearbyConnectionController
         // name shown to the other phone, see idOf and teamOf
         private val myEndpointName: String get() = "$myId|$myTeamName"
 
+        // the player sees a friendly reason, the raw error goes to logcat for us
         private val onFailure: (Exception) -> Unit = {
-            _state.value = ConnectionState.Failed(it.message ?: "could not start nearby connections")
+            Log.w(TAG, "nearby failed to start", it)
+            _state.value = ConnectionState.Failed(friendlyReason(it))
         }
 
         private val startAdvertising: () -> Unit = { hub.advertise(myEndpointName, connectionCallback, onFailure) }
