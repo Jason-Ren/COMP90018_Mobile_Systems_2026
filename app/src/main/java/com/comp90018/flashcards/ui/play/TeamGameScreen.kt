@@ -89,7 +89,7 @@ private fun ResultContent(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(text = headline(round.correctCount, opponent), style = MaterialTheme.typography.headlineMedium)
+        Text(text = state.headline, style = MaterialTheme.typography.headlineMedium)
         Row(horizontalArrangement = Arrangement.spacedBy(32.dp)) {
             Text("You: ${round.correctCount} / ${round.totalCount}", style = MaterialTheme.typography.titleLarge)
             Text(
@@ -105,15 +105,3 @@ private fun ResultContent(
         Button(onClick = onFinish) { Text("Done") }
     }
 }
-
-// the other team may still be playing, so say so until their score arrives
-private fun headline(
-    mine: Int,
-    theirs: Int?,
-): String =
-    when {
-        theirs == null -> "Waiting for the other team to finish"
-        mine > theirs -> "You win!"
-        mine < theirs -> "The other team wins"
-        else -> "It's a tie"
-    }

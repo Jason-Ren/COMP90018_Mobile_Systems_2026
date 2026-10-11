@@ -45,13 +45,23 @@ private enum class Role { Host, Guest }
  */
 @Singleton
 class NearbyConnectionController
-    @Inject
-    constructor(
-        @ApplicationContext context: Context,
+    // internal only so a test can pass in a fake transport and a test scope, the app uses the constructor below
+    internal constructor(
+        private val hub: NearbyTransport,
+        private val scope: CoroutineScope,
     ) : ConnectionController,
         DefaultLifecycleObserver {
-        private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-        private val hub = NearbyHub(context)
+        // what hilt uses, it builds the real nearby transport
+        @Inject
+        constructor(
+            @ApplicationContext context: Context,
+        ) : this(
+            NearbyHub(context),
+            CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
+        ) {
+            // watch the whole app (not one activity) so we release when it is minimised
+            scope.launch { ProcessLifecycleOwner.get().lifecycle.addObserver(this@NearbyConnectionController) }
+        }
 
         private val _state = MutableStateFlow<ConnectionState>(ConnectionState.Idle)
         override val state: StateFlow<ConnectionState> = _state.asStateFlow()
@@ -94,11 +104,6 @@ class NearbyConnectionController
         private val stopRadios: () -> Unit = {
             hub.stop()
             _hosts.value = emptyList()
-        }
-
-        init {
-            // watch the whole app (not one activity) so we release when it is minimised
-            scope.launch { ProcessLifecycleOwner.get().lifecycle.addObserver(this@NearbyConnectionController) }
         }
 
         override fun startHosting(teamName: String) {

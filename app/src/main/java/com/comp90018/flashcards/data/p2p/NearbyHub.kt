@@ -35,15 +35,56 @@ internal fun friendlyReason(e: Exception): String =
         else -> "Something went wrong starting nearby\nTry again"
     }
 
+/** what the controller needs from nearby, so a test can stand in for the real client */
+internal interface NearbyTransport {
+    fun advertise(
+        name: String,
+        callback: ConnectionLifecycleCallback,
+        onFailure: (Exception) -> Unit,
+    )
+
+    fun discover(
+        callback: EndpointDiscoveryCallback,
+        onFailure: (Exception) -> Unit,
+    )
+
+    fun stop()
+
+    fun requestConnection(
+        name: String,
+        endpointId: String,
+        callback: ConnectionLifecycleCallback,
+        onFailure: (Exception) -> Unit,
+    )
+
+    fun accept(
+        endpointId: String,
+        callback: PayloadCallback,
+    )
+
+    fun reject(endpointId: String)
+
+    fun disconnect(endpointId: String)
+
+    fun disconnectAll()
+
+    fun send(
+        endpointId: String,
+        message: GameMessage,
+    )
+
+    fun decode(payload: Payload): GameMessage?
+}
+
 /** every call to the nearby client lives here, so the controller only deals with state */
 internal class NearbyHub(
     context: Context,
-) {
+) : NearbyTransport {
     private val client = Nearby.getConnectionsClient(context)
     private val json = Json { ignoreUnknownKeys = true }
 
     // stop first so calling it twice never throws already advertising
-    fun advertise(
+    override fun advertise(
         name: String,
         callback: ConnectionLifecycleCallback,
         onFailure: (Exception) -> Unit,
@@ -54,7 +95,7 @@ internal class NearbyHub(
             .addOnFailureListener(onFailure)
     }
 
-    fun discover(
+    override fun discover(
         callback: EndpointDiscoveryCallback,
         onFailure: (Exception) -> Unit,
     ) {
@@ -64,13 +105,13 @@ internal class NearbyHub(
             .addOnFailureListener(onFailure)
     }
 
-    fun stop() {
+    override fun stop() {
         client.stopAdvertising()
         client.stopDiscovery()
     }
 
     // guest asks a discovered host to connect
-    fun requestConnection(
+    override fun requestConnection(
         name: String,
         endpointId: String,
         callback: ConnectionLifecycleCallback,
@@ -80,26 +121,26 @@ internal class NearbyHub(
     }
 
     // both sides must accept before nearby reports the connection as made
-    fun accept(
+    override fun accept(
         endpointId: String,
         callback: PayloadCallback,
     ) {
         client.acceptConnection(endpointId, callback)
     }
 
-    fun reject(endpointId: String) {
+    override fun reject(endpointId: String) {
         client.rejectConnection(endpointId)
     }
 
-    fun disconnect(endpointId: String) {
+    override fun disconnect(endpointId: String) {
         client.disconnectFromEndpoint(endpointId)
     }
 
-    fun disconnectAll() {
+    override fun disconnectAll() {
         client.stopAllEndpoints()
     }
 
-    fun send(
+    override fun send(
         endpointId: String,
         message: GameMessage,
     ) {
@@ -107,6 +148,6 @@ internal class NearbyHub(
         client.sendPayload(endpointId, Payload.fromBytes(bytes))
     }
 
-    fun decode(payload: Payload): GameMessage? =
+    override fun decode(payload: Payload): GameMessage? =
         payload.asBytes()?.let { json.decodeFromString(GameMessage.serializer(), it.decodeToString()) }
 }

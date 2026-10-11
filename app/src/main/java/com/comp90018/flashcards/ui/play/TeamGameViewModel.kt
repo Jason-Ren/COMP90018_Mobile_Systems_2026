@@ -23,7 +23,20 @@ data class TeamGameUiState(
     // null until the other team has finished its deck
     val opponentCorrect: Int? = null,
     val connection: ConnectionState = ConnectionState.Idle,
-)
+) {
+    // the other team may still be playing, so say so until their score arrives
+    val headline: String
+        get() {
+            val mine = round.correctCount
+            val theirs = opponentCorrect
+            return when {
+                theirs == null -> "Waiting for the other team to finish"
+                mine > theirs -> "You win!"
+                mine < theirs -> "The other team wins"
+                else -> "It's a tie"
+            }
+        }
+}
 
 /**
  * ViewModel for a team mode game. Each team plays its own round exactly like Duo (the round is in
