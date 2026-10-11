@@ -35,6 +35,7 @@ fun TeamGameScreen(
     viewModel: TeamGameViewModel = hiltViewModel(),
 ) {
     LockLandscape()
+    PauseWhenBackgrounded(viewModel::pause)
     val state by viewModel.uiState.collectAsState()
     var showLeaveConfirm by remember { mutableStateOf(false) }
     val leave = {
@@ -48,11 +49,13 @@ fun TeamGameScreen(
 
     Surface(modifier = modifier.fillMaxSize()) {
         val round = state.round
-        when (round.phase) {
-            DuoPhase.READY -> ReadyContent(round, viewModel::start)
-            DuoPhase.FRONT -> FrontContent(round, viewModel::reveal)
-            DuoPhase.BACK -> BackContent(round, viewModel::onGesture)
-            DuoPhase.FINISHED -> ResultContent(state, onFinish = leave)
+        // paused comes first, so the Paused screen stays until the player taps Resume
+        when {
+            round.isPaused -> PausedContent(round, viewModel::resume)
+            round.phase == DuoPhase.READY -> ReadyContent(round, viewModel::start)
+            round.phase == DuoPhase.FRONT -> FrontContent(round, viewModel::reveal)
+            round.phase == DuoPhase.BACK -> BackContent(round, viewModel::onGesture)
+            else -> ResultContent(state, onFinish = leave)
         }
     }
 

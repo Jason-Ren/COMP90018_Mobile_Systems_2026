@@ -8,7 +8,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
@@ -21,6 +20,9 @@ import kotlin.time.Duration.Companion.seconds
  * Each card gets a countdown of [secondsPerCard]. When it runs out, or the Guesser acts first, the
  * back is revealed. [onGesture] is where the tilt sensor plugs in. Until then the screen sends it
  * from taps.
+ *
+ * The countdown can be paused with [pause] (the screen does this when the app goes to the
+ * background) and carries on from the same second after [resume].
  */
 abstract class GameViewModel(
     private val secondsPerCard: Int,
@@ -29,10 +31,14 @@ abstract class GameViewModel(
     val round: StateFlow<DuoUiState> = _round.asStateFlow()
 
     private var game = DuoGame(emptyList())
+
+    // coerced because a team game whose setup was lost has no countdown, and the timer needs one
+    private val timer = CardTimer(secondsPerCard.coerceAtLeast(1))
     private var timerJob: Job? = null
 
-    // while true the countdown holds still, used when the link to the other phone is down
-    private val paused = MutableStateFlow(false)
+    // two reasons to hold the countdown: the player left the app, or the link to the other phone is down
+    private var pausedByPlayer = false
+    private var linkDown = false
 
     /** Sets up a new round on these cards, in the order given, and waits on the Ready screen. */
     protected fun loadCards(
@@ -40,6 +46,8 @@ abstract class GameViewModel(
         deckName: String,
     ) {
         timerJob?.cancel()
+        timer.reset()
+        pausedByPlayer = false
         game = DuoGame(cards)
         publish(isLoading = false, deckName = deckName)
     }
@@ -47,9 +55,10 @@ abstract class GameViewModel(
     /** Called once when the last card has been marked. */
     protected open fun onFinished(correctCount: Int) = Unit
 
-    /** Holds the countdown still, or lets it carry on. */
-    protected fun setPaused(isPaused: Boolean) {
-        paused.value = isPaused
+    /** Holds the countdown while the link to the other phone is down, and lets it carry on when it is back. */
+    protected fun setLinkDown(isDown: Boolean) {
+        linkDown = isDown
+        applyPause()
     }
 
     /** Starts the round, called from the Ready screen. */
@@ -59,10 +68,24 @@ abstract class GameViewModel(
         publish()
     }
 
-    /** Shows the back of the current card, ahead of the countdown. */
+    /** Shows the back of the current card, ahead of the countdown. Ignored while paused. */
     fun reveal() {
+        if (timer.isPaused) return
         timerJob?.cancel()
         showBack()
+    }
+
+    /** Stops the countdown while the front is showing, keeping the time left. The screen calls it in the background. */
+    fun pause() {
+        if (game.phase != DuoPhase.FRONT || pausedByPlayer) return
+        pausedByPlayer = true
+        applyPause()
+    }
+
+    /** Carries the countdown on from where [pause] stopped it. */
+    fun resume() {
+        pausedByPlayer = false
+        applyPause()
     }
 
     /**
@@ -90,19 +113,38 @@ abstract class GameViewModel(
     }
 
     private fun startTimer() {
+        timer.reset()
+        // a card can come up while the link is down (marked from the back), so it starts held
+        if (linkDown) timer.pause() else runTimer()
+    }
+
+    /** Ticks the timer once a second until time is up, then shows the back. */
+    private fun runTimer() {
         timerJob?.cancel()
         timerJob =
             viewModelScope.launch {
-                var left = secondsPerCard
-                while (left > 0) {
-                    // wait here while paused, so the number on screen stops counting down
-                    paused.first { !it }
-                    _round.update { it.copy(secondsLeft = left) }
+                while (!timer.isFinished) {
                     delay(1.seconds)
-                    left--
+                    timer.tick()
+                    publish()
                 }
                 showBack()
             }
+    }
+
+    // the timer is held while either reason is on, and only a countdown on a front can be held
+    private fun applyPause() {
+        if (game.phase == DuoPhase.FRONT) {
+            val shouldHold = pausedByPlayer || linkDown
+            if (shouldHold && !timer.isPaused) {
+                timerJob?.cancel()
+                timer.pause()
+            } else if (!shouldHold && timer.isPaused) {
+                timer.resume()
+                runTimer()
+            }
+        }
+        publish()
     }
 
     private fun publish(
@@ -115,14 +157,12 @@ abstract class GameViewModel(
                 deckName = deckName,
                 phase = game.phase,
                 current = game.current,
+                secondsLeft = timer.secondsLeft,
+                isPaused = timer.isPaused,
                 correctCount = game.correctCount,
                 totalCount = game.totalCount,
                 missed = game.missed,
             )
         }
-    }
-
-    override fun onCleared() {
-        timerJob?.cancel()
     }
 }

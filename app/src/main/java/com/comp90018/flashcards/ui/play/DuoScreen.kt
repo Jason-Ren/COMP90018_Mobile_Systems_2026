@@ -55,11 +55,13 @@ fun DuoScreen(
     viewModel: DuoViewModel = hiltViewModel(),
 ) {
     LockLandscape()
+    PauseWhenBackgrounded(viewModel::pause)
     val uiState by viewModel.uiState.collectAsState()
 
     Surface(modifier = modifier.fillMaxSize()) {
         when {
             uiState.isLoading -> LoadingContent()
+            uiState.isPaused -> PausedContent(uiState, viewModel::resume)
             uiState.phase == DuoPhase.READY -> ReadyContent(uiState, viewModel::start)
             uiState.phase == DuoPhase.FRONT -> FrontContent(uiState, viewModel::reveal)
             uiState.phase == DuoPhase.BACK -> BackContent(uiState, viewModel::onGesture)
@@ -72,6 +74,26 @@ fun DuoScreen(
 internal fun LoadingContent() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         CircularProgressIndicator()
+    }
+}
+
+/** Shown after the app was in the background, so the Guesser can get ready before the clock runs. */
+@Composable
+internal fun PausedContent(
+    uiState: DuoUiState,
+    onResume: () -> Unit,
+) {
+    Column(
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(text = "Paused", style = MaterialTheme.typography.headlineMedium)
+        Text(text = "${formatCountdown(uiState.secondsLeft)} left", style = MaterialTheme.typography.titleMedium)
+        Button(onClick = onResume) { Text("Resume") }
     }
 }
 

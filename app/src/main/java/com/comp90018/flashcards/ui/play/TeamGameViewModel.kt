@@ -66,7 +66,7 @@ class TeamGameViewModel
                 link.collect {
                     // the countdown waits while the link is down (but not in emulator mode, where there is none)
                     val linkDown = it !is ConnectionState.Connected && it !is ConnectionState.Idle
-                    setPaused(linkDown)
+                    setLinkDown(linkDown)
                     // the score is lost if it was sent while the link was down, so send it again once we are back
                     if (it is ConnectionState.Connected) sendScore()
                 }

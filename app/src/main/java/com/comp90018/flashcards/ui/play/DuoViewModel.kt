@@ -20,6 +20,7 @@ data class DuoUiState(
     val current: CardEntity? = null,
     val secondsPerCard: Int = 0,
     val secondsLeft: Int = 0,
+    val isPaused: Boolean = false,
     val correctCount: Int = 0,
     val totalCount: Int = 0,
     val missed: List<CardEntity> = emptyList(),
