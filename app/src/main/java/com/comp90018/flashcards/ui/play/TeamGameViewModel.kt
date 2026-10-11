@@ -46,8 +46,12 @@ class TeamGameViewModel
 
         // in emulator mode nearby is never started, so there is no link to wait for
         private val link =
-            combine(connection.state, debugSettings.emulatorMode) { real, emulator ->
-                if (emulator) ConnectionState.Idle else real
+            combine(
+                connection.state,
+                debugSettings.emulatorMode,
+                debugSettings.simulatedLink,
+            ) { real, emulator, simulated ->
+                if (emulator) simulated ?: ConnectionState.Idle else real
             }
 
         val uiState: StateFlow<TeamGameUiState> =
@@ -73,9 +77,18 @@ class TeamGameViewModel
             }
         }
 
-        fun reconnect() = connection.reconnect()
+        fun reconnect() {
+            if (debugSettings.emulatorMode.value) {
+                viewModelScope.launch { debugSettings.simulateReconnect() }
+            } else {
+                connection.reconnect()
+            }
+        }
 
-        fun leave() = connection.endSession()
+        fun leave() {
+            debugSettings.clearSimulatedLink()
+            connection.endSession()
+        }
 
         override fun onFinished(correctCount: Int) {
             finishedScore = correctCount

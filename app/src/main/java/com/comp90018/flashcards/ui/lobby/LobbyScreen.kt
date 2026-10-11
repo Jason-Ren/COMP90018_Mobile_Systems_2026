@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.comp90018.flashcards.ui.connection.ConnectionOverlay
+import com.comp90018.flashcards.ui.connection.DebugConnectionButtons
 import com.comp90018.flashcards.ui.deck.DeckSummaryViewModel
 
 /**
@@ -196,6 +197,9 @@ private fun LobbyBody(
                     )
                 is GuestSlot.Joined -> JoinedSlot(teamName = guest.teamName, onRemove = actions.onRemove)
             }
+
+            // DEBUG ONLY: fake the link going wrong, only shows in emulator mode
+            DebugConnectionButtons()
         }
 
         Button(

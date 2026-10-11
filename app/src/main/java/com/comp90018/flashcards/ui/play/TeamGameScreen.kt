@@ -2,6 +2,7 @@ package com.comp90018.flashcards.ui.play
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.comp90018.flashcards.ui.connection.ConnectionOverlay
+import com.comp90018.flashcards.ui.connection.DebugConnectionButtons
 
 /**
  * The team mode game screen, locked to landscape. It plays like Duo, then compares the two teams' scores.
@@ -57,6 +59,8 @@ fun TeamGameScreen(
             round.phase == DuoPhase.BACK -> BackContent(round, viewModel::onGesture)
             else -> ResultContent(state, onFinish = leave)
         }
+        // DEBUG ONLY: fake the link going wrong, only shows in emulator mode
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) { DebugConnectionButtons() }
     }
 
     ConnectionOverlay(state.connection, onReconnect = viewModel::reconnect, onEnd = leave)

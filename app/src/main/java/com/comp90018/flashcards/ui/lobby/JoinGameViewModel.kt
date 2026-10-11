@@ -54,9 +54,10 @@ class JoinGameViewModel
                 started,
                 debugSettings.emulatorMode,
                 debugLink,
-            ) { real, hasStarted, emulator, fake ->
+                debugSettings.simulatedLink,
+            ) { real, hasStarted, emulator, fake, simulated ->
                 when {
-                    emulator -> fake ?: ConnectionState.Idle
+                    emulator -> simulated ?: fake ?: ConnectionState.Idle
                     hasStarted -> real
                     else -> ConnectionState.Idle
                 }
@@ -93,10 +94,17 @@ class JoinGameViewModel
             if (host == DEBUG_HOST) simulateJoin(host) else connection.requestToJoin(host)
         }
 
-        fun reconnect() = connection.reconnect()
+        fun reconnect() {
+            if (debugSettings.emulatorMode.value) {
+                viewModelScope.launch { debugSettings.simulateReconnect() }
+            } else {
+                connection.reconnect()
+            }
+        }
 
         fun leave() {
             debugLink.value = null
+            debugSettings.clearSimulatedLink()
             hostStarted.value = false
             connection.endSession()
         }

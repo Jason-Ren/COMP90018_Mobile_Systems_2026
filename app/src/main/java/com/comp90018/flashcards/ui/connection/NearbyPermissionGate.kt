@@ -33,12 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.LifecycleEventEffect
-import com.comp90018.flashcards.debug.DebugSettings
-import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.StateFlow
-import javax.inject.Inject
 
 // which permissions nearby needs depends on the android version, matching the manifest
 private fun nearbyPermissions(): Array<String> =
@@ -66,7 +61,7 @@ private fun hasNearbyPermissions(context: Context): Boolean =
 fun NearbyPermissionGate(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
-    debugViewModel: DebugGateViewModel = hiltViewModel(),
+    debugViewModel: DebugViewModel = hiltViewModel(),
     content: @Composable () -> Unit,
 ) {
     val context = LocalContext.current
@@ -112,13 +107,3 @@ private fun openAppSettings(context: Context) {
         Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null))
     context.startActivity(intent)
 }
-
-// DEBUG ONLY: lets the gate see the emulator mode tickbox
-@HiltViewModel
-class DebugGateViewModel
-    @Inject
-    constructor(
-        debugSettings: DebugSettings,
-    ) : ViewModel() {
-        val emulatorMode: StateFlow<Boolean> = debugSettings.emulatorMode
-    }

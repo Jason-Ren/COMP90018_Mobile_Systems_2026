@@ -36,6 +36,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.comp90018.flashcards.data.p2p.ConnectionState
 import com.comp90018.flashcards.data.p2p.DiscoveredHost
 import com.comp90018.flashcards.ui.connection.ConnectionOverlay
+import com.comp90018.flashcards.ui.connection.DebugConnectionButtons
 
 /**
  * The guest's side of team mode: list the hosts nearby, ask to join one, then wait for the host to start.
@@ -111,6 +112,9 @@ private fun JoinBody(
                 WaitingCard(text = "Joined ${link.peerName}\nWaiting for the host to start", onCancel = onCancel)
             else -> HostList(hosts = state.hosts, onJoin = onJoin, modifier = Modifier.weight(1f))
         }
+
+        // DEBUG ONLY: fake the link going wrong, only shows in emulator mode
+        DebugConnectionButtons()
     }
 }
 

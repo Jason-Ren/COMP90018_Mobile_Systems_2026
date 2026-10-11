@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /** What is in the opponent's half of the lobby. */
@@ -65,16 +66,23 @@ class LobbyViewModel
         // DEBUG ONLY: a fake guest so the lobby can be tried on an emulator, where nearby cannot connect
         private val debugGuest = MutableStateFlow<GuestSlot?>(null)
 
-        val state: StateFlow<LobbyUiState> =
+        // in emulator mode nearby is never started, so the real link is ignored and the simulated one is used
+        private val link =
             combine(
-                teamName,
                 connection.state,
                 started,
-                debugGuest,
                 debugSettings.emulatorMode,
-            ) { name, link, hasStarted, fake, emulator ->
-                // in emulator mode nearby is never started, so ignore whatever state it is left in
-                val current = if (hasStarted && !emulator) link else ConnectionState.Idle
+                debugSettings.simulatedLink,
+            ) { real, hasStarted, emulator, simulated ->
+                when {
+                    emulator -> simulated ?: ConnectionState.Idle
+                    hasStarted -> real
+                    else -> ConnectionState.Idle
+                }
+            }
+
+        val state: StateFlow<LobbyUiState> =
+            combine(teamName, link, debugGuest, debugSettings.emulatorMode) { name, current, fake, emulator ->
                 LobbyUiState(
                     teamName = name,
                     guest = fake ?: guestSlotOf(current),
@@ -110,10 +118,17 @@ class LobbyViewModel
             if (debugGuest.value != null) debugGuest.value = null else connection.removePeer()
         }
 
-        fun reconnect() = connection.reconnect()
+        fun reconnect() {
+            if (debugSettings.emulatorMode.value) {
+                viewModelScope.launch { debugSettings.simulateReconnect() }
+            } else {
+                connection.reconnect()
+            }
+        }
 
         fun cancel() {
             debugGuest.value = null
+            debugSettings.clearSimulatedLink()
             connection.endSession()
         }
 
