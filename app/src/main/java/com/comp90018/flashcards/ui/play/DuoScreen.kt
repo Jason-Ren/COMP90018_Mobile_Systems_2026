@@ -33,17 +33,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.comp90018.flashcards.data.local.entity.CardEntity
+import com.comp90018.flashcards.ui.help.HelpTopic
+import com.comp90018.flashcards.ui.help.helpTip
 
 private val MISSED_LIST_MAX_WIDTH = 560.dp
-
-private fun rules(secondsPerCard: Int): List<String> =
-    listOf(
-        "One of you is the Describer and the other is the Guesser",
-        "The Guesser holds the phone up to their forehead, screen facing out",
-        "The Describer sees the card and describes it, without saying any word shown on it",
-        "The Guesser has ${describeCountdown(secondsPerCard)} to guess, then the back is shown",
-        "Check the guess: tilt down if it was right, or tilt up if it was wrong",
-    )
 
 /**
  * The 2-player screen, locked to landscape: rules, then one card at a time, then the results.
@@ -58,12 +51,23 @@ fun DuoScreen(
     val uiState by viewModel.uiState.collectAsState()
 
     Surface(modifier = modifier.fillMaxSize()) {
-        when {
-            uiState.isLoading -> LoadingContent()
-            uiState.phase == DuoPhase.READY -> ReadyContent(uiState, viewModel::start)
-            uiState.phase == DuoPhase.FRONT -> FrontContent(uiState, viewModel::reveal)
-            uiState.phase == DuoPhase.BACK -> BackContent(uiState, viewModel::onGesture)
-            else -> FinishedContent(uiState, viewModel::playAgain, onNavigateBack)
+        Box(modifier = Modifier.fillMaxSize()) {
+            when {
+                uiState.isLoading -> LoadingContent()
+                uiState.phase == DuoPhase.READY -> ReadyContent(uiState, viewModel::start)
+                uiState.phase == DuoPhase.FRONT -> FrontContent(uiState, viewModel::reveal)
+                uiState.phase == DuoPhase.BACK -> BackContent(uiState, viewModel::onGesture)
+                else -> FinishedContent(uiState, viewModel::playAgain, onNavigateBack)
+            }
+            val inPlay = uiState.phase == DuoPhase.FRONT || uiState.phase == DuoPhase.BACK
+            if (!uiState.isLoading && !inPlay) {
+                helpTip(
+                    topic = HelpTopic.DuoPlayHelp,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(8.dp),
+                    size = 36.dp,)
+            }
         }
     }
 }
@@ -90,10 +94,7 @@ private fun ReadyContent(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(text = uiState.deckName, style = MaterialTheme.typography.headlineMedium)
-        Text(text = "How to play", style = MaterialTheme.typography.titleMedium)
-        rules(uiState.secondsPerCard).forEachIndexed { index, rule ->
-            Text(text = "${index + 1}. $rule", style = MaterialTheme.typography.bodyMedium)
-        }
+        Text(text = "Tap \"?\" to learn how to play.", style = MaterialTheme.typography.bodyLarge)
         Button(onClick = onStart) { Text("Start") }
     }
 }
