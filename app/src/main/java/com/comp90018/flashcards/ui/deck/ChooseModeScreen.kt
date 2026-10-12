@@ -1,6 +1,7 @@
 package com.comp90018.flashcards.ui.deck
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -31,6 +32,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.comp90018.flashcards.R
+import com.comp90018.flashcards.ui.help.HelpTopic
+import com.comp90018.flashcards.ui.help.helpTip
 
 /**
  * The ways a deck can be played.
@@ -39,18 +42,22 @@ private enum class PlayMode(
     val title: String,
     val description: String,
     val isAvailable: Boolean,
+    val helpTip: HelpTopic,
 ) {
     SOLO("Solo",
         "Study the deck on your own, at your own pace." +
             "\nKeeps track of your progress to help you study effectively.",
-        isAvailable = true),
+        isAvailable = true,
+        HelpTopic.SoloPlayHelp),
     DUO("Duo",
         "Study together with a friend. One player describes the card, the other guesses the answer.",
-        isAvailable = true),
+        isAvailable = true,
+        HelpTopic.DuoPlayHelp),
     TEAM_MODE("Clash",
         "A competitive Duo match for 2 teams of two." +
             "\n Requires 2 devices with ClashCards installed.",
-        isAvailable = true);
+        isAvailable = true,
+        HelpTopic.MultiPlayHelp);
 
     @Composable
     fun iconPainter(): Painter =
@@ -139,6 +146,13 @@ private fun PlayModeButton(
             ) {
                 Icon(mode.iconPainter(), contentDescription = null, modifier = Modifier.size(32.dp))
                 Text(mode.title, style = MaterialTheme.typography.titleLarge)
+            }
+            Box(
+                contentAlignment = Alignment.BottomCenter,
+            ) {
+                 {
+                    helpTip(mode.helpTip)
+                }
             }
         }
         Text(

@@ -38,6 +38,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.comp90018.flashcards.ui.deck.DeckSummaryViewModel
+import com.comp90018.flashcards.ui.help.HelpTopic
+import com.comp90018.flashcards.ui.help.helpTip
 
 private const val MAX_DIGITS = 3
 
@@ -83,6 +85,13 @@ fun ChooseTimerScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
+                actions = {
+                    helpTip(
+                        topic = HelpTopic.DuoPlayHelp,
+                        modifier = Modifier.padding(end = 12.dp),
+                        size = 36.dp
+                    )
+                }
             )
         },
     ) { padding ->
