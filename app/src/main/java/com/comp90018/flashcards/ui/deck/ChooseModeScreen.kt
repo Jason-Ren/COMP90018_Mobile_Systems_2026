@@ -131,7 +131,8 @@ private fun PlayModeButton(
                     .weight(1f, fill = false)
                     .fillMaxWidth()
                     .height(72.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically // Centers vertically
         ) {
             Button(
                 onClick = onClick,

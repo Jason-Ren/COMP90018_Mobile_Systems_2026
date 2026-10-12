@@ -6,7 +6,7 @@ import androidx.compose.ui.res.stringResource
 import com.comp90018.flashcards.R
 
 @Composable
-fun SoloPlayInstructions()  {
+fun SoloPlayInstructions() {
     Text(stringResource(R.string.solo_mode_1))
     Text(stringResource(R.string.solo_mode_2))
     Text(stringResource(R.string.solo_mode_3))

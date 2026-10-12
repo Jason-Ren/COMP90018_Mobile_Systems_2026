@@ -6,7 +6,7 @@ import androidx.compose.ui.res.stringResource
 import com.comp90018.flashcards.R
 
 @Composable
-fun DuoPlayInstructions()  {
+fun DuoPlayInstructions() {
     Text(stringResource(R.string.duo_mode_1))
     Text(stringResource(R.string.duo_mode_2))
     Text(stringResource(R.string.duo_mode_3))

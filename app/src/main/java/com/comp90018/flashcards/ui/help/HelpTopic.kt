@@ -24,7 +24,7 @@ enum class HelpTopic(
 fun helpTip(
     topic: HelpTopic,
     modifier: Modifier = Modifier,
-    size: Dp = 48.dp,
+    size: Dp = 72.dp,
 ) = HelpTip(title = stringResource(topic.title), modifier = modifier, size = size) {
     topic.content(this)
 }
