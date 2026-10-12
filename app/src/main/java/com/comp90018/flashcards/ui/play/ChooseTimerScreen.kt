@@ -100,7 +100,7 @@ fun ChooseTimerScreen(
                 Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .padding(16.dp),
+                    .padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 48.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
         ) {
             TimerOption.entries.forEach { option ->

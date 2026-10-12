@@ -1,7 +1,6 @@
 package com.comp90018.flashcards.ui.deck
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,9 +23,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -46,7 +45,7 @@ private enum class PlayMode(
 ) {
     SOLO("Solo",
         "Study the deck on your own, at your own pace." +
-            "\nKeeps track of your progress to help you study effectively.",
+            "\nKeeps track of your progress for effective revision.",
         isAvailable = true,
         HelpTopic.SoloPlayHelp),
     DUO("Duo",
@@ -69,8 +68,7 @@ private enum class PlayMode(
 }
 
 /**
- * Choose-mode page: pick how to play the deck. Only Solo works for now, and Duo and team mode are
- * shown disabled until those modes exist.
+ * Choose-mode page: pick how to play the deck. Modes that are not built yet are shown disabled.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -107,8 +105,9 @@ fun ChooseModeScreen(
                 Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 48.dp),
+                    .padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 48.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             PlayMode.entries.forEach { mode ->
                 PlayModeButton(
@@ -134,26 +133,30 @@ private fun PlayModeButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Button(
-            onClick = onClick,
-            enabled = mode.isAvailable,
-            modifier = Modifier.weight(1f, fill = false).fillMaxWidth().height(72.dp),
+    Column(
+        // fillMaxWidth first, then the cap, so every row has exactly the same width.
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(20.dp),
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            Button(
+                onClick = onClick,
+                enabled = mode.isAvailable,
+                modifier = Modifier.weight(1f).height(72.dp),
             ) {
-                Icon(mode.iconPainter(), contentDescription = null, modifier = Modifier.size(32.dp))
-                Text(mode.title, style = MaterialTheme.typography.titleLarge)
-            }
-            Box(
-                contentAlignment = Alignment.BottomCenter,
-            ) {
-                 {
-                    helpTip(mode.helpTip)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Icon(mode.iconPainter(), contentDescription = null, modifier = Modifier.size(32.dp))
+                    Text(mode.title, style = MaterialTheme.typography.titleLarge)
                 }
             }
+            helpTip(mode.helpTip, size = 48.dp)
         }
         Text(
             text = if (mode.isAvailable) mode.description else "${mode.description} (coming soon)",
