@@ -33,6 +33,7 @@ fun DeckPageScreen(
     onPlay: (String) -> Unit,
     onAddCard: (String) -> Unit,
     onEditCard: (String, String) -> Unit,
+    onCommunity: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DeckSummaryViewModel = hiltViewModel(),
 ) {
@@ -48,6 +49,7 @@ fun DeckPageScreen(
                 onNavigateBack = onNavigateBack,
                 onEditDeckInfo = { showEditDialog = true },
                 onDeleteDeck = { showDeleteConfirmDialog = true },
+                onCommunity = { onCommunity(viewModel.deckId) },
             )
         },
     ) { padding ->
@@ -101,6 +103,7 @@ private fun DeckPageTopBar(
     onNavigateBack: () -> Unit,
     onEditDeckInfo: () -> Unit,
     onDeleteDeck: () -> Unit,
+    onCommunity: () -> Unit,
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
@@ -120,6 +123,13 @@ private fun DeckPageTopBar(
                     expanded = showMenu,
                     onDismissRequest = { showMenu = false },
                 ) {
+                    DropdownMenuItem(
+                        text = { Text("Share & publish") },
+                        onClick = {
+                            showMenu = false
+                            onCommunity()
+                        },
+                    )
                     DropdownMenuItem(
                         text = { Text("Edit Deck Info") },
                         leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },

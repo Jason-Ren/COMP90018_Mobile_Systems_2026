@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -31,6 +32,8 @@ import com.comp90018.flashcards.ui.deck.DeckListScreen
 import com.comp90018.flashcards.ui.deck.DeckPageScreen
 import com.comp90018.flashcards.ui.play.ChooseTimerScreen
 import com.comp90018.flashcards.ui.play.DuoScreen
+import com.comp90018.flashcards.ui.social.CloudDeckScreen
+import com.comp90018.flashcards.ui.social.CommunityScreen
 import com.comp90018.flashcards.ui.study.StudyScreen
 import com.comp90018.flashcards.ui.theme.AppTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -62,10 +65,12 @@ private fun FlashcardApp(sessionViewModel: SessionViewModel = hiltViewModel()) {
         return
     }
 
-    val navController = rememberNavController()
-    val startDestination = if (authState is AuthState.SignedIn) "home" else "login"
-    AuthNavigationEffect(authState = authState, navController = navController)
-    FlashcardNavHost(navController = navController, startDestination = startDestination)
+    key((authState as? AuthState.SignedIn)?.user?.uid) {
+        val navController = rememberNavController()
+        val startDestination = if (authState is AuthState.SignedIn) "home" else "login"
+        AuthNavigationEffect(authState = authState, navController = navController)
+        FlashcardNavHost(navController = navController, startDestination = startDestination)
+    }
 }
 
 @Composable
@@ -79,12 +84,14 @@ private fun FlashcardNavHost(
         }
         composable("home") {
             DeckListScreen(
+                onCommunity = { navController.navigate("community") },
                 onNavigateToDeck = { deckId ->
                     navController.navigate("deck/$deckId")
                 },
             )
         }
         deckPlayRoutes(navController)
+        communityRoutes(navController)
         duoRoutes(navController)
         composable(
             route = "add_edit_card/{deckId}?cardId={cardId}",
@@ -132,6 +139,7 @@ private fun NavGraphBuilder.deckPlayRoutes(navController: NavHostController) {
             onEditCard = { deckId, cardId ->
                 navController.navigate("add_edit_card/$deckId?cardId=$cardId")
             },
+            onCommunity = { deckId -> navController.navigate("cloud_deck/$deckId") },
         )
     }
     composable(
@@ -146,6 +154,33 @@ private fun NavGraphBuilder.deckPlayRoutes(navController: NavHostController) {
             onPlayDuo = { deckId ->
                 navController.navigate("choose_timer/$deckId")
             },
+        )
+    }
+}
+
+private fun NavGraphBuilder.communityRoutes(navController: NavHostController) {
+    composable(
+        "community?friends={friends}",
+        arguments =
+            listOf(
+                navArgument("friends") {
+                    type = NavType.BoolType
+                    defaultValue = false
+                },
+            ),
+    ) { entry ->
+        CommunityScreen(
+            onBack = { navController.popBackStack() },
+            onOpenDeck = { navController.navigate("cloud_deck/$it") },
+            startWithFriends = entry.arguments?.getBoolean("friends") == true,
+        )
+    }
+    composable("cloud_deck/{deckId}", arguments = listOf(navArgument("deckId") { type = NavType.StringType })) {
+        CloudDeckScreen(
+            onBack = { navController.popBackStack() },
+            onOpenLocal = { navController.navigate("deck/$it") },
+            onFriends = { navController.navigate("community?friends=true") },
+            onOpenSource = { navController.navigate("cloud_deck/$it") },
         )
     }
 }
