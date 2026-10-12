@@ -157,7 +157,7 @@ private fun NavGraphBuilder.deckPlayRoutes(navController: NavHostController) {
                 navController.navigate("choose_timer/$deckId")
             },
             onPlayTeamMode = { deckId ->
-                navController.navigate("lobby/$deckId")
+                navController.navigate("host_lobby/$deckId")
             },
         )
     }
@@ -198,7 +198,7 @@ private fun NavGraphBuilder.duoRoutes(navController: NavHostController) {
  */
 private fun NavGraphBuilder.teamGameRoutes(navController: NavHostController) {
     composable(
-        route = "lobby/{deckId}",
+        route = "host_lobby/{deckId}",
         arguments = listOf(navArgument("deckId") { type = NavType.StringType }),
     ) { entry ->
         val deckId = entry.arguments?.getString("deckId").orEmpty()
@@ -221,7 +221,8 @@ private fun NavGraphBuilder.teamGameRoutes(navController: NavHostController) {
             },
         )
     }
-    composable(route = "team_game") { TeamGameScreen(onNavigateBack = { navController.popBackStack("home", false) }) }
+    composable(route = "team_game")
+    { TeamGameScreen(onNavigateBack = { navController.popBackStack("home", false) }) }
 }
 
 /** The guest's team mode flow: find a host, wait for Start, then play. */
