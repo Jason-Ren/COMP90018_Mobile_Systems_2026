@@ -54,10 +54,22 @@ private fun nearbyPermissions(): Array<String> =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) add(Manifest.permission.NEARBY_WIFI_DEVICES)
     }.toTypedArray()
 
-private fun hasNearbyPermissions(context: Context): Boolean =
-    nearbyPermissions().all {
-        ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
-    }
+private fun hasNearbyPermissions(context: Context): Boolean {
+    fun has(p: String) =
+        ContextCompat.checkSelfPermission(context, p) == PackageManager.PERMISSION_GRANTED
+
+    val needsLocation = Build.VERSION.SDK_INT <= Build.VERSION_CODES.S
+    val locationOk =
+        !needsLocation ||
+            has(Manifest.permission.ACCESS_FINE_LOCATION) ||
+            has(Manifest.permission.ACCESS_COARSE_LOCATION)
+    val others =
+        nearbyPermissions().filter {
+            it != Manifest.permission.ACCESS_FINE_LOCATION &&
+                it != Manifest.permission.ACCESS_COARSE_LOCATION
+        }
+    return locationOk && others.all(::has)
+}
 
 /**
  * Shows [content] once the nearby permissions are granted. Until then it asks for them, and if

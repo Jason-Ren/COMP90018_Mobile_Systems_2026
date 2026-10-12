@@ -37,19 +37,30 @@ internal fun teamOf(endpointName: String) = endpointName.substringAfter('|')
 // nearby's missing permission errors are one run of codes: 8029 (nearby wifi devices) to 8039 (bluetooth connect)
 private val MISSING_PERMISSION_CODES = 8029..8039
 
-// turns nearby's raw error (like 8032: MISSING_PERMISSION_ACCESS_WIFI_STATE) into something a player can act on
 @Suppress("DEPRECATION")
-internal fun friendlyReason(e: Exception): String =
-    when ((e as? ApiException)?.statusCode) {
-        ConnectionsStatusCodes.STATUS_RADIO_ERROR ->
-            "Bluetooth or Wi-Fi is off\nTurn both on and try again"
-        ConnectionsStatusCodes.MISSING_SETTING_LOCATION_MUST_BE_ON ->
-            "Location is turned off\nTurn on Location in your phone's settings and try again"
-        in MISSING_PERMISSION_CODES ->
-            "Nearby access isn't allowed\nOpen Settings, allow $permissionName and try again"
-        else ->
-            "Couldn't connect to nearby phones\nCheck Bluetooth and Wi-Fi are on, then try again"
-    }
+// turns nearby's raw error (like 8032: MISSING_PERMISSION_ACCESS_WIFI_STATE) into something a player can act on
+internal fun friendlyReason(e: Exception): String {
+    val code = (e as? ApiException)?.statusCode
+    val message =
+        when (code) {
+            ConnectionsStatusCodes.STATUS_RADIO_ERROR ->
+                "Bluetooth or Wi-Fi is off\nTurn both on and try again"
+            ConnectionsStatusCodes.MISSING_SETTING_LOCATION_MUST_BE_ON ->
+                "Location is turned off\nTurn on Location in your phone's settings and try again"
+            in MISSING_PERMISSION_CODES ->
+                "Nearby access isn't allowed\nOpen Settings, allow $permissionName and try again"
+            else ->
+                "Couldn't connect to nearby phones\nCheck Bluetooth and Wi-Fi are on, then try again"
+        }
+    // DEBUG ONLY: remove before release, players shouldn't see raw codes
+    val debugInfo =
+        if (code != null) {
+            "${ConnectionsStatusCodes.getStatusCodeString(code)} ($code)"
+        } else {
+            e::class.java.simpleName
+        }
+    return "$message\n[$debugInfo]"
+}
 
 // android 12 and newer call the permission "Nearby devices", older versions call it "Location"
 private val permissionName: String
