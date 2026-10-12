@@ -15,9 +15,9 @@ enum class HelpTopic(
     val content: @Composable ColumnScope.() -> Unit,
 ) {
     // Play Instructions
-    SoloPlayHelp(R.string.duo_mode_title, { SoloPlayInstructions() }),
+    SoloPlayHelp(R.string.solo_mode_title, { SoloPlayInstructions() }),
     DuoPlayHelp(R.string.duo_mode_title, { DuoPlayInstructions() }),
-    MultiPlayHelp(R.string.duo_mode_title, { MultiPlayInstructions() }),
+    MultiPlayHelp(R.string.multi_mode_title, { MultiPlayInstructions() }),
 }
 
 @Composable
