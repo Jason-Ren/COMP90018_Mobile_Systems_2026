@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -40,7 +39,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-
 
 /**
  * A small "?" in a circle. Tapping it opens a large help panel covering most
@@ -80,15 +78,20 @@ fun HelpTip(
 }
 
 @Composable
-private fun HelpIconButton(size: Dp, modifier: Modifier, onClick: () -> Unit) {
+private fun HelpIconButton(
+    size: Dp,
+    modifier: Modifier,
+    onClick: () -> Unit,
+) {
     Surface(
         shape = CircleShape,
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary),
-        modifier = modifier
-            .size(size)
-            .semantics { contentDescription = "Help" }
-            .clickable(role = Role.Button, onClick = onClick),
+        modifier =
+            modifier
+                .size(size)
+                .semantics { contentDescription = "Help" }
+                .clickable(role = Role.Button, onClick = onClick),
     ) {
         Box(contentAlignment = Alignment.Center) {
             Text(
@@ -113,9 +116,10 @@ private fun HelpDialog(
         properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
         Surface(
-            modifier = Modifier
-                .fillMaxWidth(0.94f)
-                .fillMaxHeight(0.85f),
+            modifier =
+                Modifier
+                    .fillMaxWidth(0.94f)
+                    .fillMaxHeight(0.85f),
             shape = RoundedCornerShape(24.dp),
             color = MaterialTheme.colorScheme.surface,
             tonalElevation = 6.dp,
@@ -140,10 +144,11 @@ private fun HelpDialog(
 
                 // Scrollable body, takes all remaining space
                 Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                        .verticalScroll(rememberScrollState()),
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     content = content,
                 )

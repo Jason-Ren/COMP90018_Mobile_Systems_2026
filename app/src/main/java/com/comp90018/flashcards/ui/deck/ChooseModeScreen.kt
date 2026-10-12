@@ -25,16 +25,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.comp90018.flashcards.ui.components.HelpTip
-import com.comp90018.flashcards.R
-import com.comp90018.flashcards.ui.help.DuoPlayInstructions
 import com.comp90018.flashcards.ui.help.HelpTopic
 import com.comp90018.flashcards.ui.help.helpTip
-import com.google.android.gms.common.internal.StringResourceValueReader
 
 /**
  * The ways a deck can be played. [playerCount] is how many person icons the button shows.
@@ -45,13 +40,23 @@ private enum class PlayMode(
     val description: String,
     val playerCount: Int,
     val isAvailable: Boolean,
-    val helpTip: HelpTopic
+    val helpTip: HelpTopic,
 ) {
     SOLO("Solo", "Study the deck on your own, at your own pace", 1, isAvailable = true, HelpTopic.SoloPlayHelp),
-    DUO("Duo", "One describes, one guesses, and a tilt marks each answer right or wrong", 2, isAvailable = true,
-        HelpTopic.DuoPlayHelp
+    DUO(
+        "Duo",
+        "One describes, one guesses, and a tilt marks each answer right or wrong",
+        2,
+        isAvailable = true,
+        HelpTopic.DuoPlayHelp,
     ),
-    TWO_V_TWO("2v2", "Two teams of two race through the deck together", 4, isAvailable = false, HelpTopic.MultiPlayHelp),
+    TWO_V_TWO(
+        "2v2",
+        "Two teams of two race through the deck together",
+        4,
+        isAvailable = false,
+        HelpTopic.MultiPlayHelp,
+    ),
 }
 
 /**
@@ -74,13 +79,11 @@ fun ChooseModeScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Column{
-                            Text(uiState.deckName.ifBlank { "Deck" })
-                            Text(text = "Choose mode", style = MaterialTheme.typography.labelMedium)
-
-                        }
+                    Column {
+                        Text(uiState.deckName.ifBlank { "Deck" })
+                        Text(text = "Choose mode", style = MaterialTheme.typography.labelMedium)
+                    }
                 },
-
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -114,6 +117,7 @@ fun ChooseModeScreen(
         }
     }
 }
+
 @Composable
 private fun PlayModeButton(
     mode: PlayMode,
@@ -122,19 +126,21 @@ private fun PlayModeButton(
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(
-            modifier = Modifier
-                .weight(1f, fill = false)
-                .fillMaxWidth()
-                .height(72.dp),
+            modifier =
+                Modifier
+                    .weight(1f, fill = false)
+                    .fillMaxWidth()
+                    .height(72.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Button(
                 onClick = onClick,
                 enabled = mode.isAvailable,
-                modifier = Modifier
-                    .weight(1f, fill = false)
-                    .fillMaxWidth()
-                    .height(72.dp),
+                modifier =
+                    Modifier
+                        .weight(1f, fill = false)
+                        .fillMaxWidth()
+                        .height(72.dp),
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -145,7 +151,6 @@ private fun PlayModeButton(
                     }
                     Text(mode.title, style = MaterialTheme.typography.titleLarge)
                 }
-
             }
             Box(
                 contentAlignment = Alignment.BottomCenter,
