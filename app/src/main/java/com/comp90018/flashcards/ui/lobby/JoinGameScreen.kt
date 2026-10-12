@@ -46,7 +46,7 @@ import com.comp90018.flashcards.ui.connection.DebugConnectionButtons
 @Composable
 fun JoinGameScreen(
     onNavigateBack: () -> Unit,
-    onGameStart: () -> Unit,
+    onJoined: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: JoinGameViewModel = hiltViewModel(),
 ) {
@@ -54,23 +54,10 @@ fun JoinGameScreen(
 
     LaunchedEffect(Unit) { viewModel.begin() }
 
-    val openGame by rememberUpdatedState(onGameStart)
-    LaunchedEffect(state.hostStarted) { if (state.hostStarted) openGame() }
-
-    // If already connected to host, show the GuestLobbyScreen
-    val isJoined = state.connection is ConnectionState.Connected ||
-        state.connection is ConnectionState.Reconnecting ||
-        state.connection is ConnectionState.Lost
-
-    if (isJoined) {
-        GuestLobbyScreen(
-            onNavigateBack = onNavigateBack,
-            onGameStart = onGameStart,
-            modifier = modifier,
-            viewModel = viewModel,
-        )
-        return
-    }
+    // once the host accepts, move on to the lobby screen
+    val openLobby by rememberUpdatedState(onJoined)
+    val joined = state.connection is ConnectionState.Connected
+    LaunchedEffect(joined) { if (joined) openLobby() }
 
     // back, top bar arrow and Cancel all leave the same way
     val leave = {

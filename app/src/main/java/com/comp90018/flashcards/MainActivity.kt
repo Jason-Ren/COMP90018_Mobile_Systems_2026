@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -31,6 +32,7 @@ import com.comp90018.flashcards.ui.deck.ChooseModeScreen
 import com.comp90018.flashcards.ui.deck.DeckListScreen
 import com.comp90018.flashcards.ui.deck.DeckPageScreen
 import com.comp90018.flashcards.ui.lobby.GameSetupViewModel
+import com.comp90018.flashcards.ui.lobby.GuestLobbyScreen
 import com.comp90018.flashcards.ui.lobby.JoinGameScreen
 import com.comp90018.flashcards.ui.lobby.HostLobbyScreen
 import com.comp90018.flashcards.ui.play.ChooseTimerScreen
@@ -229,11 +231,21 @@ private fun NavGraphBuilder.joinRoutes(navController: NavHostController) {
             JoinGameScreen(
                 onNavigateBack = { navController.popBackStack() },
                 // the join screen is dropped so back from the game cannot return to it
-                onGameStart = {
-                    navController.navigate("team_game") { popUpTo("join") { inclusive = true } }
-                },
+                onJoined = { navController.navigate("guest_lobby") { launchSingleTop = true } },
             )
         }
+    }
+    composable(route = "guest_lobby") { entry ->
+        // share the join screen's view model, it holds the team names and the host's Start
+        val joinEntry = remember(entry) { navController.getBackStackEntry("join") }
+        GuestLobbyScreen(
+            onNavigateBack = { navController.popBackStack("home", inclusive = false) },
+            // the join and lobby screens are both dropped so back from the game cannot return to them
+            onGameStart = {
+                navController.navigate("team_game") { popUpTo("join") { inclusive = true } }
+                          },
+            viewModel = hiltViewModel(joinEntry),
+            )
     }
 }
 
