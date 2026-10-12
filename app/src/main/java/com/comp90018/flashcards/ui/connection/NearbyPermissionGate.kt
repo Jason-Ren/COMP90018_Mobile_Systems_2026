@@ -43,25 +43,21 @@ private fun nearbyPermissions(): Array<String> =
             add(Manifest.permission.BLUETOOTH_CONNECT)
             add(Manifest.permission.BLUETOOTH_SCAN)
         }
-        // the manifest only declares location up to android 12
-        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S) {
-            add(Manifest.permission.ACCESS_COARSE_LOCATION)
-            // fine is only declared from android 10, and it has to be asked for beside coarse
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                add(Manifest.permission.ACCESS_FINE_LOCATION)
+        // nearby can want location on any android version, so ask for it everywhere
+        add(Manifest.permission.ACCESS_COARSE_LOCATION)
+        // fine is only declared from android 10, and it has to be asked for beside coarse
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            add(Manifest.permission.ACCESS_FINE_LOCATION)
             }
-        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) add(Manifest.permission.NEARBY_WIFI_DEVICES)
     }.toTypedArray()
 
 private fun hasNearbyPermissions(context: Context): Boolean {
-    fun has(p: String) =
-        ContextCompat.checkSelfPermission(context, p) == PackageManager.PERMISSION_GRANTED
-
-    val needsLocation = Build.VERSION.SDK_INT <= Build.VERSION_CODES.S
+    fun has(permission: String) =
+        ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+    // either location permission will do, android 12+ lets the user pick "approximate"
     val locationOk =
-        !needsLocation ||
-            has(Manifest.permission.ACCESS_FINE_LOCATION) ||
+        has(Manifest.permission.ACCESS_FINE_LOCATION) ||
             has(Manifest.permission.ACCESS_COARSE_LOCATION)
     val others =
         nearbyPermissions().filter {
