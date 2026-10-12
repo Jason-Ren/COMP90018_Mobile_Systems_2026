@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -23,24 +23,42 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.comp90018.flashcards.R
 
 /**
- * The ways a deck can be played. [playerCount] is how many person icons the button shows.
- * [isAvailable] is false for modes that are not built yet.
+ * The ways a deck can be played.
  */
 private enum class PlayMode(
     val title: String,
     val description: String,
-    val playerCount: Int,
     val isAvailable: Boolean,
 ) {
-    SOLO("Solo", "Study the deck on your own, at your own pace", 1, isAvailable = true),
-    DUO("Duo", "One describes, one guesses, and a tilt marks each answer right or wrong", 2, isAvailable = true),
-    TEAM_MODE("Team Mode", "Two teams of two race through the deck together", 4, isAvailable = true),
+    SOLO("Solo",
+        "Study the deck on your own, at your own pace." +
+            "\nKeeps track of your progress to help you study effectively.",
+        isAvailable = true),
+    DUO("Duo",
+        "Study together with a friend. One player describes the card, the other guesses the answer.",
+        isAvailable = true),
+    TEAM_MODE("Clash",
+        "A competitive Duo match for 2 teams of two." +
+            "\n Requires 2 devices with ClashCards installed.",
+        isAvailable = true);
+
+    @Composable
+    fun iconPainter(): Painter =
+        when (this) {
+            SOLO -> rememberVectorPainter(Icons.Outlined.Person)
+            DUO -> painterResource(R.drawable.ic_conversation)
+            TEAM_MODE -> painterResource(R.drawable.ic_swords)
+        }
 }
 
 /**
@@ -65,8 +83,8 @@ fun ChooseModeScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text(uiState.deckName.ifBlank { "Deck" })
-                        Text(text = "Choose mode", style = MaterialTheme.typography.labelMedium)
+                        Text(text = "Choose mode")
+                        Text(uiState.deckName.ifBlank { "Deck" }, style = MaterialTheme.typography.labelSmall)
                     }
                 },
                 navigationIcon = {
@@ -82,7 +100,7 @@ fun ChooseModeScreen(
                 Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .padding(16.dp),
+                    .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 48.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
         ) {
             PlayMode.entries.forEach { mode ->
@@ -119,9 +137,7 @@ private fun PlayModeButton(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                repeat(mode.playerCount) {
-                    Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.size(32.dp))
-                }
+                Icon(mode.iconPainter(), contentDescription = null, modifier = Modifier.size(32.dp))
                 Text(mode.title, style = MaterialTheme.typography.titleLarge)
             }
         }
@@ -129,7 +145,10 @@ private fun PlayModeButton(
             text = if (mode.isAvailable) mode.description else "${mode.description} (coming soon)",
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp, bottom = 12.dp),
         )
     }
 }

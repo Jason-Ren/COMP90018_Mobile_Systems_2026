@@ -74,8 +74,8 @@ fun ChooseTimerScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text(uiState.deckName.ifBlank { "Deck" })
-                        Text(text = "Choose countdown", style = MaterialTheme.typography.labelMedium)
+                        Text(text = "Choose countdown")
+                        Text(uiState.deckName.ifBlank { "Deck" }, style = MaterialTheme.typography.labelMedium)
                     }
                 },
                 navigationIcon = {
@@ -136,7 +136,10 @@ private fun TimerOptionButton(
             text = option.description,
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp, bottom = 12.dp),
         )
     }
 }
