@@ -2,7 +2,7 @@
 
 Start with account profiles and the friend graph: Share needs to check both ownership and an accepted friendship, and Save-a-copy needs to check whether the source is accessible. The Android app already provides email/password and Google sign-in through Firebase Auth. This API reuses that identity instead of maintaining another password database.
 
-This API implements profiles, username lookup, friend requests, persistent bidirectional friendships, explicit friend sharing, Publish/unpublish, and Save-a-copy in Cloud Firestore. It uses Jason-Ren's existing root `decks/{deckId}` and `cards` schema, with optional source attribution on copied decks. Android continues to access deck data directly through Firestore; the Python API manages social actions and copies. Sync and the Android Friends/sharing screens remain subsequent work. The Android app does not yet call this API.
+This API implements profiles, username lookup, friend requests, persistent bidirectional friendships, explicit friend sharing, Publish/unpublish, and Save-a-copy in Cloud Firestore. It uses Jason-Ren's existing root `decks/{deckId}` and `cards` schema, with optional source attribution on copied decks. Android syncs deck data directly through Firestore and calls this API from the Community and Share & publish screens. See [Android community usage](../docs/android-community.md).
 
 ## Run locally
 
@@ -94,7 +94,7 @@ Sharing leaves `visibility` as `private` or `public`, leaves the owner unchanged
 
 Grants live in `decks/{deckId}/shares/{recipientFirebaseUid}`. Each records the owner UID, recipient public UUID, social namespace, relationship pair ID, current friend-request ID, participant hashes, and creation timestamp. Rules look up the grant and the accepted relationship; clients cannot read or write grant documents directly. The API grants within its configured social namespace, and reads evaluate the namespace recorded in the grant, just as the rules do. Firestore does not automatically delete subcollections when a deck is deleted, so deck IDs must not be reused for unrelated decks. A grant is also bound to its owner UID, preventing it from authorizing a different owner who recreates that ID.
 
-API deck/card responses preserve the existing camelCase fields and add `deckId` / `cardId` from the document IDs. Firestore `updatedAt` is returned as an ISO timestamp over HTTP. Shared private decks are read by known ID; the original owner/public catalogue queries remain unchanged. A shared-deck inbox, notifications, and Android HTTP integration are not included yet.
+API deck/card responses preserve the existing camelCase fields and add `deckId` / `cardId` from the document IDs. Firestore `updatedAt` is returned as an ISO timestamp over HTTP. Android opens shared private decks by a pasted deck code; the original owner/public catalogue queries remain unchanged. A shared-deck inbox and notifications are not included yet.
 
 ## Publish and Save-a-copy contract
 
@@ -182,7 +182,7 @@ Known application/validation errors use this format:
 | 422 | Invalid fields or self-request | Show validation feedback |
 | 503 | Firebase verification/storage unavailable or transaction contention | Roll back, reload current state, offer retry |
 
-For optimistic UI, keep the previous list state, show the pending action, replace it with the server response on success, and restore/reload it on failure. After a timeout the outcome is unknown: reload before retrying; for Save-a-copy, retry the same stored request UUID and body to recover the completed result without duplicates. Cancel outstanding calls and clear social state on account changes. These are integration contracts; the Friends UI is not implemented in this slice.
+After a timeout the outcome is unknown: reload before retrying; for Save-a-copy, retry the same stored request UUID and body to recover the completed result without duplicates. The Android UI disables actions while pending and waits for server confirmation. Its API client rejects responses after an account change, and navigation resets for the new user.
 
 ## Storage and privacy
 
@@ -226,12 +226,9 @@ Tests exercise account ownership, validation, atomic username reservations, requ
 
 The emulator does not enforce production composite-index requirements. Deploy the checked-in indexes before the live smoke test; emulator success alone does not verify production IAM, index readiness, or Firebase credentials.
 
-## Next implementation order
+## Further integration work
 
-1. Connect profile setup and a Friends repository/screen in Android to this API.
-2. Add Android share/revoke actions and a shared-deck inbox using this API and the existing cloud deck client.
-3. Connect Android Publish/unpublish controls and public catalogue actions to the implemented endpoints.
-4. Connect Android Save-a-copy, retaining its request UUID through retries; import the returned deck/cards into Room with fresh study state and show source attribution.
+Android profile setup, friend requests, share/revoke, Publish/unpublish, and Save-a-copy are connected. Copies import into Room with new IDs and fresh study state; interrupted copies retain a request UUID for retry. Remaining work includes a shared-deck inbox, notifications, portable image uploads, and a live two-account acceptance test against deployed Firebase rules.
 
 The older `discussion1509.md` removes friends; this implementation follows the current request to include them and the supplied Project Plan.
 
