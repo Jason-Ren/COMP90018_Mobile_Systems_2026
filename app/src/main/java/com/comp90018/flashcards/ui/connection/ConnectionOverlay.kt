@@ -61,8 +61,14 @@ fun ConnectionOverlay(
             }
         is ConnectionState.Failed ->
             OverlayScreen(onDismiss = onEnd, modifier = modifier) {
-                Text("Couldn't start", style = MaterialTheme.typography.headlineSmall)
-                Text(state.reason, textAlign = TextAlign.Center)
+                // a reason is "what went wrong" on the first line and "what to do" on the next
+                Text(
+                    text = state.reason.substringBefore('\n'),
+                    style = MaterialTheme.typography.headlineSmall,
+                    textAlign = TextAlign.Center,
+                )
+                val advice = state.reason.substringAfter('\n', "")
+                if (advice.isNotEmpty()) Text(advice, textAlign = TextAlign.Center)
                 Button(onClick = onEnd, modifier = Modifier.fillMaxWidth()) { Text("Back") }
             }
         else -> Unit

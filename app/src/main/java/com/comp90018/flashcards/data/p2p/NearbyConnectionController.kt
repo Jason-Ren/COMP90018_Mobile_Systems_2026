@@ -45,325 +45,370 @@ private enum class Role { Host, Guest }
  */
 @Singleton
 class NearbyConnectionController
-    // internal only so a test can pass in a fake transport and a test scope, the app uses the constructor below
-    internal constructor(
-        private val hub: NearbyTransport,
-        private val scope: CoroutineScope,
-    ) : ConnectionController,
-        DefaultLifecycleObserver {
-        // what hilt uses, it builds the real nearby transport
-        @Inject
-        constructor(
-            @ApplicationContext context: Context,
-        ) : this(
-            NearbyHub(context),
-            CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
-        ) {
-            // watch the whole app (not one activity) so we release when it is minimised
-            scope.launch { ProcessLifecycleOwner.get().lifecycle.addObserver(this@NearbyConnectionController) }
+// internal only so a test can pass in a fake transport and a test scope, the app uses the constructor below
+internal constructor(
+    private val hub: NearbyTransport,
+    private val scope: CoroutineScope,
+) : ConnectionController,
+    DefaultLifecycleObserver {
+    // what hilt uses, it builds the real nearby transport
+    @Inject
+    constructor(
+        @ApplicationContext context: Context,
+    ) : this(
+        NearbyHub(context),
+        CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
+    ) {
+        // watch the whole app (not one activity) so we release when it is minimised
+        scope.launch { ProcessLifecycleOwner.get().lifecycle.addObserver(this@NearbyConnectionController) }
+    }
+
+    private val _state = MutableStateFlow<ConnectionState>(ConnectionState.Idle)
+    override val state: StateFlow<ConnectionState> = _state.asStateFlow()
+
+    private val _hosts = MutableStateFlow<List<DiscoveredHost>>(emptyList())
+    override val hosts: StateFlow<List<DiscoveredHost>> = _hosts.asStateFlow()
+
+    private val _messages = MutableSharedFlow<GameMessage>(extraBufferCapacity = 16)
+    override val messages = _messages
+
+    private val _opponentScore = MutableStateFlow<Int?>(null)
+    override val opponentScore: StateFlow<Int?> = _opponentScore.asStateFlow()
+
+    // random id for this app run, sent with our name so a returning phone can be recognised
+    private val myId = UUID.randomUUID().toString().take(8)
+    private var myTeamName = ""
+    private var role: Role? = null
+
+    // the other phone: stable id, display name and its current nearby endpoint
+    private var peerId: String? = null
+    private var peerName = ""
+    private var endpointId: String? = null
+
+    private var graceJob: Job? = null
+
+    // our own result, kept so it can be sent again if it was lost while the link was down
+    private var lastFinished: GameMessage.Finished? = null
+
+    // a send that fails while connected means the link cannot be trusted
+    private val onSendFailure: (Exception) -> Unit = {
+        Log.w(TAG, "nearby failed to send", it)
+        if (_state.value is ConnectionState.Connected) {
+            _state.value = ConnectionState.Failed("Couldn't send to the other phone\nTry again")
         }
+    }
 
-        private val _state = MutableStateFlow<ConnectionState>(ConnectionState.Idle)
-        override val state: StateFlow<ConnectionState> = _state.asStateFlow()
+    // true while advertising/discovering is switched off because the app is in the background
+    private var radiosPaused = false
 
-        private val _hosts = MutableStateFlow<List<DiscoveredHost>>(emptyList())
-        override val hosts: StateFlow<List<DiscoveredHost>> = _hosts.asStateFlow()
+    // name shown to the other phone, see idOf and teamOf
+    private val myEndpointName: String get() = "$myId|$myTeamName"
 
-        private val _messages = MutableSharedFlow<GameMessage>(extraBufferCapacity = 16)
-        override val messages = _messages
+    // the player sees a friendly reason, the raw error goes to logcat for us
+    private val onFailure: (Exception) -> Unit = {
+        Log.w(TAG, "nearby failed to start", it)
+        _state.value = ConnectionState.Failed(friendlyReason(it))
+    }
 
-        // random id for this app run, sent with our name so a returning phone can be recognised
-        private val myId = UUID.randomUUID().toString().take(8)
-        private var myTeamName = ""
-        private var role: Role? = null
+    private val startAdvertising: () -> Unit = { hub.advertise(myEndpointName, connectionCallback, onFailure) }
 
-        // the other phone: stable id, display name and its current nearby endpoint
-        private var peerId: String? = null
-        private var peerName = ""
-        private var endpointId: String? = null
+    private val startDiscovery: () -> Unit = { hub.discover(discoveryCallback, onFailure) }
 
-        private var graceJob: Job? = null
+    // also forget the hosts we had listed
+    private val stopRadios: () -> Unit = {
+        hub.stop()
+        _hosts.value = emptyList()
+    }
 
-        // true while advertising/discovering is switched off because the app is in the background
-        private var radiosPaused = false
+    override fun startHosting(teamName: String) {
+        resetPeer()
+        role = Role.Host
+        myTeamName = teamName
+        _state.value = ConnectionState.Advertising
+        startAdvertising()
+    }
 
-        // name shown to the other phone, see idOf and teamOf
-        private val myEndpointName: String get() = "$myId|$myTeamName"
+    override fun startJoining(teamName: String) {
+        resetPeer()
+        role = Role.Guest
+        myTeamName = teamName
+        _hosts.value = emptyList()
+        _state.value = ConnectionState.Discovering
+        startDiscovery()
+    }
 
-        // the player sees a friendly reason, the raw error goes to logcat for us
-        private val onFailure: (Exception) -> Unit = {
-            Log.w(TAG, "nearby failed to start", it)
-            _state.value = ConnectionState.Failed(friendlyReason(it))
+    override fun requestToJoin(host: DiscoveredHost) {
+        if (role != Role.Guest) return
+        peerName = host.teamName
+        _state.value = ConnectionState.Requested(host.teamName)
+        hub.requestConnection(myEndpointName, host.endpointId, connectionCallback) {
+            _state.value = ConnectionState.Discovering
         }
+    }
 
-        private val startAdvertising: () -> Unit = { hub.advertise(myEndpointName, connectionCallback, onFailure) }
-
-        private val startDiscovery: () -> Unit = { hub.discover(discoveryCallback, onFailure) }
-
-        // also forget the hosts we had listed
-        private val stopRadios: () -> Unit = {
-            hub.stop()
-            _hosts.value = emptyList()
+    override fun accept() {
+        val id = endpointId ?: return
+        if (role == Role.Host && _state.value is ConnectionState.Requested) {
+            hub.accept(id, payloadCallback)
         }
+    }
 
-        override fun startHosting(teamName: String) {
-            resetPeer()
-            role = Role.Host
-            myTeamName = teamName
-            _state.value = ConnectionState.Advertising
+    override fun reject() {
+        val id = endpointId ?: return
+        hub.reject(id)
+        endpointId = null
+        peerId = null
+        _state.value = ConnectionState.Advertising
+    }
+
+    override fun removePeer() {
+        val id = endpointId
+        endpointId = null
+        peerId = null
+        peerName = ""
+        _state.value = ConnectionState.Advertising
+        scope.launch {
+            if (id != null) {
+                hub.send(id, GameMessage.EndSession)
+                delay(FLUSH_MS)
+                hub.disconnect(id)
+            }
+            // point to point stops advertising once connected, so start again for the next guest
             startAdvertising()
         }
+    }
 
-        override fun startJoining(teamName: String) {
+    override fun reconnect() {
+        if (_state.value is ConnectionState.Lost) beginReconnecting()
+    }
+
+    override fun send(message: GameMessage) {
+        // keep our result even if there is no link right now, it is sent again on reconnect
+        if (message is GameMessage.Finished) lastFinished = message
+        // a new game starts from no score on either side
+        if (message is GameMessage.Start) _opponentScore.value = null
+        val id = endpointId ?: return
+        hub.send(id, message, onSendFailure)
+    }
+
+    override fun endSession() {
+        val id = endpointId
+        scope.launch {
+            if (id != null) {
+                hub.send(id, GameMessage.EndSession)
+                delay(FLUSH_MS)
+            }
+            releaseAll()
+            role = null
             resetPeer()
-            role = Role.Guest
-            myTeamName = teamName
-            _hosts.value = emptyList()
-            _state.value = ConnectionState.Discovering
-            startDiscovery()
+            _state.value = ConnectionState.Idle
         }
+    }
 
-        override fun requestToJoin(host: DiscoveredHost) {
-            if (role != Role.Guest) return
-            peerName = host.teamName
-            _state.value = ConnectionState.Requested(host.teamName)
-            hub.requestConnection(myEndpointName, host.endpointId, connectionCallback) {
-                _state.value = ConnectionState.Discovering
+    // app went to the background: free the radios and the link so nothing runs while minimised
+    override fun onStop(owner: LifecycleOwner) {
+        when (val s = _state.value) {
+            is ConnectionState.Advertising, is ConnectionState.Discovering -> {
+                stopRadios()
+                radiosPaused = true
             }
-        }
-
-        override fun accept() {
-            val id = endpointId ?: return
-            if (role == Role.Host && _state.value is ConnectionState.Requested) {
-                hub.accept(id, payloadCallback)
-            }
-        }
-
-        override fun reject() {
-            val id = endpointId ?: return
-            hub.reject(id)
-            endpointId = null
-            peerId = null
-            _state.value = ConnectionState.Advertising
-        }
-
-        override fun removePeer() {
-            val id = endpointId
-            endpointId = null
-            peerId = null
-            peerName = ""
-            _state.value = ConnectionState.Advertising
-            scope.launch {
-                if (id != null) {
-                    hub.send(id, GameMessage.EndSession)
-                    delay(FLUSH_MS)
-                    hub.disconnect(id)
-                }
-                // point to point stops advertising once connected, so start again for the next guest
-                startAdvertising()
-            }
-        }
-
-        override fun reconnect() {
-            if (_state.value is ConnectionState.Lost) beginReconnecting()
-        }
-
-        override fun send(message: GameMessage) {
-            endpointId?.let { hub.send(it, message) }
-        }
-
-        override fun endSession() {
-            val id = endpointId
-            scope.launch {
-                if (id != null) {
-                    hub.send(id, GameMessage.EndSession)
-                    delay(FLUSH_MS)
-                }
+            is ConnectionState.Requested -> {
                 releaseAll()
-                role = null
-                resetPeer()
-                _state.value = ConnectionState.Idle
+                endpointId = null
+                peerId = null
+                _state.value = if (role == Role.Host) ConnectionState.Advertising else ConnectionState.Discovering
+                radiosPaused = true
             }
+            is ConnectionState.Connected, is ConnectionState.Reconnecting -> {
+                val name =
+                    if (s is ConnectionState.Connected) {
+                        s.peerName
+                    } else {
+                        (s as ConnectionState.Reconnecting)
+                            .peerName
+                    }
+                releaseAll()
+                endpointId = null
+                _state.value = ConnectionState.Lost(name)
+            }
+            else -> Unit
         }
+    }
 
-        // app went to the background: free the radios and the link so nothing runs while minimised
-        override fun onStop(owner: LifecycleOwner) {
-            when (val s = _state.value) {
-                is ConnectionState.Advertising, is ConnectionState.Discovering -> {
+    // back in the foreground: start searching again if we were only waiting or searching
+    override fun onStart(owner: LifecycleOwner) {
+        if (!radiosPaused) return
+        radiosPaused = false
+        when (_state.value) {
+            is ConnectionState.Advertising -> startAdvertising()
+            is ConnectionState.Discovering -> startDiscovery()
+            else -> Unit
+        }
+    }
+
+    // link dropped: look for the same phone again, and give up after the grace period
+    private fun beginReconnecting() {
+        _state.value = ConnectionState.Reconnecting(peerName)
+        if (role == Role.Host) startAdvertising() else startDiscovery()
+        graceJob?.cancel()
+        graceJob =
+            scope.launch {
+                delay(RECONNECT_GRACE_MS)
+                if (_state.value is ConnectionState.Reconnecting) {
                     stopRadios()
-                    radiosPaused = true
+                    _state.value = ConnectionState.Lost(peerName)
                 }
-                is ConnectionState.Requested -> {
-                    releaseAll()
+            }
+    }
+
+    private fun handle(message: GameMessage) {
+        if (message is GameMessage.EndSession) {
+            // peer left on purpose, so skip the reconnect attempt
+            endpointId = null
+            releaseAll()
+            _state.value = ConnectionState.PeerEnded
+        } else {
+            // kept as well as emitted, so a screen that opens later still gets the score
+            when (message) {
+                is GameMessage.Finished -> _opponentScore.value = message.correct
+                is GameMessage.Start -> _opponentScore.value = null
+                else -> Unit
+            }
+            _messages.tryEmit(message)
+        }
+    }
+
+    private fun releaseAll() {
+        graceJob?.cancel()
+        stopRadios()
+        hub.disconnectAll()
+    }
+
+    private fun resetPeer() {
+        graceJob?.cancel()
+        lastFinished = null
+        _opponentScore.value = null
+        peerId = null
+        peerName = ""
+        endpointId = null
+    }
+
+    private val connectionCallback =
+        object : ConnectionLifecycleCallback() {
+            override fun onConnectionInitiated(
+                id: String,
+                info: ConnectionInfo,
+            ) {
+                val theirId = idOf(info.endpointName)
+                val theirTeam = teamOf(info.endpointName)
+                val current = _state.value
+                when {
+                    // guest already chose this host, so accept its side straight away
+                    role == Role.Guest -> {
+                        endpointId = id
+                        peerId = theirId
+                        peerName = theirTeam
+                        hub.accept(id, payloadCallback)
+                    }
+                    // the same guest coming back after a drop, no need to ask the host again
+                    current is ConnectionState.Reconnecting && theirId == peerId -> {
+                        endpointId = id
+                        hub.accept(id, payloadCallback)
+                    }
+                    // a new request, wait for the host to accept or decline
+                    current is ConnectionState.Advertising -> {
+                        endpointId = id
+                        peerId = theirId
+                        peerName = theirTeam
+                        _state.value = ConnectionState.Requested(theirTeam)
+                    }
+                    // already busy with someone else
+                    else -> hub.reject(id)
+                }
+            }
+
+            override fun onConnectionResult(
+                id: String,
+                result: ConnectionResolution,
+            ) {
+                if (result.status.isSuccess) {
+                    graceJob?.cancel()
+                    stopRadios()
+                    endpointId = id
+                    _state.value = ConnectionState.Connected(peerName)
+                    // a result sent while the link was down never arrived, so say it again
+                    // (the other side must treat a repeat as the same result)
+                    lastFinished?.let { hub.send(id, it, onSendFailure) }
+                } else if (_state.value !is ConnectionState.Reconnecting) {
+                    // refused or failed, go back to waiting or searching
                     endpointId = null
                     peerId = null
-                    _state.value = if (role == Role.Host) ConnectionState.Advertising else ConnectionState.Discovering
-                    radiosPaused = true
+                    _state.value =
+                        if (role == Role.Host) ConnectionState.Advertising else ConnectionState.Discovering
                 }
-                is ConnectionState.Connected, is ConnectionState.Reconnecting -> {
-                    val name =
-                        if (s is ConnectionState.Connected) {
-                            s.peerName
-                        } else {
-                            (s as ConnectionState.Reconnecting)
-                                .peerName
-                        }
-                    releaseAll()
-                    endpointId = null
-                    _state.value = ConnectionState.Lost(name)
-                }
-                else -> Unit
             }
-        }
 
-        // back in the foreground: start searching again if we were only waiting or searching
-        override fun onStart(owner: LifecycleOwner) {
-            if (!radiosPaused) return
-            radiosPaused = false
-            when (_state.value) {
-                is ConnectionState.Advertising -> startAdvertising()
-                is ConnectionState.Discovering -> startDiscovery()
-                else -> Unit
-            }
-        }
-
-        // link dropped: look for the same phone again, and give up after the grace period
-        private fun beginReconnecting() {
-            _state.value = ConnectionState.Reconnecting(peerName)
-            if (role == Role.Host) startAdvertising() else startDiscovery()
-            graceJob?.cancel()
-            graceJob =
-                scope.launch {
-                    delay(RECONNECT_GRACE_MS)
-                    if (_state.value is ConnectionState.Reconnecting) {
-                        stopRadios()
-                        _state.value = ConnectionState.Lost(peerName)
-                    }
-                }
-        }
-
-        private fun releaseAll() {
-            graceJob?.cancel()
-            stopRadios()
-            hub.disconnectAll()
-        }
-
-        private fun resetPeer() {
-            graceJob?.cancel()
-            peerId = null
-            peerName = ""
-            endpointId = null
-        }
-
-        private val connectionCallback =
-            object : ConnectionLifecycleCallback() {
-                override fun onConnectionInitiated(
-                    id: String,
-                    info: ConnectionInfo,
-                ) {
-                    val theirId = idOf(info.endpointName)
-                    val theirTeam = teamOf(info.endpointName)
-                    val current = _state.value
-                    when {
-                        // guest already chose this host, so accept its side straight away
-                        role == Role.Guest -> {
-                            endpointId = id
-                            peerId = theirId
-                            peerName = theirTeam
-                            hub.accept(id, payloadCallback)
-                        }
-                        // the same guest coming back after a drop, no need to ask the host again
-                        current is ConnectionState.Reconnecting && theirId == peerId -> {
-                            endpointId = id
-                            hub.accept(id, payloadCallback)
-                        }
-                        // a new request, wait for the host to accept or decline
-                        current is ConnectionState.Advertising -> {
-                            endpointId = id
-                            peerId = theirId
-                            peerName = theirTeam
-                            _state.value = ConnectionState.Requested(theirTeam)
-                        }
-                        // already busy with someone else
-                        else -> hub.reject(id)
-                    }
-                }
-
-                override fun onConnectionResult(
-                    id: String,
-                    result: ConnectionResolution,
-                ) {
-                    if (result.status.isSuccess) {
-                        graceJob?.cancel()
-                        stopRadios()
-                        endpointId = id
-                        _state.value = ConnectionState.Connected(peerName)
-                    } else if (_state.value !is ConnectionState.Reconnecting) {
-                        // refused or failed, go back to waiting or searching
-                        endpointId = null
+            override fun onDisconnected(id: String) {
+                if (id != endpointId) return
+                endpointId = null
+                when (_state.value) {
+                    is ConnectionState.Connected -> beginReconnecting()
+                    // the requester left before the host answered
+                    is ConnectionState.Requested -> {
                         peerId = null
                         _state.value =
                             if (role == Role.Host) ConnectionState.Advertising else ConnectionState.Discovering
                     }
+                    else -> Unit
                 }
+            }
+        }
 
-                override fun onDisconnected(id: String) {
-                    if (id != endpointId) return
-                    endpointId = null
-                    when (_state.value) {
-                        is ConnectionState.Connected -> beginReconnecting()
-                        // the requester left before the host answered
-                        is ConnectionState.Requested -> {
-                            peerId = null
-                            _state.value =
-                                if (role == Role.Host) ConnectionState.Advertising else ConnectionState.Discovering
-                        }
-                        else -> Unit
-                    }
+    private val discoveryCallback =
+        object : EndpointDiscoveryCallback() {
+            override fun onEndpointFound(
+                id: String,
+                info: DiscoveredEndpointInfo,
+            ) {
+                // while reconnecting, go straight back to the host we lost instead of listing it
+                if (_state.value is ConnectionState.Reconnecting && idOf(info.endpointName) == peerId) {
+                    // a failed try is ignored, the grace timer decides when to give up
+                    hub.requestConnection(myEndpointName, id, connectionCallback) {}
+                } else {
+                    val host = DiscoveredHost(id, teamOf(info.endpointName))
+                    _hosts.update { list -> list.filterNot { it.endpointId == id } + host }
                 }
             }
 
-        private val discoveryCallback =
-            object : EndpointDiscoveryCallback() {
-                override fun onEndpointFound(
-                    id: String,
-                    info: DiscoveredEndpointInfo,
+            override fun onEndpointLost(id: String) {
+                _hosts.update { list -> list.filterNot { it.endpointId == id } }
+            }
+        }
+
+    private val payloadCallback =
+        object : PayloadCallback() {
+            override fun onPayloadReceived(
+                id: String,
+                payload: Payload,
+            ) {
+                // launched so a stream (the deck) can be read without blocking the main thread
+                scope.launch {
+                    val message = hub.decode(payload) ?: return@launch
+                    handle(message)
+                }
+            }
+
+            override fun onPayloadTransferUpdate(
+                id: String,
+                update: PayloadTransferUpdate,
+            ) {
+                if (update.status == PayloadTransferUpdate.Status.FAILURE &&
+                    _state.value is ConnectionState.Connected
                 ) {
-                    // while reconnecting, go straight back to the host we lost instead of listing it
-                    if (_state.value is ConnectionState.Reconnecting && idOf(info.endpointName) == peerId) {
-                        // a failed try is ignored, the grace timer decides when to give up
-                        hub.requestConnection(myEndpointName, id, connectionCallback) {}
-                    } else {
-                        val host = DiscoveredHost(id, teamOf(info.endpointName))
-                        _hosts.update { list -> list.filterNot { it.endpointId == id } + host }
-                    }
-                }
-
-                override fun onEndpointLost(id: String) {
-                    _hosts.update { list -> list.filterNot { it.endpointId == id } }
+                    Log.w(TAG, "a payload transfer failed")
+                    _state.value =
+                        ConnectionState.Failed("The other phone missed something\nTry again")
                 }
             }
-
-        private val payloadCallback =
-            object : PayloadCallback() {
-                override fun onPayloadReceived(
-                    id: String,
-                    payload: Payload,
-                ) {
-                    val message = hub.decode(payload) ?: return
-                    if (message is GameMessage.EndSession) {
-                        // peer left on purpose, so skip the reconnect attempt
-                        endpointId = null
-                        releaseAll()
-                        _state.value = ConnectionState.PeerEnded
-                    } else {
-                        _messages.tryEmit(message)
-                    }
-                }
-
-                override fun onPayloadTransferUpdate(
-                    id: String,
-                    update: PayloadTransferUpdate,
-                ) = Unit
-            }
-    }
+        }
+}

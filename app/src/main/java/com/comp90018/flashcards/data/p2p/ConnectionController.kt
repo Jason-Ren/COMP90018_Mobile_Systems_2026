@@ -57,6 +57,10 @@ interface ConnectionController {
     // messages from the other phone, already decoded
     val messages: SharedFlow<GameMessage>
 
+    // the other team's final score once it has arrived, null before that and at game start.
+    // unlike messages this is kept, so a screen that opens after it arrived can still read it
+    val opponentScore: StateFlow<Int?>
+
     fun startHosting(teamName: String)
 
     fun startJoining(teamName: String)

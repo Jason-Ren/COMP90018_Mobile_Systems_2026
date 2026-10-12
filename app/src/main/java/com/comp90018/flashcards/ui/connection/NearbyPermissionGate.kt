@@ -44,7 +44,13 @@ private fun nearbyPermissions(): Array<String> =
             add(Manifest.permission.BLUETOOTH_SCAN)
         }
         // the manifest only declares location up to android 12
-        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S) add(Manifest.permission.ACCESS_FINE_LOCATION)
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S) {
+            add(Manifest.permission.ACCESS_COARSE_LOCATION)
+            // fine is only declared from android 10, and it has to be asked for beside coarse
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                add(Manifest.permission.ACCESS_FINE_LOCATION)
+            }
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) add(Manifest.permission.NEARBY_WIFI_DEVICES)
     }.toTypedArray()
 
