@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.comp90018.flashcards.data.p2p.ConnectionController
 import com.comp90018.flashcards.data.p2p.ConnectionState
+import com.comp90018.flashcards.data.p2p.GameMessage
 import com.comp90018.flashcards.debug.DebugSettings
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,18 +42,18 @@ data class LobbyUiState(
     // Later: also require that the deck has finished syncing to the guest.
     val canStart: Boolean get() = guest is GuestSlot.Joined
 
-    // the name is already advertised to the guest, so it is locked once someone asks to join
-    val canReroll: Boolean get() = guest is GuestSlot.Empty
+    // allow rerolling before anyone joins OR when guest is connected in lobby (not when pending request)
+    val canReroll: Boolean get() = guest is GuestSlot.Empty || guest is GuestSlot.Joined
 }
 
 /**
- * ViewModel for the host's team mode lobby.
+ * ViewModel for the host's team mode waiting lobby.
  *
- * The connection itself lives in [ConnectionController]. This only turns its state into what the
- * lobby shows and passes the host's taps on to it.
+ * The connection itself lives in [ConnectionController]. This manages advertising host presence,
+ * team names, and handling guest join requests.
  */
 @HiltViewModel
-class LobbyViewModel
+class HostLobbyViewModel
     @Inject
     constructor(
         private val connection: ConnectionController,
@@ -65,6 +66,9 @@ class LobbyViewModel
 
         // DEBUG ONLY: a fake guest so the lobby can be tried on an emulator, where nearby cannot connect
         private val debugGuest = MutableStateFlow<GuestSlot?>(null)
+
+        // guest's team name updated via network message
+        private val guestNameOverride = MutableStateFlow<String?>(null)
 
         // in emulator mode nearby is never started, so the real link is ignored and the simulated one is used
         private val link =
@@ -82,14 +86,30 @@ class LobbyViewModel
             }
 
         val state: StateFlow<LobbyUiState> =
-            combine(teamName, link, debugGuest, debugSettings.emulatorMode) { name, current, fake, emulator ->
+            combine(teamName, link, debugGuest, guestNameOverride, debugSettings.emulatorMode) { name, current, fake, guestOverride, emulator ->
+                val resolvedGuest = fake ?: guestSlotOf(current)
+                val finalGuest = if (resolvedGuest is GuestSlot.Joined && guestOverride != null) {
+                    GuestSlot.Joined(guestOverride)
+                } else {
+                    resolvedGuest
+                }
                 LobbyUiState(
                     teamName = name,
-                    guest = fake ?: guestSlotOf(current),
+                    guest = finalGuest,
                     connection = current,
                     showDebugButton = emulator,
                 )
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), LobbyUiState(teamName.value))
+
+        init {
+            viewModelScope.launch {
+                connection.messages.collect { msg ->
+                    if (msg is GameMessage.UpdateTeamName) {
+                        guestNameOverride.value = msg.teamName
+                    }
+                }
+            }
+        }
 
         // called once permissions are granted, and only once so rotating does not drop the guest
         fun begin() {
@@ -101,8 +121,13 @@ class LobbyViewModel
         fun rerollName() {
             if (!state.value.canReroll) return
             teamName.value = randomTeamName()
-            // advertise again so new guests see the new name, but leave a connected guest alone
-            if (connection.state.value is ConnectionState.Advertising) connection.startHosting(teamName.value)
+            if (connection.state.value is ConnectionState.Advertising) {
+                connection.startHosting(teamName.value)
+            } else if (state.value.guest is GuestSlot.Joined) {
+                if (debugGuest.value == null) {
+                    connection.send(GameMessage.UpdateTeamName(teamName.value))
+                }
+            }
         }
 
         fun accept() {
@@ -134,7 +159,7 @@ class LobbyViewModel
 
         // DEBUG ONLY: pretend a team asked to join
         fun debugSimulateRequest() {
-            debugGuest.value = GuestSlot.Pending("Team Kiwi")
+            debugGuest.value = GuestSlot.Pending("Team Cool Kiwi")
         }
     }
 

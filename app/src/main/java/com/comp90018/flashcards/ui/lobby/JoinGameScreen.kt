@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -39,7 +40,7 @@ import com.comp90018.flashcards.ui.connection.ConnectionOverlay
 import com.comp90018.flashcards.ui.connection.DebugConnectionButtons
 
 /**
- * The guest's side of team mode: list the hosts nearby, ask to join one, then wait for the host to start.
+ * The guest's side of team mode: list hosts nearby, ask to join, and once accepted display [GuestLobbyScreen].
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,11 +53,26 @@ fun JoinGameScreen(
     val state by viewModel.state.collectAsState()
 
     LaunchedEffect(Unit) { viewModel.begin() }
-    // the host pressed Start, so open the game
+
     val openGame by rememberUpdatedState(onGameStart)
     LaunchedEffect(state.hostStarted) { if (state.hostStarted) openGame() }
 
-    // back, the top bar arrow and Cancel all leave the same way
+    // If already connected to host, show the GuestLobbyScreen
+    val isJoined = state.connection is ConnectionState.Connected ||
+        state.connection is ConnectionState.Reconnecting ||
+        state.connection is ConnectionState.Lost
+
+    if (isJoined) {
+        GuestLobbyScreen(
+            onNavigateBack = onNavigateBack,
+            onGameStart = onGameStart,
+            modifier = modifier,
+            viewModel = viewModel,
+        )
+        return
+    }
+
+    // back, top bar arrow and Cancel all leave the same way
     val leave = {
         viewModel.leave()
         onNavigateBack()
@@ -78,6 +94,7 @@ fun JoinGameScreen(
     ) { padding ->
         JoinBody(
             state = state,
+            onReroll = viewModel::rerollName,
             onJoin = viewModel::join,
             onCancel = leave,
             modifier = Modifier.padding(padding),
@@ -90,6 +107,7 @@ fun JoinGameScreen(
 @Composable
 private fun JoinBody(
     state: JoinUiState,
+    onReroll: () -> Unit,
     onJoin: (DiscoveredHost) -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
@@ -98,18 +116,31 @@ private fun JoinBody(
         modifier = modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Text(
-            text = "You are ${state.teamName}",
-            style = MaterialTheme.typography.titleMedium,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
-        )
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "My Team",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.outline,
+                    )
+                    Text(
+                        text = state.teamName,
+                        style = MaterialTheme.typography.headlineSmall,
+                    )
+                }
+                IconButton(onClick = onReroll, enabled = state.canReroll) {
+                    Icon(Icons.Default.Refresh, contentDescription = "Pick another team name")
+                }
+            }
+        }
 
         when (val link = state.connection) {
             is ConnectionState.Requested ->
-                WaitingCard(text = "Waiting for ${link.peerName} to accept", onCancel = onCancel)
-            is ConnectionState.Connected ->
-                WaitingCard(text = "Joined ${link.peerName}\nWaiting for the host to start", onCancel = onCancel)
+                WaitingCard(text = "Waiting for ${link.peerName} to accept…", onCancel = onCancel)
             else -> HostList(hosts = state.hosts, onJoin = onJoin, modifier = Modifier.weight(1f))
         }
 

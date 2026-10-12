@@ -13,7 +13,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
-class HostGameViewModelTest {
+class GameSetupViewModelTest {
     @get:Rule
     val mainRule = MainDispatcherRule()
 
@@ -22,7 +22,7 @@ class HostGameViewModelTest {
     private val deck = DeckEntity(deckId = "deck", name = "Capitals", description = "", ownerId = "me")
 
     private fun viewModel(cards: Int = 6) =
-        HostGameViewModel(FakeCardRepository(deck, testCards(cards)), connection, session)
+        GameSetupViewModel(FakeCardRepository(deck, testCards(cards)), connection, session)
 
     private fun startedMessage() = connection.sent.single() as GameMessage.Start
 

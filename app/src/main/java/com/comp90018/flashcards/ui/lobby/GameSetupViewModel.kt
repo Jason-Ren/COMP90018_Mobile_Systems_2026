@@ -14,9 +14,12 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/** Starts a team mode game from the host's side once the countdown has been chosen. */
+/**
+ * ViewModel for initiating and setting up the game session from the host side once countdown settings are selected.
+ * Deals cards to each team, prepares the [GameSession], and sends [GameMessage.Start] to the connected guest.
+ */
 @HiltViewModel
-class HostGameViewModel
+class GameSetupViewModel
     @Inject
     constructor(
         private val repository: CardRepository,

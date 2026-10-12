@@ -1,6 +1,7 @@
 package com.comp90018.flashcards.ui.lobby
 
 import com.comp90018.flashcards.data.p2p.ConnectionState
+import com.comp90018.flashcards.data.p2p.GameMessage
 import com.comp90018.flashcards.debug.DebugSettings
 import com.comp90018.flashcards.testutil.FakeConnectionController
 import com.comp90018.flashcards.testutil.MainDispatcherRule
@@ -13,15 +14,15 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
-class LobbyViewModelTest {
+class HostLobbyViewModelTest {
     @get:Rule
     val mainRule = MainDispatcherRule()
 
     private val connection = FakeConnectionController()
     private val debug = DebugSettings()
 
-    private fun TestScope.viewModel(): LobbyViewModel {
-        val vm = LobbyViewModel(connection, debug)
+    private fun TestScope.viewModel(): HostLobbyViewModel {
+        val vm = HostLobbyViewModel(connection, debug)
         keepCollecting(vm.state)
         return vm
     }
@@ -126,7 +127,7 @@ class LobbyViewModelTest {
         }
 
     @Test
-    fun `rerolling is locked once a guest has asked to join`() =
+    fun `rerolling is locked once a guest has asked to join, but allowed when joined`() =
         runTest {
             val vm = viewModel()
             vm.begin()
@@ -137,6 +138,23 @@ class LobbyViewModelTest {
 
             assertFalse(vm.state.value.canReroll)
             assertEquals(before, vm.state.value.teamName)
-            assertEquals(1, connection.hostedAs.size)
+
+            connection.state.value = ConnectionState.Connected("Team B")
+            assertTrue(vm.state.value.canReroll)
+
+            vm.rerollName()
+            assertEquals(GameMessage.UpdateTeamName(vm.state.value.teamName), connection.sent.last())
+        }
+
+    @Test
+    fun `receiving update team name message updates the guest team name`() =
+        runTest {
+            val vm = viewModel()
+            vm.begin()
+            connection.state.value = ConnectionState.Connected("Team B")
+
+            connection.messages.tryEmit(GameMessage.UpdateTeamName("Team Updated"))
+
+            assertEquals(GuestSlot.Joined("Team Updated"), vm.state.value.guest)
         }
 }

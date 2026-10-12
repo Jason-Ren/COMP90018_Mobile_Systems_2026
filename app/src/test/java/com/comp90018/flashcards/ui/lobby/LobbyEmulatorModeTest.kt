@@ -24,8 +24,8 @@ class LobbyEmulatorModeTest {
     private val connection = FakeConnectionController()
     private val debug = DebugSettings().also { it.setEmulatorMode(true) }
 
-    private fun TestScope.viewModel(): LobbyViewModel {
-        val vm = LobbyViewModel(connection, debug)
+    private fun TestScope.viewModel(): HostLobbyViewModel {
+        val vm = HostLobbyViewModel(connection, debug)
         keepCollecting(vm.state)
         return vm
     }
@@ -36,7 +36,7 @@ class LobbyEmulatorModeTest {
             assertTrue(viewModel().state.value.showDebugButton)
             debug.setEmulatorMode(false)
 
-            assertFalse(LobbyViewModel(connection, debug).state.value.showDebugButton)
+            assertFalse(HostLobbyViewModel(connection, debug).state.value.showDebugButton)
         }
 
     @Test

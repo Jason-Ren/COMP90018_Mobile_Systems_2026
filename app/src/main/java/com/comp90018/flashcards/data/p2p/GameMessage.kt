@@ -29,4 +29,10 @@ sealed interface GameMessage {
     // one side left on purpose, so the other side should not wait for a reconnect
     @Serializable
     data object EndSession : GameMessage
+
+    // a team updated their team name while in the lobby
+    @Serializable
+    data class UpdateTeamName(
+        val teamName: String,
+    ) : GameMessage
 }

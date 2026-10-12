@@ -30,9 +30,9 @@ import com.comp90018.flashcards.ui.connection.NearbyPermissionGate
 import com.comp90018.flashcards.ui.deck.ChooseModeScreen
 import com.comp90018.flashcards.ui.deck.DeckListScreen
 import com.comp90018.flashcards.ui.deck.DeckPageScreen
-import com.comp90018.flashcards.ui.lobby.HostGameViewModel
+import com.comp90018.flashcards.ui.lobby.GameSetupViewModel
 import com.comp90018.flashcards.ui.lobby.JoinGameScreen
-import com.comp90018.flashcards.ui.lobby.LobbyScreen
+import com.comp90018.flashcards.ui.lobby.HostLobbyScreen
 import com.comp90018.flashcards.ui.play.ChooseTimerScreen
 import com.comp90018.flashcards.ui.play.DuoScreen
 import com.comp90018.flashcards.ui.play.TeamGameScreen
@@ -201,7 +201,7 @@ private fun NavGraphBuilder.teamGameRoutes(navController: NavHostController) {
     ) { entry ->
         val deckId = entry.arguments?.getString("deckId").orEmpty()
         NearbyPermissionGate(onNavigateBack = { navController.popBackStack() }) {
-            LobbyScreen(
+            HostLobbyScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onStart = { navController.navigate("choose_timer_team/$deckId") },
             )
@@ -211,11 +211,11 @@ private fun NavGraphBuilder.teamGameRoutes(navController: NavHostController) {
         route = "choose_timer_team/{deckId}",
         arguments = listOf(navArgument("deckId") { type = NavType.StringType }),
     ) {
-        val hostGame: HostGameViewModel = hiltViewModel()
+        val gameSetup: GameSetupViewModel = hiltViewModel()
         ChooseTimerScreen(
             onNavigateBack = { navController.popBackStack() },
             onStart = { deckId, seconds ->
-                hostGame.startGame(deckId, seconds) { navController.navigate("team_game") }
+                gameSetup.startGame(deckId, seconds) { navController.navigate("team_game") }
             },
         )
     }

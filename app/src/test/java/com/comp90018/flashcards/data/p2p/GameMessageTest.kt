@@ -36,6 +36,11 @@ class GameMessageTest {
     }
 
     @Test
+    fun `update team name round trips`() {
+        assertEquals(GameMessage.UpdateTeamName("Team Falcon"), roundTrip(GameMessage.UpdateTeamName("Team Falcon")))
+    }
+
+    @Test
     fun `text with symbols and non latin characters survives`() {
         val start = GameMessage.Start("日本語 \"deck\"", 5, listOf(WireCard("a|b\nc", "é ü ñ 😀")))
 

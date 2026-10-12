@@ -121,4 +121,32 @@ class JoinGameViewModelTest {
 
             assertEquals(1, connection.reconnects)
         }
+
+    @Test
+    fun `rerolling is locked while requested, but allowed when connected`() =
+        runTest {
+            val vm = viewModel()
+            vm.begin()
+            connection.state.value = ConnectionState.Requested("Team Host")
+
+            assertFalse(vm.state.value.canReroll)
+
+            connection.state.value = ConnectionState.Connected("Team Host")
+            assertTrue(vm.state.value.canReroll)
+
+            vm.rerollName()
+            assertEquals(GameMessage.UpdateTeamName(vm.state.value.teamName), connection.sent.last())
+        }
+
+    @Test
+    fun `receiving update team name message updates host team name`() =
+        runTest {
+            val vm = viewModel()
+            vm.begin()
+            connection.state.value = ConnectionState.Connected("Team Host")
+
+            connection.messages.tryEmit(GameMessage.UpdateTeamName("Team SuperHost"))
+
+            assertEquals("Team SuperHost", vm.state.value.hostTeamName)
+        }
 }

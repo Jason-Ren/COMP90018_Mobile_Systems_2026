@@ -23,11 +23,16 @@ import javax.inject.Inject
 
 data class JoinUiState(
     val teamName: String,
+    val hostTeamName: String = "",
     val hosts: List<DiscoveredHost> = emptyList(),
     val connection: ConnectionState = ConnectionState.Idle,
     // the host pressed Start
     val hostStarted: Boolean = false,
-)
+    val showDebugButton: Boolean = false,
+) {
+    // neither team can reroll while join request is pending
+    val canReroll: Boolean get() = connection !is ConnectionState.Requested
+}
 
 /** ViewModel for the guest's join screen: find hosts, ask to join, then wait for Start. */
 @HiltViewModel
@@ -39,6 +44,7 @@ class JoinGameViewModel
         private val session: GameSession,
     ) : ViewModel() {
         private val teamName = MutableStateFlow(randomTeamName())
+        private val hostNameOverride = MutableStateFlow<String?>(null)
 
         // the controller is app wide, so ignore its state until this screen has started searching
         private val started = MutableStateFlow(false)
@@ -70,14 +76,48 @@ class JoinGameViewModel
             }
 
         val state: StateFlow<JoinUiState> =
-            combine(teamName, hosts, link, hostStarted) { name, hosts, link, go ->
-                JoinUiState(teamName = name, hosts = hosts, connection = link, hostStarted = go)
+            combine(
+                teamName,
+                hosts,
+                link,
+                hostStarted,
+                hostNameOverride,
+                debugSettings.emulatorMode,
+            ) { args: Array<Any?> ->
+                val name = args[0] as String
+                @Suppress("UNCHECKED_CAST")
+                val currentHosts = args[1] as List<DiscoveredHost>
+                val currentLink = args[2] as ConnectionState
+                val go = args[3] as Boolean
+                val hostOverride = args[4] as? String
+                val emulator = args[5] as Boolean
+
+                val resolvedHostName =
+                    hostOverride ?: when (currentLink) {
+                        is ConnectionState.Requested -> currentLink.peerName
+                        is ConnectionState.Connected -> currentLink.peerName
+                        is ConnectionState.Reconnecting -> currentLink.peerName
+                        is ConnectionState.Lost -> currentLink.peerName
+                        else -> ""
+                    }
+                JoinUiState(
+                    teamName = name,
+                    hostTeamName = resolvedHostName,
+                    hosts = currentHosts,
+                    connection = currentLink,
+                    hostStarted = go,
+                    showDebugButton = emulator,
+                )
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), JoinUiState(teamName.value))
 
         init {
             viewModelScope.launch {
-                connection.messages.collect {
-                    if (it is GameMessage.Start) startGame(it.toSetup())
+                connection.messages.collect { message ->
+                    when (message) {
+                        is GameMessage.Start -> startGame(message.toSetup())
+                        is GameMessage.UpdateTeamName -> hostNameOverride.value = message.teamName
+                        else -> {}
+                    }
                 }
             }
         }
@@ -88,6 +128,14 @@ class JoinGameViewModel
             started.value = true
             // in emulator mode nearby is never started
             if (!debugSettings.emulatorMode.value) connection.startJoining(teamName.value)
+        }
+
+        fun rerollName() {
+            if (!state.value.canReroll) return
+            teamName.value = randomTeamName()
+            if (state.value.connection is ConnectionState.Connected && !debugSettings.emulatorMode.value) {
+                connection.send(GameMessage.UpdateTeamName(teamName.value))
+            }
         }
 
         fun join(host: DiscoveredHost) {
@@ -128,7 +176,7 @@ class JoinGameViewModel
     }
 
 // DEBUG ONLY: the fake host shown in emulator mode
-private val DEBUG_HOST = DiscoveredHost(endpointId = "debug-host", teamName = "Team Plum")
+private val DEBUG_HOST = DiscoveredHost(endpointId = "debug-host", teamName = "Team Awesome Plum")
 
 // DEBUG ONLY: the cards the fake host starts the game with
 private val DEBUG_SETUP =
