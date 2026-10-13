@@ -5,27 +5,28 @@
 
     <!-- Solo Mode-->
     <string name="solo_mode_title">Playing Solo Mode</string>
-    <string name="solo_mode_1">1. look at card</string>
-    <string name="solo_mode_2">2. think about what it could be</string>
-    <string name="solo_mode_3">3. Flip it around . . .</string>
-    <string name="solo_mode_4">4. Decide if you got it right</string>
-    <string name="solo_mode_5">5. Note the difficulty of the card below the card</string>
+    <string name="solo_mode_1">1. You will be shown a card with a text prompt.</string>
+    <string name="solo_mode_2">2. Aim to guess what could be the answer to this prompt - it could be something such as a definition of the word in the prompt.</string>
+    <string name="solo_mode_3">3. When you know the answer, flip your phone towards you. Alternatively, you can press the screen.</string>
+    <string name="solo_mode_4">4. On flip, the answer is now visible to you.</string>
+    <string name="solo_mode_5">5. Using the rating system on the bottom on the page, select the difficulty of the card based on what you answered.</string>
 
     <!-- Duo Mode-->
     <string name="duo_mode_title">Playing Duo Mode</string>
-    <string name="duo_mode_1">1. One of you is the describer and the other is the guesser</string>
-    <string name="duo_mode_2">2. Guesser hold the phone up to their forehead, screen facing out</string>
-    <string name="duo_mode_3">3. The describer see the card and describes it, without saying any word shown on it</string>
-    <string name="duo_mode_4">4. Guesser has until the timer runs out to guess, then the back is shown</string>
-    <string name="duo_mode_5">5. Check the guess - tilt down if it was right, or tilt up if it was wrong</string>
+    <string name="duo_mode_1">1. With 2 people, one person will be the \'Describer\', and the other \'Guesser\'.</string>
+    <string name="duo_mode_2">2. The Guesser will be the one who will hold the phone, up to their forehead. The screen faces the Describer.</string>
+    <string name="duo_mode_3">3. The Describer can see the prompt on the held phone, and will begin to describe the concept without explicitly telling the Guesser.</string>
+    <string name="duo_mode_4">4. The Guesser has until the timer runs out to figure out the answer to the prompt.</string>
+    <string name="duo_mode_5">5. When the timer runs out, or if the Guesser already gets the correct answer, they will tilt the phone according to their response: Down for Correct, and Up for False.</string>
+    <string name="duo_mode_6">6. This will repeat until the deck is complete.</string>
 
     <!-- Multi Mode-->
     <string name="multi_mode_title">Playing Clash Mode</string>
-    <string name="multi_mode_1">1. get some friends</string>
-    <string name="multi_mode_2">2. Connect via Bluetooth</string>
-    <string name="multi_mode_3">3. Play a 2 player version against one another</string>
-    <string name="multi_mode_4">4. see who wins between the two groups</string>
-    <string name="multi_mode_5">5. Bask in the glory when you eventually win</string>
+    <string name="multi_mode_1">1. One team sets up the game by selecting \'Clash Mode\' in the desired Deck.</string>
+    <string name="multi_mode_2">2. Once the lobby is set up, the other team can join the game via the homepage of the application (Join Clash).</string>
+    <string name="multi_mode_3">3. The host team will accept the requests, and set the timer for both teams.</string>
+    <string name="multi_mode_4">4. When ready, the teams will split into their roles as per a Duo mode game - one person will be the \'Describer\', and the other \'Guesser\'.</string>
+    <string name="multi_mode_5">5. Play out this game and see who can get a better score!</string>
 
 
 </resources>
