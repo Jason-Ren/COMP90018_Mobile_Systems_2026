@@ -76,6 +76,7 @@ fun GuestLobbyScreen(
                     label = "Host Team",
                     teamName = state.hostTeamName.ifBlank { "Host" },
                     canReroll = false,
+                    tint = TeamTint.Blue
                 )
             },
             bottomSlot = {
@@ -84,6 +85,7 @@ fun GuestLobbyScreen(
                     teamName = state.teamName,
                     canReroll = state.canReroll,
                     onReroll = viewModel::rerollName,
+                    tint = TeamTint.Red
                 )
             },
             bottomActions = {

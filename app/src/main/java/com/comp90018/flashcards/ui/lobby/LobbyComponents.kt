@@ -22,7 +22,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -36,6 +35,52 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.comp90018.flashcards.ui.connection.DebugConnectionButtons
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.CardDefaults
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import com.comp90018.flashcards.R
+
+// every team container is this tall, whatever is inside, so the lobby does not jump around
+private val TEAM_SLOT_HEIGHT = 150.dp
+private const val TINT_ALPHA = 0.1f
+
+/** Top team blue, bottom team red. A see-through wash over the surface, so it suits light and dark. */
+enum class TeamTint(
+    private val base: Color?,
+) {
+    None(null),
+    Blue(Color(0xFF2196F3)),
+    Red(Color(0xFFF44336)),
+    ;
+
+    @Composable
+    fun container(): Color {
+        val background = MaterialTheme.colorScheme.background
+        return base?.copy(TINT_ALPHA)?.compositeOver(background) ?: background
+    }
+}
+
+@Composable
+private fun TeamContainer(
+    modifier: Modifier = Modifier,
+    tint: TeamTint = TeamTint.None,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Card(
+        modifier = modifier.fillMaxWidth().height(TEAM_SLOT_HEIGHT),
+        colors = CardDefaults.cardColors(containerColor = tint.container()),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(16.dp),
+            verticalArrangement = Arrangement.Center,
+            content = content,
+        )
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,8 +120,11 @@ fun LobbyLayout(
             if (!deckName.isNullOrBlank()) {
                 Text(
                     text = deckName,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.headlineSmall,
                     textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -100,33 +148,36 @@ fun LobbyLayout(
  */
 @Composable
 fun TeamSlotCard(
+    modifier: Modifier = Modifier,
     label: String,
     teamName: String,
+    tint: TeamTint,
     canReroll: Boolean = false,
     onReroll: (() -> Unit)? = null,
-    modifier: Modifier = Modifier,
 ) {
-    Card(modifier = modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
+    TeamContainer(tint = tint, modifier = modifier) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.outline,
+        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
             Text(
-                text = label,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.outline,
+                text = teamName,
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.weight(1f),
             )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(
-                    text = teamName,
-                    style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.weight(1f),
-                )
-                if (onReroll != null) {
-                    IconButton(onClick = onReroll, enabled = canReroll) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Pick another team name")
-                    }
+            if (onReroll != null) {
+                IconButton(onClick = onReroll, enabled = canReroll) {
+                    Icon(
+                        Icons.Default.Refresh,
+                        contentDescription = "Pick another team name",
+                        modifier = Modifier.size(32.dp)
+                    )
                 }
             }
         }
@@ -146,15 +197,13 @@ fun VersusDivider() {
     }
 }
 
-/** Dashed empty slot while nobody has asked to join. */
 @Composable
 fun WaitingSlot() {
-    val outline = MaterialTheme.colorScheme.outline
     Row(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .dashedBorder(outline)
+                .height(TEAM_SLOT_HEIGHT)
                 .padding(20.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
@@ -170,9 +219,9 @@ fun PendingSlot(
     onAccept: () -> Unit,
     onDecline: () -> Unit,
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    TeamContainer(tint = TeamTint.None) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -194,9 +243,9 @@ fun JoinedSlot(
     teamName: String,
     onRemove: () -> Unit,
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    TeamContainer(tint = TeamTint.Red) {
         Row(
-            modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 8.dp),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
@@ -204,24 +253,12 @@ fun JoinedSlot(
                 style = MaterialTheme.typography.headlineSmall,
                 modifier = Modifier.weight(1f),
             )
-            TextButton(onClick = onRemove) { Text("Remove") }
+            IconButton(onClick = onRemove) {
+                Icon(
+                    painterResource(R.drawable.ic_person_cancel),
+                    contentDescription = "Remove team",
+                    modifier = Modifier.size(32.dp))
+            }
         }
     }
 }
-
-private fun Modifier.dashedBorder(
-    color: Color,
-    cornerRadius: Dp = 12.dp,
-    strokeWidth: Dp = 2.dp,
-): Modifier =
-    drawBehind {
-        drawRoundRect(
-            color = color,
-            cornerRadius = CornerRadius(cornerRadius.toPx()),
-            style =
-                Stroke(
-                    width = strokeWidth.toPx(),
-                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(16f, 12f)),
-                ),
-        )
-    }

@@ -70,6 +70,7 @@ fun HostLobbyScreen(
                     teamName = state.teamName,
                     canReroll = state.canReroll,
                     onReroll = lobbyViewModel::rerollName,
+                    tint = TeamTint.Blue
                 )
             },
             bottomSlot = {

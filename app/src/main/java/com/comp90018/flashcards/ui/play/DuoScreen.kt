@@ -70,7 +70,7 @@ fun DuoScreen(
                     topic = HelpTopic.DuoPlayHelp,
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(8.dp),
+                        .padding(16.dp),
                     size = 36.dp,)
             }
         }
