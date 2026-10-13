@@ -48,6 +48,9 @@ The root Firebase configuration includes five composite indexes (two deck, three
 
 ## Building & running
 
+Duo and clash rounds support automatic start/pause from the forehead pose, with
+manual Start available. See [pose behavior and device checks](docs/heads-up-pose.md).
+
 ```bash
 ./gradlew assembleDebug   # build a debug APK
 ./gradlew test            # run unit tests

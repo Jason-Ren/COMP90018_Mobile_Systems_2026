@@ -352,4 +352,43 @@ class GameViewModelTest {
 
         assertEquals(DuoPhase.FINISHED, vm.round.value.phase)
     }
+
+    @Test
+    fun `pose and connection holds must both clear before the clock resumes`() =
+        runTest {
+            val vm = game()
+            vm.onForeheadPose(true)
+            passSeconds(3)
+            vm.onForeheadPose(false)
+            vm.linkDown(true)
+
+            vm.onForeheadPose(true)
+            passSeconds(5)
+            assertTrue(vm.round.value.isPaused)
+            assertEquals(3, vm.round.value.secondsLeft)
+            vm.onForeheadPose(false)
+            vm.linkDown(false)
+            assertTrue(vm.round.value.isPaused)
+
+            vm.onForeheadPose(true)
+            passSeconds(3)
+            assertEquals(DuoPhase.BACK, vm.round.value.phase)
+        }
+
+    @Test
+    fun `leaving pose during the last countdown number cannot start a round`() =
+        runTest {
+            val vm = game()
+            vm.onForeheadPose(true)
+            passSeconds(2)
+            vm.onForeheadPose(false)
+            passSeconds(5)
+            assertEquals(1, vm.round.value.startCountdown)
+            assertEquals(DuoPhase.READY, vm.round.value.phase)
+            assertEquals(0, vibration.timeUps)
+
+            vm.onForeheadPose(true)
+            passSeconds(1)
+            assertEquals(DuoPhase.FRONT, vm.round.value.phase)
+        }
 }

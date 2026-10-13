@@ -43,6 +43,7 @@
         <!-- portrait everywhere, the game screens switch to landscape while playing -->
         <activity
             android:name=".MainActivity"
+            android:configChanges="orientation|screenSize"
             android:exported="true"
             android:screenOrientation="portrait">
             <intent-filter>
