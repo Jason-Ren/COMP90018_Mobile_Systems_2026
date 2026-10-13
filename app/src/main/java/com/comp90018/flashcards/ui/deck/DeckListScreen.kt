@@ -1,5 +1,8 @@
 package com.comp90018.flashcards.ui.deck
 
+import android.R.attr.label
+import android.R.attr.onClick
+import android.R.attr.padding
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -9,9 +12,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AddCircle
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,12 +23,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.comp90018.flashcards.data.local.entity.DeckEntity
-import com.comp90018.flashcards.R
-import androidx.compose.ui.res.painterResource
+import com.comp90018.flashcards.ui.components.NavBar
 
 /**
  * Shows list of users decks
@@ -38,6 +36,9 @@ import androidx.compose.ui.res.painterResource
 fun DeckListScreen(
     onNavigateToDeck: (String) -> Unit,
     onCommunity: () -> Unit,
+    onNavigateBack: () -> Unit,
+    onHome: () -> Unit,
+    onJoinGame: () -> Unit,
     viewModel: DeckListViewModel = hiltViewModel(),
 ) {
     val decks by viewModel.decks.collectAsState()
@@ -51,95 +52,8 @@ fun DeckListScreen(
             // sign out, community notes
             DeckListTopBar(onSignOut = viewModel::signOut, onCommunity = onCommunity)
         },
-
         bottomBar = {
-            BottomAppBar(
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.height(100.dp),
-
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly, // 👈 Distributes items evenly
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-
-
-                    //Add Button
-                    Column(
-                        //modifier = Modifier.padding(4.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        IconButton(
-                            onClick = { showDialog = true }
-                        ) {
-                            Icon(
-                                painterResource(id = R.drawable.ic_stack),
-                                contentDescription = "Add Deck",
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(text = "DECKS", textAlign = TextAlign.Center)
-                    }
-
-                    //Clash Button
-                    Column(
-                        //modifier = Modifier.padding(4.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        IconButton(
-                            onClick = { showDialog = true }
-                        ) {
-                            Icon(
-                                painterResource(id = R.drawable.ic_swords),
-                                contentDescription = "Join Game",
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(text = "CLASH", textAlign = TextAlign.Center)
-                    }
-
-                    //Search Button
-                    Column(
-                        //modifier = Modifier.padding(4.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        IconButton(
-                            onClick = { showDialog = true }
-                        ) {
-                            Icon(
-                                Icons.Filled.Search,
-                                contentDescription = "Add Deck",
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(text = "DISCOVER", textAlign = TextAlign.Center)
-                    }
-
-                    //------------------------------------------------------Friends Button
-                    Column(
-                        //modifier = Modifier.padding(4.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        IconButton(
-                            onClick = { showDialog = true }
-                        ) {
-                            Icon(
-                                painterResource(id = R.drawable.ic_conversation),
-                                contentDescription = "Add Deck",
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(text = "FRIENDS", textAlign = TextAlign.Center)
-                    }
-
-                }
-            }
+            NavBar(onCommunity, onHome)
         },
         floatingActionButton = {
             // to be removed

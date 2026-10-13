@@ -36,6 +36,7 @@ fun DeckPageScreen(
     onCommunity: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DeckSummaryViewModel = hiltViewModel(),
+    onJoinGame: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsState()
 

@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.comp90018.flashcards.ui.components.NavBar
 import com.comp90018.flashcards.ui.deck.PublicDeckRow
 import com.comp90018.flashcards.ui.deck.matchingPublicSearch
 
@@ -25,7 +26,11 @@ fun CommunityScreen(
     onOpenLocal: (String) -> Unit,
     modifier: Modifier = Modifier,
     startWithFriends: Boolean = false,
-) {
+    onCommunity: () -> Unit,
+    onNavigateBack: () -> Unit,
+    onHome: () -> Unit,
+
+    ) {
     var tab by rememberSaveable { mutableIntStateOf(if (startWithFriends) 1 else 0) }
     Scaffold(
         modifier = modifier,
@@ -34,7 +39,11 @@ fun CommunityScreen(
                 IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") }
             })
         },
-    ) { padding ->
+        bottomBar = {
+            NavBar(onCommunity, onHome)
+        },
+    ) {
+        padding ->
         Column(Modifier.padding(padding)) {
             TabRow(selectedTabIndex = tab) {
                 Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("Discover") })
@@ -95,7 +104,10 @@ private fun DiscoverPanel(
                 onOpenLocal = onOpenLocal,
             )
         }
+
     }
+
+
 }
 
 @Composable
