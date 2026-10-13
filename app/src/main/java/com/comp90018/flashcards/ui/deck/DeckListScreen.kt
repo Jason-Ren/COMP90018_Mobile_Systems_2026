@@ -28,6 +28,7 @@ import com.comp90018.flashcards.data.local.entity.DeckEntity
 @Composable
 fun DeckListScreen(
     onNavigateToDeck: (String) -> Unit,
+    onCommunity: () -> Unit,
     viewModel: DeckListViewModel = hiltViewModel(),
 ) {
     val decks by viewModel.decks.collectAsState()
@@ -38,7 +39,7 @@ fun DeckListScreen(
 
     Scaffold(
         topBar = {
-            DeckListTopBar(onSignOut = viewModel::signOut)
+            DeckListTopBar(onSignOut = viewModel::signOut, onCommunity = onCommunity)
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
@@ -146,10 +147,14 @@ private fun DeckListBody(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DeckListTopBar(onSignOut: () -> Unit) {
+private fun DeckListTopBar(
+    onSignOut: () -> Unit,
+    onCommunity: () -> Unit,
+) {
     TopAppBar(
         title = {},
         actions = {
+            TextButton(onClick = onCommunity) { Text("Community") }
             TextButton(onClick = onSignOut) {
                 Text("Log out")
             }

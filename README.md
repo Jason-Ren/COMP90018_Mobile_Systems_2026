@@ -5,8 +5,10 @@ A spaced-repetition flashcard app built with Jetpack Compose, Room, Hilt, and Na
 
 ## Requirements
 
-- JDK 17
+- JDK 25 for the Gradle daemon; JDK 21 for compilation (provisioned automatically if missing). App bytecode targets Java 17.
 - Android Studio (latest stable) or the Gradle wrapper on the command line
+
+The build uses Gradle 9.1.0, Android Gradle Plugin 8.13.2, Kotlin/Compose compiler 2.3.21, Compose BOM 2025.10.01, Hilt 2.57.2, and Room 2.8.3. Install Android SDK Platform 36 for compilation; `minSdk` remains 26 and `targetSdk` remains 34. Detekt is pinned to 2.0.0-alpha.3 with Compose rules 0.5.8 because the previous Detekt release cannot run on the Java 25 build daemon. Detekt 2.0 is a prerelease and future upgrades may require configuration changes.
 
 ## Google sign-in
 
@@ -22,7 +24,7 @@ Authentication is Firebase Auth. Users can continue with Google, or register and
 
 ## Cloud decks (Firestore)
 
-Shared deck storage uses **Cloud Firestore** in the same Firebase project as Auth (`com-comp90018-flashcards`). Local Room remains the source of truth on device. Deck and card edits are pushed in the background when the device is online. Upload / download UI (publish and save-a-copy) is still a separate Stage 2 issue.
+Shared deck storage uses **Cloud Firestore** in the same Firebase project as Auth (`com-comp90018-flashcards`). Local Room remains the source of truth on device. Deck and card edits are pushed in the background when the device is online. Community screens now support friend sharing, publishing, and saving independent copies into My Decks.
 
 Schema, security rules, and provisioning steps: [docs/cloud-deck-schema.md](docs/cloud-deck-schema.md).
 
@@ -40,7 +42,7 @@ Rules and indexes live in `firestore.rules` and `firestore.indexes.json`. The An
 
 The [Python social API](backend/README.md) uses the same Firebase Auth project and Firestore database for profiles, friend requests, explicit read-only deck sharing, Publish/unpublish, and Save-a-copy. Deck `ownerId` remains the Firebase UID; copies receive new IDs, private visibility, and protected source attribution. Removing a friendship revokes private source access in both the API and the Firestore rules; previously saved copies remain independent.
 
-The root Firebase configuration includes all five indexes (two deck, three social) and the combined rules. Run `npm run test:emulator` from `backend` after following its setup instructions to test both the API and direct-client access rules. Android Friends/sharing screens, publish/copy controls, and HTTP integration are still pending. API and rules updates need separate deployment; see the [Cloud Run guide](backend/DEPLOYMENT.md).
+The root Firebase configuration includes all five indexes (two deck, three social) and the combined rules. Run `npm run test:emulator` from `backend` after following its setup instructions to test both the API and direct-client access rules. Open **Community** from My Decks for public decks, profiles, and friends; your deck's **⋮** menu offers **Publish / Unpublish** and **Share with friends**. Public catalogue rows and previews save copies through the same API workflow. See [Android community setup and usage](docs/android-community.md). API and rules updates need separate deployment; see the [Cloud Run guide](backend/DEPLOYMENT.md).
 
 ## Building & running
 
@@ -78,19 +80,21 @@ Detekt also pulls in the [Compose rules](https://mrmans0n.github.io/compose-rule
 
 ## Continuous integration
 
-`.github/workflows/ci.yml` runs two parallel jobs on every pull request and on every push to `main`: Android checks (`./gradlew check`: tests, Android Lint, ktlint, detekt) and Social API checks (Ruff lint/format checks and the API/Firestore rules tests in the emulator). Each job has its own environment: JDK 17 for Android; Python 3.12, Node 20, and Java 21 for the social API.
+`.github/workflows/ci.yml` runs two parallel jobs on every pull request and on every push to `main`: Android checks (`./gradlew check`: tests, Android Lint, ktlint, detekt) and Social API checks (Ruff lint/format checks and the API/Firestore rules tests in the emulator). Each job has its own environment: JDK 25 for the Android build daemon with a JDK 21 compilation toolchain; Python 3.12, Node 20, and Java 21 for the social API.
 
 A red check on a PR means one of those failed — click into the job's logs to see which task and what it reported. There's no auto-fix step in CI. For Android formatting issues, run `./gradlew ktlintFormat detekt` locally; for social API checks, follow [backend/README.md](backend/README.md), then push the fix.
 
-### Troubleshooting: `./gradlew` fails with `What went wrong: 26` (or similar bare number)
+### Troubleshooting: Java runtime and Gradle sync errors
 
-This project's Gradle wrapper (8.7) doesn't support very new JDKs — if your machine's default `java` is something like JDK 24+ (check with `java -version`), Gradle fails to even start, with an unhelpful error that's just the major version number.
+The project uses Gradle 9.1.0 and Java 25 daemon criteria to support Android Studio's Java 25 sync tooling. Compilation uses a separate Java 21 toolchain, and app bytecode still targets Java 17.
 
-Fix: install JDK 17 (e.g. via [Adoptium](https://adoptium.net/) or `sdk install java 17.0.x-tem` with [SDKMAN](https://sdkman.io/)), then point Gradle at it **globally on your machine** — not in this repo, since the path is machine-specific:
+Keep Android Studio on its bundled runtime. In Settings > Build, Execution, Deployment > Build Tools > Gradle, use the project's Java 25 Daemon JVM criteria. Switching a newer Android Studio's boot runtime to Java 21 can prevent the IDE from starting.
+
+For command-line builds, set `JAVA_HOME` to your JDK 25 installation. The daemon criteria in `gradle/gradle-daemon-jvm.properties` select Java 25. The Foojay resolver provisions missing toolchains. Do not put a personal JDK path in the project's `gradle.properties`; if you need a machine-specific override for other Gradle projects, use your user-level properties:
 
 ```properties
 # ~/.gradle/gradle.properties (create if it doesn't exist)
-org.gradle.java.home=/path/to/your/jdk-17
+org.gradle.java.home=/path/to/your/jdk-25
 ```
 
 Find your installed JDKs' paths with `/usr/libexec/java_home -V` (macOS) or `update-alternatives --list java` (Linux). Don't add `org.gradle.java.home` to the project's own `gradle.properties` — it would hardcode your personal file path for every other contributor.
