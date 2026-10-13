@@ -46,9 +46,14 @@ abstract class GameViewModel(
     private var timerJob: Job? = null
     private var startCountdownJob: Job? = null
 
-    // two reasons to hold the countdown: the player left the app, or the link to the other phone is down
+    // Independent holds: the player left the app, the link is down, or a pose-started phone was lowered.
     private var pausedByPlayer = false
     private var linkDown = false
+    private var poseControlled = false
+    private var poseMissing = false
+
+    private val countdownHeld: Boolean
+        get() = pausedByPlayer || linkDown || poseMissing
 
     /** Sets up a new round on these cards, in the order given, and waits on the Ready screen. */
     protected fun loadCards(
@@ -59,6 +64,9 @@ abstract class GameViewModel(
         startCountdownJob?.cancel()
         timer.reset()
         pausedByPlayer = false
+        poseControlled = false
+        poseMissing = false
+        _round.update { it.copy(startCountdown = 0) }
         game = DuoGame(cards)
         publish(isLoading = false, deckName = deckName)
     }
@@ -74,16 +82,34 @@ abstract class GameViewModel(
 
     /** Counts 3, 2, 1 on the screen and then starts the round, called from the Ready screen. */
     fun startWithCountdown() {
-        if (startCountdownJob?.isActive == true) return
+        if (_round.value.isLoading || game.phase != DuoPhase.READY || startCountdownJob?.isActive == true) return
         startCountdownJob =
             viewModelScope.launch {
-                for (number in START_COUNTDOWN_FROM downTo 1) {
+                var number = START_COUNTDOWN_FROM
+                while (number > 0) {
                     _round.update { it.copy(startCountdown = number) }
+                    publish()
                     delay(1.seconds)
+                    if (!countdownHeld) number--
                 }
                 _round.update { it.copy(startCountdown = 0) }
                 start()
             }
+    }
+
+    /** A stable forehead pose starts a ready round; leaving it holds countdowns and scoring. */
+    fun onForeheadPose(inPose: Boolean) {
+        val state = _round.value
+        if (state.isLoading || game.phase == DuoPhase.FINISHED) return
+        val missing = !inPose
+        if (inPose && game.phase == DuoPhase.READY && state.startCountdown == 0) {
+            poseControlled = true
+            poseMissing = false
+            startWithCountdown()
+        } else if (poseControlled && poseMissing != missing) {
+            poseMissing = missing
+            applyPause()
+        }
     }
 
     /** Starts the round straight away. */
@@ -95,16 +121,18 @@ abstract class GameViewModel(
 
     /** Shows the back of the current card, ahead of the countdown. Ignored while paused. */
     fun reveal() {
-        if (timer.isPaused) return
+        if (_round.value.isPaused) return
         // a light tick, running out of time has its own longer buzz
         vibration.vibrateReveal()
         timerJob?.cancel()
-        showBack()
+        game.reveal()
+        publish()
     }
 
-    /** Stops the countdown while the front is showing, keeping the time left. The screen calls it in the background. */
+    /** Holds the opening/card countdown, keeping the time left. The screen calls it in the background. */
     fun pause() {
-        if (game.phase != DuoPhase.FRONT || pausedByPlayer) return
+        val canPause = game.phase == DuoPhase.FRONT || _round.value.startCountdown > 0
+        if (!canPause || pausedByPlayer) return
         pausedByPlayer = true
         applyPause()
     }
@@ -120,6 +148,7 @@ abstract class GameViewModel(
      * With the back showing, DOWN marks the guess right and UP marks it wrong.
      */
     fun onGesture(gesture: TiltGesture) {
+        if (_round.value.isPaused) return
         when (game.phase) {
             DuoPhase.FRONT -> reveal()
             DuoPhase.BACK -> mark(isCorrect = gesture == TiltGesture.DOWN)
@@ -137,15 +166,10 @@ abstract class GameViewModel(
         if (game.phase == DuoPhase.FINISHED) onFinished(game.correctCount)
     }
 
-    private fun showBack() {
-        game.reveal()
-        publish()
-    }
-
     private fun startTimer() {
         timer.reset()
         // a card can come up while the link is down (marked from the back), so it starts held
-        if (linkDown) timer.pause() else runTimer()
+        if (countdownHeld) timer.pause() else runTimer()
     }
 
     /** Ticks the timer once a second until time is up, then shows the back. */
@@ -159,14 +183,15 @@ abstract class GameViewModel(
                     publish()
                 }
                 vibration.vibrateTimeUp()
-                showBack()
+                game.reveal()
+                publish()
             }
     }
 
-    // the timer is held while either reason is on, and only a countdown on a front can be held
+    // Only fronts have a card timer; pose pauses also block scoring on the back.
     private fun applyPause() {
         if (game.phase == DuoPhase.FRONT) {
-            val shouldHold = pausedByPlayer || linkDown
+            val shouldHold = countdownHeld
             if (shouldHold && !timer.isPaused) {
                 timerJob?.cancel()
                 timer.pause()
@@ -189,7 +214,15 @@ abstract class GameViewModel(
                 phase = game.phase,
                 current = game.current,
                 secondsLeft = timer.secondsLeft,
-                isPaused = timer.isPaused,
+                isPaused =
+                    when {
+                        game.phase == DuoPhase.FRONT -> timer.isPaused
+                        it.startCountdown > 0 -> countdownHeld
+                        game.phase == DuoPhase.BACK -> poseMissing
+                        else -> false
+                    },
+                isPoseControlled = poseControlled,
+                isPosePaused = poseMissing,
                 correctCount = game.correctCount,
                 totalCount = game.totalCount,
                 missed = game.missed,

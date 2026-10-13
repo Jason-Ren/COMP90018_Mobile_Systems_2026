@@ -23,6 +23,8 @@ data class DuoUiState(
     val secondsPerCard: Int = 0,
     val secondsLeft: Int = 0,
     val isPaused: Boolean = false,
+    val isPoseControlled: Boolean = false,
+    val isPosePaused: Boolean = false,
     // 3, 2, 1 before the round starts, 0 when it is not counting
     val startCountdown: Int = 0,
     val correctCount: Int = 0,
@@ -67,7 +69,8 @@ class DuoViewModel
 
         /** Starts a new round with the same cards, in a new order, and the same countdown. */
         fun playAgain() {
+            val waitForPose = round.value.isPoseControlled
             loadCards(cards.shuffled(), round.value.deckName)
-            startWithCountdown()
+            if (!waitForPose) startWithCountdown()
         }
     }
