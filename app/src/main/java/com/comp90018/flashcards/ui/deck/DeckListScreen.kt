@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -38,6 +39,7 @@ fun DeckListScreen(
 ) {
     val decks by viewModel.decks.collectAsState()
     val emulatorMode by viewModel.emulatorMode.collectAsState()
+    val isSyncing by viewModel.isSyncing.collectAsState()
     var showDialog by remember { mutableStateOf(false) }
     var newDeckName by remember { mutableStateOf("") }
     var newDeckDescription by remember { mutableStateOf("") }
@@ -45,6 +47,8 @@ fun DeckListScreen(
     Scaffold(
         topBar = {
             DeckListTopBar(
+                isSyncing = isSyncing,
+                onSync = viewModel::syncFromCloud,
                 onAccount = onAccount,
                 emulatorMode = emulatorMode,
                 onEmulatorModeChange = viewModel::setEmulatorMode,
@@ -58,6 +62,7 @@ fun DeckListScreen(
         DeckListBody(
             displayName = displayName,
             decks = decks,
+            isSyncing = isSyncing,
             onNavigateToDeck = onNavigateToDeck,
             modifier = Modifier.padding(padding),
         )
@@ -86,7 +91,7 @@ fun DeckListScreen(
     }
 }
 
-/** Join Game sits above Create Deck. */
+/** Join Clash sits above Create Deck. */
 @Composable
 private fun DeckListButtons(
     onJoinGame: () -> Unit,
@@ -96,7 +101,7 @@ private fun DeckListButtons(
         ExtendedFloatingActionButton(
             onClick = onJoinGame,
             icon = { Icon(Icons.Default.PlayArrow, contentDescription = null) },
-            text = { Text("Join Game", style = MaterialTheme.typography.titleMedium) },
+            text = { Text("Join Clash", style = MaterialTheme.typography.titleMedium) },
             containerColor = MaterialTheme.colorScheme.primaryContainer,
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
         )
@@ -114,6 +119,7 @@ private fun DeckListButtons(
 private fun DeckListBody(
     displayName: String,
     decks: List<DeckEntity>,
+    isSyncing: Boolean,
     onNavigateToDeck: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -125,6 +131,9 @@ private fun DeckListBody(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         DeckListHeader(displayName = displayName)
+        if (isSyncing) {
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+        }
 
         if (decks.isEmpty()) {
             Box(
@@ -176,6 +185,8 @@ private fun DeckListBody(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DeckListTopBar(
+    isSyncing: Boolean,
+    onSync: () -> Unit,
     onAccount: () -> Unit,
     emulatorMode: Boolean,
     onEmulatorModeChange: (Boolean) -> Unit,
@@ -184,7 +195,16 @@ private fun DeckListTopBar(
     TopAppBar(
         title = {},
         actions = {
-            // DEBUG ONLY: lets team mode be tried on an emulator, hide it with DEBUG_TOOLS_ENABLED
+            TextButton(onClick = onSync, enabled = !isSyncing) {
+                Icon(
+                    imageVector = Icons.Default.Refresh,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(if (isSyncing) "Syncing…" else "Sync")
+            }
+            // DEBUG ONLY: lets clash mode be tried on an emulator, hide it with DEBUG_TOOLS_ENABLED
             if (DEBUG_TOOLS_ENABLED) {
                 Checkbox(checked = emulatorMode, onCheckedChange = onEmulatorModeChange)
                 Text("[DEBUG] Emulator mode", style = MaterialTheme.typography.labelSmall)

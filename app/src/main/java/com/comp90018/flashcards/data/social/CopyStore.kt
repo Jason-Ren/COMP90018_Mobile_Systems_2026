@@ -88,7 +88,14 @@ class LocalCopyStore
                 session.requireUser(uid)
                 val existing = database.deckDao().getDeckById(deck.deckId)
                 if (existing == null) {
-                    database.deckDao().insertDeck(DeckEntity(deck.deckId, deck.name, ownerId = uid))
+                    database.deckDao().insertDeck(
+                        DeckEntity(
+                            deckId = deck.deckId,
+                            name = deck.name,
+                            ownerId = uid,
+                            createdAtEpochMillis = System.currentTimeMillis(),
+                        ),
+                    )
                     cards.forEach { database.cardDao().insertCard(it.toLocalCard(deck.deckId)) }
                     // No review/state rows: the existing scheduler treats these new IDs as new cards.
                 } else {

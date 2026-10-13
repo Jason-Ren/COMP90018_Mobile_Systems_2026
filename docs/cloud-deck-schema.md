@@ -1,7 +1,8 @@
 # Cloud deck database schema (Issue #18)
 
 **Backend:** Cloud Firestore in Firebase project `com-comp90018-flashcards`
-**Auth:** Firebase Auth (`uid` = deck `ownerId`, same as local Room)
+**Auth:** Firebase Auth (`uid` = deck `ownerId`)
+**Single source of truth:** Firestore holds each account's decks, cards, visibility, shares, profiles, and friendships. Room on Android is only an offline cache of deck/card content for My Decks and study. Friends/social data are not cached in Room; the app reads them from the social API (which uses Firestore). Per-user study progress (FSRS) stays on-device only.
 **Architecture:** Firebase Auth and Cloud Firestore, with direct Android deck access and a Python social API for profiles, friendships, sharing, publishing, and copying. See [backend/README.md](../backend/README.md).
 
 This document is the missing write-up for [SPIKE #17](https://github.com/hboykett/COMP90018_Mobile_Systems_2026/issues/17) and the schema provisioned for [#18](https://github.com/hboykett/COMP90018_Mobile_Systems_2026/issues/18).
@@ -36,7 +37,8 @@ account_deletions/{FirebaseUid}  # server-only, durable deletion barrier
 | `name` | string | Display name |
 | `ownerId` | string | Firebase Auth uid |
 | `visibility` | string | `"private"` or `"public"` (publish for search / Save-a-copy) |
-| `updatedAt` | timestamp | UTC; used for ordering and conflict hints |
+| `updatedAt` | timestamp | UTC; used for catalogue ordering and conflict hints |
+| `createdAt` | timestamp? | First-created time; My Decks sorts newest first |
 | `cardCount` | number | Denormalised count for catalogue lists |
 | `authorEmail` | string? | Optional creator email for Discover search; stamped on Publish |
 | `copiedFrom` | map? | API-issued source attribution on saved copies; absent on original decks |
@@ -99,15 +101,24 @@ firebase deploy --only firestore:rules,firestore:indexes
 
 4. Ensure `app/google-services.json` is present (gitignored) so the Android app can reach the same project.
 
-## Sync (#19)
+## Sync (#19) / account consistency (#70)
 
-Local Room stays the source of truth. Deck and card edits are stored in a local outbox and pushed to Firestore when the device has a network connection. Saving a deck does not wait on the network.
+**Firestore is authoritative** for deck content and for friends/social data. Room mirrors decks for offline use; the social API mirrors friends in Firestore.
 
-- Study progress (FSRS) is not uploaded.
+Online sync order:
+
+1. Enqueue any local decks not yet marked for upload (one-time backfill per user).
+2. **Push** the outbox to Firestore.
+3. **Pull** owned decks from Firestore into Room (upsert cards; remove local owned decks that no longer exist in Firestore).
+
+Saving a deck does not wait on the network; the outbox uploads in the background.
+
+- Study progress (FSRS) is not uploaded or downloaded.
 - Cloud document ids stay equal to the local UUIDs.
 - The first push creates the deck as `private`. Later pushes update `name`, cards, `cardCount`, and `updatedAt` only, so a published deck stays public (#20).
-- Deleting a local deck deletes that cloud deck.
-- Decks already on the device are enqueued once per signed-in user.
+- Deleting a local deck deletes that cloud deck; other devices drop it on the next pull.
+- A deck with a pending outbox row is not overwritten or deleted by a pull until that upload finishes.
+- Friends, profiles, shares, and publish state are always read/written through the social API → Firestore (no Room copy).
 
 ## Android client
 

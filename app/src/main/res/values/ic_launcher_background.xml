@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- matches the light blue of the logo so the icon has no visible edge -->
+<resources>
+    <color name="ic_launcher_background">#EDF6FD</color>
+</resources>

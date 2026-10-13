@@ -25,19 +25,29 @@ class DatabaseInitializer
 
         suspend fun seedForUser(ownerId: String) {
             seedMutex.withLock {
-                SEED_DECKS.forEach { spec -> ensureDeck(ownerId, spec) }
+                SEED_DECKS.forEachIndexed { index, spec -> ensureDeck(ownerId, spec, index) }
             }
         }
 
         private suspend fun ensureDeck(
             ownerId: String,
             spec: SeedDeck,
+            seedIndex: Int,
         ) {
             val deckId = "seed-$ownerId-${spec.slug}"
             if (deckDao.getDeckById(deckId) != null) {
                 return
             }
-            deckDao.insertDeck(DeckEntity(deckId = deckId, name = spec.name, ownerId = ownerId))
+            // Deterministic timestamps so seeds keep a stable order across devices (first seed on top).
+            val createdAt = (SEED_DECKS.size - seedIndex).toLong()
+            deckDao.insertDeck(
+                DeckEntity(
+                    deckId = deckId,
+                    name = spec.name,
+                    ownerId = ownerId,
+                    createdAtEpochMillis = createdAt,
+                ),
+            )
             spec.cards.forEachIndexed { index, card ->
                 cardDao.insertCard(
                     CardEntity(

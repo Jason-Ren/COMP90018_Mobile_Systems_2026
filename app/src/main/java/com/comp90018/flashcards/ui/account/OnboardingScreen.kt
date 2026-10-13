@@ -23,7 +23,7 @@ fun OnboardingScreen(
         modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Text("Welcome to Flashcards", style = MaterialTheme.typography.headlineLarge)
+        Text("Welcome to Clashcards", style = MaterialTheme.typography.headlineLarge)
         Text("Choose how you appear to friends before you start studying.")
         SocialStatus(task)
         ProfileEditor(null, !task.busy, viewModel::createProfile)

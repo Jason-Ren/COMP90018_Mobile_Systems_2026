@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Flashcards</string>
+    <string name="app_name">Clashcards</string>
 
     <!-- Gameplay Instructions-->
 
@@ -20,7 +20,7 @@
     <string name="duo_mode_5">5. Check the guess - tilt down if it was right, or tilt up if it was wrong</string>
 
     <!-- Multi Mode-->
-    <string name="multi_mode_title">Playing 2V2 Mode</string>
+    <string name="multi_mode_title">Playing Clash Mode</string>
     <string name="multi_mode_1">1. get some friends</string>
     <string name="multi_mode_2">2. Connect via Bluetooth</string>
     <string name="multi_mode_3">3. Play a 2 player version against one another</string>
