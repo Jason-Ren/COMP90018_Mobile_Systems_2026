@@ -39,6 +39,7 @@ fun TeamGameScreen(
 ) {
     PauseWhenBackgrounded(viewModel::pause)
     val state by viewModel.uiState.collectAsState()
+    val poseAvailable = observeForeheadPose(viewModel::onForeheadPose)
     // landscape only from the countdown until the last card
     val inPlay = state.round.phase == DuoPhase.FRONT || state.round.phase == DuoPhase.BACK
     GameOrientation(landscape = state.round.startCountdown > 0 || inPlay)
@@ -54,11 +55,11 @@ fun TeamGameScreen(
 
     Surface(modifier = modifier.fillMaxSize()) {
         val round = state.round
-        // paused comes first, so the Paused screen stays until the player taps Resume
+        // Pauses take precedence over countdowns and cards.
         when {
             round.isPaused -> PausedContent(round, viewModel::resume)
             round.startCountdown > 0 -> StartCountdownContent(round.startCountdown)
-            round.phase == DuoPhase.READY -> ReadyContent(round, viewModel::startWithCountdown)
+            round.phase == DuoPhase.READY -> ReadyContent(round, viewModel::startWithCountdown, poseAvailable)
             round.phase == DuoPhase.FRONT -> FrontContent(round, viewModel::reveal)
             round.phase == DuoPhase.BACK -> BackContent(round, viewModel::onGesture)
             else -> ResultContent(state, onFinish = leave)
