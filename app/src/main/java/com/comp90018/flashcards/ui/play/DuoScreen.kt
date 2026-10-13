@@ -37,17 +37,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.comp90018.flashcards.data.local.entity.CardEntity
+import com.comp90018.flashcards.ui.help.HelpTopic
+import com.comp90018.flashcards.ui.help.helpTip
 
 private val MISSED_LIST_MAX_WIDTH = 560.dp
-
-private fun rules(secondsPerCard: Int): List<String> =
-    listOf(
-        "One of you is the Describer and the other is the Guesser",
-        "The Guesser holds the phone up to their forehead, screen facing out",
-        "The Describer sees the card and describes it, without saying any word shown on it",
-        "The Guesser has ${describeCountdown(secondsPerCard)} to guess, then the back is shown",
-        "Check the guess: tilt down if it was right, or tilt up if it was wrong",
-    )
 
 /**
  * The 2-player screen, locked to landscape: rules, then one card at a time, then the results.
@@ -59,28 +52,62 @@ fun DuoScreen(
     viewModel: DuoViewModel = hiltViewModel(),
 ) {
     LockLandscape()
+    PauseWhenBackgrounded(viewModel::pause)
     val uiState by viewModel.uiState.collectAsState()
 
     Surface(modifier = modifier.fillMaxSize()) {
-        when {
-            uiState.isLoading -> LoadingContent()
-            uiState.phase == DuoPhase.READY -> ReadyContent(uiState, viewModel::start)
-            uiState.phase == DuoPhase.FRONT -> FrontContent(uiState, viewModel::reveal)
-            uiState.phase == DuoPhase.BACK -> BackContent(uiState, viewModel::onGesture)
-            else -> FinishedContent(uiState, viewModel::playAgain, onNavigateBack)
+        Box(modifier = Modifier.fillMaxSize()) {
+            when {
+                uiState.isLoading -> LoadingContent()
+                uiState.phase == DuoPhase.READY -> ReadyContent(uiState, viewModel::start)
+                uiState.phase == DuoPhase.FRONT -> FrontContent(uiState, viewModel::reveal)
+                uiState.phase == DuoPhase.BACK -> BackContent(uiState, viewModel::onGesture)
+                else -> FinishedContent(uiState, viewModel::playAgain, onNavigateBack)
+            }
+            val inPlay = uiState.phase == DuoPhase.FRONT || uiState.phase == DuoPhase.BACK
+            if (!uiState.isLoading && !inPlay) {
+                helpTip(
+                    topic = HelpTopic.DuoPlayHelp,
+                    modifier =
+                        Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(16.dp),
+                    size = 36.dp,
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun LoadingContent() {
+internal fun LoadingContent() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         CircularProgressIndicator()
     }
 }
 
+/** Shown after the app was in the background, so the Guesser can get ready before the clock runs. */
 @Composable
-private fun ReadyContent(
+internal fun PausedContent(
+    uiState: DuoUiState,
+    onResume: () -> Unit,
+) {
+    Column(
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(text = "Paused", style = MaterialTheme.typography.headlineMedium)
+        Text(text = "${formatCountdown(uiState.secondsLeft)} left", style = MaterialTheme.typography.titleMedium)
+        Button(onClick = onResume) { Text("Resume") }
+    }
+}
+
+@Composable
+internal fun ReadyContent(
     uiState: DuoUiState,
     onStart: () -> Unit,
 ) {
@@ -94,17 +121,14 @@ private fun ReadyContent(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(text = uiState.deckName, style = MaterialTheme.typography.headlineMedium)
-        Text(text = "How to play", style = MaterialTheme.typography.titleMedium)
-        rules(uiState.secondsPerCard).forEachIndexed { index, rule ->
-            Text(text = "${index + 1}. $rule", style = MaterialTheme.typography.bodyMedium)
-        }
+        Text(text = "Tap \"?\" to learn how to play.", style = MaterialTheme.typography.bodyLarge)
         Button(onClick = onStart) { Text("Start") }
     }
 }
 
 /** The front of the card. Tapping anywhere reveals the back early. */
 @Composable
-private fun FrontContent(
+internal fun FrontContent(
     uiState: DuoUiState,
     onReveal: () -> Unit,
 ) {
@@ -144,16 +168,15 @@ private fun FrontContent(
  * (wrong) and the bottom for tilting down (right), until the tilt sensor is connected.
  */
 @Composable
-private fun BackContent(
+internal fun BackContent(
     uiState: DuoUiState,
     onGesture: (TiltGesture) -> Unit,
-    viewModel: DuoViewModel = hiltViewModel(),
 ) {
-    val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     val currentOnGesture by rememberUpdatedState(onGesture)
 
-    DisposableEffect(viewModel) {
+    // listen for the tilt while the back is showing, and stop when it leaves the screen
+    DisposableEffect(Unit) {
         val detector = DuoFlipDetector(context) { gesture -> currentOnGesture(gesture) }
         detector.start()
         onDispose {
@@ -246,7 +269,7 @@ private fun FinishedContent(
 }
 
 @Composable
-private fun MissedCards(
+internal fun MissedCards(
     cards: List<CardEntity>,
     modifier: Modifier = Modifier,
 ) {
@@ -294,7 +317,7 @@ private fun MissedCardRow(card: CardEntity) {
 
 /** Fills the space where the missed cards would be when there are none. */
 @Composable
-private fun PerfectRound(
+internal fun PerfectRound(
     hasCards: Boolean,
     modifier: Modifier = Modifier,
 ) {

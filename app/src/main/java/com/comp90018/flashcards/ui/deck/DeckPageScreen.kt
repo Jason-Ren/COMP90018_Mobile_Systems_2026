@@ -278,11 +278,11 @@ private fun PlayBottomBar(
         Button(
             onClick = onPlay,
             enabled = canPlay,
-            modifier = Modifier.fillMaxWidth().height(54.dp),
+            modifier = Modifier.fillMaxWidth().height(64.dp),
         ) {
-            Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(28.dp))
+            Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(32.dp))
             Spacer(Modifier.width(12.dp))
-            Text("Play", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text("Play", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         }
     }
 }

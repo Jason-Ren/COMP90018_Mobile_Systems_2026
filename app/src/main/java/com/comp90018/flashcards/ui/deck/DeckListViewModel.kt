@@ -6,6 +6,7 @@ import com.comp90018.flashcards.data.auth.AuthRepository
 import com.comp90018.flashcards.data.auth.AuthState
 import com.comp90018.flashcards.data.local.DatabaseInitializer
 import com.comp90018.flashcards.data.local.entity.DeckEntity
+import com.comp90018.flashcards.debug.DebugSettings
 import com.comp90018.flashcards.domain.repository.CardRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -28,7 +29,11 @@ class DeckListViewModel
         private val repository: CardRepository,
         private val authRepository: AuthRepository,
         private val databaseInitializer: DatabaseInitializer,
+        private val debugSettings: DebugSettings,
     ) : ViewModel() {
+        // DEBUG ONLY: the emulator mode tickbox next to log out
+        val emulatorMode: StateFlow<Boolean> = debugSettings.emulatorMode
+
         val displayName: StateFlow<String> =
             authRepository.authState
                 .map { state -> state.displayName() }
@@ -78,6 +83,8 @@ class DeckListViewModel
                 repository.deleteDeck(deck)
             }
         }
+
+        fun setEmulatorMode(enabled: Boolean) = debugSettings.setEmulatorMode(enabled)
 
         fun signOut() {
             viewModelScope.launch {
