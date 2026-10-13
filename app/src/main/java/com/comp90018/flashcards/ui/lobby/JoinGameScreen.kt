@@ -38,10 +38,15 @@ import com.comp90018.flashcards.data.p2p.ConnectionState
 import com.comp90018.flashcards.data.p2p.DiscoveredHost
 import com.comp90018.flashcards.ui.connection.ConnectionOverlay
 import com.comp90018.flashcards.ui.connection.DebugConnectionButtons
-
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.layout.height
 /**
  * The guest's side of team mode: list hosts nearby, ask to join, and once accepted display [GuestLobbyScreen].
  */
+
+private val JOIN_CARD_HEIGHT = 100.dp
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun JoinGameScreen(
@@ -103,9 +108,9 @@ private fun JoinBody(
         modifier = modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Card(modifier = Modifier.fillMaxWidth()) {
+        Card(modifier = Modifier.fillMaxWidth().height(JOIN_CARD_HEIGHT)) {
             Row(
-                modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 8.dp),
+                modifier = Modifier.fillMaxSize().padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(modifier = Modifier.weight(1f)) {
@@ -125,12 +130,25 @@ private fun JoinBody(
             }
         }
 
+        HorizontalDivider()
+
         when (val link = state.connection) {
             is ConnectionState.Requested ->
                 WaitingCard(text = "Waiting for ${link.peerName} to accept…", onCancel = onCancel)
-            else -> HostList(hosts = state.hosts, onJoin = onJoin, modifier = Modifier.weight(1f))
+            else ->
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        text = "Nearby Games",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.outline,
+                    )
+                    HostList(hosts = state.hosts, onJoin = onJoin, modifier = Modifier.weight(1f))
+                }
         }
-
         // DEBUG ONLY: fake the link going wrong, only shows in emulator mode
         DebugConnectionButtons()
     }
@@ -154,9 +172,9 @@ private fun HostList(
     } else {
         LazyColumn(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
             items(hosts, key = { it.endpointId }) { host ->
-                Card(modifier = Modifier.fillMaxWidth()) {
+                Card(modifier = Modifier.fillMaxWidth().height(JOIN_CARD_HEIGHT)) {
                     Row(
-                        modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 8.dp),
+                        modifier = Modifier.fillMaxSize().padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
@@ -185,6 +203,11 @@ private fun WaitingCard(
     ) {
         CircularProgressIndicator()
         Text(text = text, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
-        TextButton(onClick = onCancel) { Text("Cancel", color = MaterialTheme.colorScheme.error) }
+        TextButton(onClick = onCancel) {
+            Text(
+                "Cancel",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.titleMedium
+            ) }
     }
 }

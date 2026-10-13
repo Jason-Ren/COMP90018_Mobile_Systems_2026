@@ -109,7 +109,10 @@ fun HostLobbyScreen(
                         Text("Start", style = MaterialTheme.typography.titleLarge)
                     }
                     TextButton(onClick = { requestLeave() }, modifier = Modifier.fillMaxWidth()) {
-                        Text("Cancel", color = MaterialTheme.colorScheme.error)
+                        Text(
+                            "Cancel",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.titleMedium)
                     }
                 }
             },

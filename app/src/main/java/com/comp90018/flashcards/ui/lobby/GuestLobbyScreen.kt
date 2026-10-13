@@ -102,7 +102,10 @@ fun GuestLobbyScreen(
                     }
 
                     TextButton(onClick = { requestLeave() }, modifier = Modifier.fillMaxWidth()) {
-                        Text("Leave Game", color = MaterialTheme.colorScheme.error)
+                        Text(
+                            "Leave Game",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.titleMedium)
                     }
                 }
             },
