@@ -2,7 +2,9 @@ package com.comp90018.flashcards.ui.play
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.comp90018.flashcards.data.audio.AnswerSounds
 import com.comp90018.flashcards.data.local.entity.CardEntity
+import com.comp90018.flashcards.data.vibration.GameVibration
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,11 +23,18 @@ import kotlin.time.Duration.Companion.seconds
  * back is revealed. [onGesture] is where the tilt sensor plugs in. Until then the screen sends it
  * from taps.
  *
+ * Marking a guess plays the right or wrong sound through [sounds] and buzzes through [vibration].
+ * Revealing early and running out of time buzz too. Both modes get this from here.
+ *
  * The countdown can be paused with [pause] (the screen does this when the app goes to the
  * background) and carries on from the same second after [resume].
  */
 abstract class GameViewModel(
     private val secondsPerCard: Int,
+    // plays the right and wrong sounds, shared by every game mode
+    private val sounds: AnswerSounds,
+    // buzzes the phone for a right or wrong guess, shared by every game mode
+    private val vibration: GameVibration,
 ) : ViewModel() {
     private val _round = MutableStateFlow(DuoUiState(secondsPerCard = secondsPerCard))
     val round: StateFlow<DuoUiState> = _round.asStateFlow()
@@ -35,6 +44,7 @@ abstract class GameViewModel(
     // coerced because a clash whose setup was lost has no countdown, and the timer needs one
     private val timer = CardTimer(secondsPerCard.coerceAtLeast(1))
     private var timerJob: Job? = null
+    private var startCountdownJob: Job? = null
 
     // two reasons to hold the countdown: the player left the app, or the link to the other phone is down
     private var pausedByPlayer = false
@@ -46,6 +56,7 @@ abstract class GameViewModel(
         deckName: String,
     ) {
         timerJob?.cancel()
+        startCountdownJob?.cancel()
         timer.reset()
         pausedByPlayer = false
         game = DuoGame(cards)
@@ -61,7 +72,21 @@ abstract class GameViewModel(
         applyPause()
     }
 
-    /** Starts the round, called from the Ready screen. */
+    /** Counts 3, 2, 1 on the screen and then starts the round, called from the Ready screen. */
+    fun startWithCountdown() {
+        if (startCountdownJob?.isActive == true) return
+        startCountdownJob =
+            viewModelScope.launch {
+                for (number in START_COUNTDOWN_FROM downTo 1) {
+                    _round.update { it.copy(startCountdown = number) }
+                    delay(1.seconds)
+                }
+                _round.update { it.copy(startCountdown = 0) }
+                start()
+            }
+    }
+
+    /** Starts the round straight away. */
     fun start() {
         game.start()
         if (game.phase == DuoPhase.FRONT) startTimer()
@@ -71,6 +96,8 @@ abstract class GameViewModel(
     /** Shows the back of the current card, ahead of the countdown. Ignored while paused. */
     fun reveal() {
         if (timer.isPaused) return
+        // a light tick, running out of time has its own longer buzz
+        vibration.vibrateReveal()
         timerJob?.cancel()
         showBack()
     }
@@ -101,6 +128,9 @@ abstract class GameViewModel(
     }
 
     private fun mark(isCorrect: Boolean) {
+        // sound and buzz first so they line up with the tap or tilt
+        sounds.play(isCorrect)
+        vibration.vibrate(isCorrect)
         game.mark(isCorrect)
         if (game.phase == DuoPhase.FRONT) startTimer()
         publish()
@@ -128,6 +158,7 @@ abstract class GameViewModel(
                     timer.tick()
                     publish()
                 }
+                vibration.vibrateTimeUp()
                 showBack()
             }
     }
@@ -166,3 +197,6 @@ abstract class GameViewModel(
         }
     }
 }
+
+// the number the countdown before a round starts from
+private const val START_COUNTDOWN_FROM = 3

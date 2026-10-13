@@ -5,7 +5,9 @@ import com.comp90018.flashcards.data.p2p.GameMessage
 import com.comp90018.flashcards.data.p2p.GameSession
 import com.comp90018.flashcards.data.p2p.GameSetup
 import com.comp90018.flashcards.debug.DebugSettings
+import com.comp90018.flashcards.testutil.FakeAnswerSounds
 import com.comp90018.flashcards.testutil.FakeConnectionController
+import com.comp90018.flashcards.testutil.FakeGameVibration
 import com.comp90018.flashcards.testutil.MainDispatcherRule
 import com.comp90018.flashcards.testutil.passMillis
 import com.comp90018.flashcards.testutil.passSeconds
@@ -32,7 +34,7 @@ class TeamGameViewModelTest {
         seconds: Int = 10,
     ): TeamGameViewModel {
         session.setup = GameSetup("Capitals", seconds, testCards(cards))
-        return TeamGameViewModel(connection, session, debug)
+        return TeamGameViewModel(connection, session, debug, FakeAnswerSounds(), FakeGameVibration())
     }
 
     // plays every card, marking each one right
@@ -57,7 +59,7 @@ class TeamGameViewModelTest {
     fun `without a setup there is no game to play`() {
         session.setup = null
 
-        val vm = TeamGameViewModel(connection, session, debug)
+        val vm = TeamGameViewModel(connection, session, debug, FakeAnswerSounds(), FakeGameVibration())
 
         assertFalse(vm.hasGame)
     }
