@@ -28,7 +28,8 @@ import com.comp90018.flashcards.ui.connection.ConnectionOverlay
 import com.comp90018.flashcards.ui.connection.DebugConnectionButtons
 
 /**
- * The clash mode game screen, locked to landscape. It plays like Duo, then compares the two teams' scores.
+ * The clash mode game screen. It plays like Duo, then compares the two teams' scores.
+ * Landscape from the countdown until the last card, portrait otherwise.
  */
 @Composable
 fun TeamGameScreen(
@@ -36,9 +37,11 @@ fun TeamGameScreen(
     modifier: Modifier = Modifier,
     viewModel: TeamGameViewModel = hiltViewModel(),
 ) {
-    LockLandscape()
     PauseWhenBackgrounded(viewModel::pause)
     val state by viewModel.uiState.collectAsState()
+    // landscape only from the countdown until the last card
+    val inPlay = state.round.phase == DuoPhase.FRONT || state.round.phase == DuoPhase.BACK
+    GameOrientation(landscape = state.round.startCountdown > 0 || inPlay)
     var showLeaveConfirm by remember { mutableStateOf(false) }
     val leave = {
         viewModel.leave()
