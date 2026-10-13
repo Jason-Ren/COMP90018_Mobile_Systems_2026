@@ -30,7 +30,8 @@ internal fun PublicDeckRow(
                 deck.name,
                 style = MaterialTheme.typography.titleLarge,
                 maxLines = 2,
-                overflow = TextOverflow.Ellipsis)
+                overflow = TextOverflow.Ellipsis,
+            )
             Text(
                 text = "${deck.cardCount} cards · $owner",
                 style = MaterialTheme.typography.bodyMedium,

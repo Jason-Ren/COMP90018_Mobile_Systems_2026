@@ -22,7 +22,6 @@ import com.comp90018.flashcards.ui.deck.matchingPublicSearch
 fun CommunityScreen(
     onBack: () -> Unit,
     onOpenDeck: (String) -> Unit,
-    onOpenLocal: (String) -> Unit,
     modifier: Modifier = Modifier,
     startWithFriends: Boolean = false,
 ) {
@@ -40,7 +39,7 @@ fun CommunityScreen(
                 Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("Discover") })
                 Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("Friends") })
             }
-            if (tab == 0) DiscoverPanel(onOpenDeck = onOpenDeck, onOpenLocal = onOpenLocal) else FriendsPanel()
+            if (tab == 0) DiscoverPanel(onOpenDeck = onOpenDeck) else FriendsPanel()
         }
     }
 }
@@ -48,7 +47,6 @@ fun CommunityScreen(
 @Composable
 private fun DiscoverPanel(
     onOpenDeck: (String) -> Unit,
-    onOpenLocal: (String) -> Unit,
     viewModel: CommunityViewModel = hiltViewModel(),
 ) {
     val decks by viewModel.decks.collectAsStateWithLifecycle()
