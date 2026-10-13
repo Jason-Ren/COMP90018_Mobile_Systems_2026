@@ -7,6 +7,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -25,6 +28,7 @@ internal fun FriendsPanel(viewModel: FriendsViewModel = hiltViewModel()) {
                 TextButton(onClick = viewModel::refresh, enabled = !task.busy) { Text("Refresh") }
             }
             SocialStatus(task)
+            FriendOutcomeNotice(state.notice)
         }
         if (state.profile != null) {
             item { AddFriendForm(!task.busy, viewModel::addFriend) }
@@ -60,6 +64,18 @@ internal fun FriendsPanel(viewModel: FriendsViewModel = hiltViewModel()) {
             onDismiss = { removing = null },
         )
     }
+}
+
+@Composable
+internal fun FriendOutcomeNotice(notice: String?) {
+    notice ?: return
+    Text(
+        notice,
+        modifier =
+            Modifier
+                .padding(vertical = 12.dp)
+                .semantics { liveRegion = LiveRegionMode.Polite },
+    )
 }
 
 @Composable

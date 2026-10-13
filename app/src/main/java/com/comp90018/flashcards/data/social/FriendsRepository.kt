@@ -51,9 +51,10 @@ class FriendsRepository
         suspend fun requests(
             uid: String,
             incoming: Boolean,
+            status: String = "pending",
         ): List<SocialRequest> {
             val direction = if (incoming) "incoming" else "outgoing"
-            return pages(uid, "/v1/friend-requests?direction=$direction&status=pending&")
+            return pages(uid, "/v1/friend-requests?direction=$direction&status=$status&")
         }
 
         suspend fun respond(

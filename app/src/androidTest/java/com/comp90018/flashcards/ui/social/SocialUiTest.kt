@@ -18,6 +18,12 @@ class SocialUiTest {
     @get:Rule val compose = createComposeRule()
 
     @Test
+    fun friendOutcomeNoticeShowsTheLiveMessage() {
+        compose.setContent { MaterialTheme { FriendOutcomeNotice("Bob approved your friend request") } }
+        compose.onNodeWithText("Bob approved your friend request").assertExists()
+    }
+
+    @Test
     fun sharedCodeValidationAndNavigation() {
         var opened: String? = null
         compose.setContent { MaterialTheme { SharedDeckCode { opened = it } } }
