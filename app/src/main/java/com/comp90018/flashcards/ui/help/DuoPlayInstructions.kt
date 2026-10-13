@@ -15,5 +15,6 @@ fun DuoPlayInstructions(modifier: Modifier = Modifier) {
         Text(stringResource(R.string.duo_mode_3))
         Text(stringResource(R.string.duo_mode_4))
         Text(stringResource(R.string.duo_mode_5))
+        Text(stringResource(R.string.duo_mode_6))
     }
 }
