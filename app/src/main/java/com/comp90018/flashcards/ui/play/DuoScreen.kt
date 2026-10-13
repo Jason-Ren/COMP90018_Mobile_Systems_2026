@@ -45,7 +45,8 @@ private val MISSED_LIST_MAX_WIDTH = 560.dp
 private val START_COUNTDOWN_FONT_SIZE = 160.sp
 
 /**
- * The 2-player screen, locked to landscape: rules, then one card at a time, then the results.
+ * The 2-player screen: rules, then one card at a time, then the results.
+ * Landscape from the countdown until the last card, portrait otherwise.
  */
 @Composable
 fun DuoScreen(
@@ -53,9 +54,11 @@ fun DuoScreen(
     modifier: Modifier = Modifier,
     viewModel: DuoViewModel = hiltViewModel(),
 ) {
-    LockLandscape()
     PauseWhenBackgrounded(viewModel::pause)
     val uiState by viewModel.uiState.collectAsState()
+    // landscape only from the countdown until the last card
+    val inPlay = uiState.phase == DuoPhase.FRONT || uiState.phase == DuoPhase.BACK
+    GameOrientation(landscape = uiState.startCountdown > 0 || inPlay)
 
     Surface(modifier = modifier.fillMaxSize()) {
         Box(modifier = Modifier.fillMaxSize()) {
@@ -67,7 +70,6 @@ fun DuoScreen(
                 uiState.phase == DuoPhase.BACK -> BackContent(uiState, viewModel::onGesture)
                 else -> FinishedContent(uiState, viewModel::playAgain, onNavigateBack)
             }
-            val inPlay = uiState.phase == DuoPhase.FRONT || uiState.phase == DuoPhase.BACK
             if (!uiState.isLoading && !inPlay && uiState.startCountdown == 0) {
                 helpTip(
                     topic = HelpTopic.DuoPlayHelp,
