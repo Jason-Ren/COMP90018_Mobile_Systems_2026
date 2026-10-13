@@ -21,4 +21,5 @@ fun CommunityScreen(
     } else {
         DiscoverScreen(onBack = onBack, onOpenDeck = onOpenDeck, modifier = modifier,onCommunity, onHome, onJoinGame, onFriends)
     }
+    
 }

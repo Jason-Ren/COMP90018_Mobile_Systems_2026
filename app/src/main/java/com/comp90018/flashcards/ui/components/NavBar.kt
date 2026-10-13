@@ -21,7 +21,7 @@ fun NavBar(
     onCommunity: () -> Unit,
     onHome: () -> Unit,
     onJoinGame: () -> Unit,
-    onFriends: () -> Unit
+    onFriends: () -> Unit,
 
 
     ) {
@@ -47,7 +47,7 @@ fun NavBar(
         )
         NavigationBarItem(
             selected = false,
-            onClick = { onFriends },
+            onClick = onFriends,
             icon = { Icon(painterResource(R.drawable.ic_conversation), contentDescription = "Friends") },
             label = { Text("Friends") }
         )
