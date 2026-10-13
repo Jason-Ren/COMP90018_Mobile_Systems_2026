@@ -174,7 +174,7 @@ internal fun ReadyContent(
     }
 }
 
-/** The front of the card. Tapping anywhere reveals the back early. */
+/** The back of the card, shown first. Tapping anywhere reveals the front early. */
 @Composable
 internal fun FrontContent(
     uiState: DuoUiState,
@@ -198,13 +198,13 @@ internal fun FrontContent(
             Text(text = formatCountdown(uiState.secondsLeft), style = MaterialTheme.typography.headlineSmall)
         }
         Text(
-            text = uiState.current?.front.orEmpty(),
+            text = uiState.current?.back.orEmpty(),
             style = MaterialTheme.typography.displayMedium,
             textAlign = TextAlign.Center,
             modifier = Modifier.align(Alignment.Center),
         )
         Text(
-            text = "Tap to reveal the back",
+            text = "Tap to reveal the front",
             style = MaterialTheme.typography.bodySmall,
             modifier = Modifier.align(Alignment.BottomCenter),
         )
@@ -277,9 +277,9 @@ private fun CardFaces(card: CardEntity?) {
                 .padding(horizontal = 24.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(text = card?.front.orEmpty(), style = MaterialTheme.typography.titleMedium)
+        Text(text = card?.back.orEmpty(), style = MaterialTheme.typography.titleMedium)
         Text(
-            text = card?.back.orEmpty(),
+            text = card?.front.orEmpty(),
             style = MaterialTheme.typography.headlineLarge,
             textAlign = TextAlign.Center,
         )
