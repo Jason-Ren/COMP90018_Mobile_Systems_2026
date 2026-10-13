@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
+import android.view.WindowManager
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.platform.LocalContext
@@ -25,6 +26,22 @@ fun GameOrientation(landscape: Boolean) {
     // leaving the game screen, by back or a dropped connection, always goes back to portrait
     DisposableEffect(context) {
         onDispose { context.findActivity()?.requestedOrientation = orientationFor(false) }
+    }
+}
+
+/**
+ * Stops the screen dimming or locking while [enabled] is true.
+ *
+ * Nobody touches the phone during play, so without this it would dim mid-round.
+ */
+@Composable
+fun KeepScreenOn(enabled: Boolean) {
+    val context = LocalContext.current
+    DisposableEffect(context, enabled) {
+        val window = context.findActivity()?.window
+        if (enabled) window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        // always cleared on leave, so the rest of the app can dim normally
+        onDispose { window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) }
     }
 }
 

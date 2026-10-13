@@ -43,6 +43,8 @@ fun TeamGameScreen(
     // landscape only from the countdown until the last card
     val inPlay = state.round.phase == DuoPhase.FRONT || state.round.phase == DuoPhase.BACK
     GameOrientation(landscape = state.round.startCountdown > 0 || inPlay)
+    // no touches during play, so stop the screen dimming
+    KeepScreenOn(enabled = state.round.startCountdown > 0 || inPlay)
     var showLeaveConfirm by remember { mutableStateOf(false) }
     val leave = {
         viewModel.leave()

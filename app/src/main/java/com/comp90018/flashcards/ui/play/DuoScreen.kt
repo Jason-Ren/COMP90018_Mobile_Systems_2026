@@ -60,6 +60,8 @@ fun DuoScreen(
     // landscape only from the countdown until the last card
     val inPlay = uiState.phase == DuoPhase.FRONT || uiState.phase == DuoPhase.BACK
     GameOrientation(landscape = uiState.startCountdown > 0 || inPlay)
+    // no touches during play, so stop the screen dimming
+    KeepScreenOn(enabled = uiState.startCountdown > 0 || inPlay)
 
     Surface(modifier = modifier.fillMaxSize()) {
         Box(modifier = Modifier.fillMaxSize()) {
