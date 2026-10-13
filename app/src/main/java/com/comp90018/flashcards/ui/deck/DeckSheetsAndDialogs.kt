@@ -13,7 +13,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -26,7 +25,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.comp90018.flashcards.R
 import com.comp90018.flashcards.data.social.SocialFriend
 import com.comp90018.flashcards.ui.social.DeckCode
 import com.comp90018.flashcards.ui.social.ProfileLabel
@@ -104,12 +105,15 @@ fun DeckOptionsBottomSheet(
                     },
             )
             ListItem(
-                headlineContent = { Text("Edit Visibility") },
+                headlineContent = {
+                    Text(if (isPublic) "Make Deck Private" else "Make Deck Public")
+                },
                 leadingContent = {
-                    Icon(
-                        if (isPublic) Icons.Default.Lock else Icons.Default.Share,
-                        contentDescription = null,
-                    )
+                    if (isPublic) {
+                        Icon(Icons.Default.Lock, contentDescription = null)
+                    } else {
+                        Icon(painterResource(R.drawable.ic_globe), contentDescription = null)
+                    }
                 },
                 modifier =
                     Modifier.fillMaxWidth().clickable {
