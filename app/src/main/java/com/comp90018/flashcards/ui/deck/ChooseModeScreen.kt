@@ -69,7 +69,7 @@ private enum class PlayMode(
     fun iconPainter(): Painter =
         when (this) {
             SOLO -> rememberVectorPainter(Icons.Outlined.Person)
-            DUO -> painterResource(R.drawable.ic_conversation)
+            DUO -> painterResource(R.drawable.ic_communication)
             TEAM_MODE -> painterResource(R.drawable.ic_swords)
         }
 }
