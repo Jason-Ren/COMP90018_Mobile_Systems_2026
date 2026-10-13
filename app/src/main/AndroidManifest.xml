@@ -62,5 +62,5 @@
 </manifest>
 
     <!--
-            android:theme="@style/Theme.Flashcards"
-    android:theme="@style/Theme.Flashcards"-->
+            android:theme="@style/Theme.Clashcards"
+    android:theme="@style/Theme.Clashcards"-->
