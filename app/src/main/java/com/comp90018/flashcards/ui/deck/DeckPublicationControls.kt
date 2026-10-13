@@ -3,12 +3,13 @@ package com.comp90018.flashcards.ui.deck
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.comp90018.flashcards.R
 import com.comp90018.flashcards.ui.social.PublishConfirmation
 import com.comp90018.flashcards.ui.social.SocialStatus
 
@@ -22,9 +23,13 @@ internal fun PublishMenuItem(
 ) {
     DropdownMenuItem(
         modifier = modifier,
-        text = { Text(if (published) "Unpublish" else "Publish") },
+        text = { Text(if (published) "Make Deck Private" else "Make Deck Public") },
         leadingIcon = {
-            Icon(if (published) Icons.Default.Lock else Icons.Default.Share, contentDescription = null)
+            if (published) {
+                Icon(Icons.Default.Lock, contentDescription = null)
+            } else {
+                Icon(painterResource(R.drawable.ic_globe), contentDescription = null)
+            }
         },
         enabled = enabled,
         onClick = onClick,
