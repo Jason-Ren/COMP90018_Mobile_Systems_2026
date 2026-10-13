@@ -126,7 +126,7 @@ class DeckListViewModel
         }
 
         private companion object {
-            const val AUTO_SYNC_INTERVAL_MS = 30_000L
+            const val AUTO_SYNC_INTERVAL_MS = 90_000L
         }
     }
 
