@@ -13,6 +13,7 @@ import com.comp90018.flashcards.data.social.SocialSession
 import com.comp90018.flashcards.domain.repository.CardRepository
 import com.comp90018.flashcards.ui.social.SocialViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -76,75 +77,80 @@ class DeckSummaryViewModel
             viewModelScope.launch {
                 state.update { it.copy(isLoading = true) }
                 val owned = repository.getDeckById(deckId)
-                if (owned != null) {
-                    currentLocalDeck = owned
+                if (owned != null) loadOwnedDeck(owned) else loadCommunityDeck()
+            }
+        }
+
+        // the player's own deck, read from the local database and topped up with the cloud details
+        private suspend fun CoroutineScope.loadOwnedDeck(owned: DeckEntity) {
+            currentLocalDeck = owned
+            state.update {
+                it.copy(
+                    deckName = owned.name,
+                    deckDescription = owned.description,
+                    isOwned = true,
+                    isLoading = false,
+                )
+            }
+
+            // Observe local cards
+            launch {
+                repository.getCardsByDeckId(deckId).collectLatest { localCards ->
+                    val uiCards = localCards.map { card -> card.toUiModel() }
                     state.update {
                         it.copy(
-                            deckName = owned.name,
-                            deckDescription = owned.description,
-                            isOwned = true,
-                            isLoading = false,
+                            cardCount = localCards.size,
+                            cards = uiCards,
                         )
                     }
-
-                    // Observe local cards
-                    launch {
-                        repository.getCardsByDeckId(deckId).collectLatest { localCards ->
-                            val uiCards = localCards.map { card -> card.toUiModel() }
-                            state.update {
-                                it.copy(
-                                    cardCount = localCards.size,
-                                    cards = uiCards,
-                                )
-                            }
-                        }
-                    }
-
-                    // Fetch remote metadata for owned deck if available
-                    runCatching {
-                        val cloud = decks.get(userId, deckId)
-                        state.update {
-                            it.copy(
-                                visibility = cloud.visibility,
-                                copiedFrom = cloud.copiedFrom,
-                            )
-                        }
-                    }
-                } else {
-                    // Remote community deck
-                    state.update { it.copy(isOwned = false) }
-                    val pending = copies.hasPending(userId, deckId)
-                    state.update { it.copy(pendingCopy = pending) }
-
-                    // Check if local DB already has a copy saved from this deck
-                    val localDecks = localDeckDao.listDecksForOwner(userId)
-                    val existingCopy =
-                        localDecks.find {
-                            // Check if this local deck was copied from source deckId
-                            it.deckId == savedStateHandle["savedCopyId"]
-                        }
-                    if (existingCopy != null) {
-                        state.update { it.copy(savedCopyId = existingCopy.deckId) }
-                    }
-
-                    runCatching {
-                        val remoteDeck = decks.prepare(userId, deckId)
-                        val remoteCards = decks.cards(userId, deckId, 0).map { it.toUiModel() }
-                        state.update {
-                            it.copy(
-                                deckName = remoteDeck.name,
-                                cardCount = remoteDeck.cardCount,
-                                visibility = remoteDeck.visibility,
-                                copiedFrom = remoteDeck.copiedFrom,
-                                cards = remoteCards,
-                                moreCards = remoteCards.size == 50,
-                                isLoading = false,
-                            )
-                        }
-                    }.onFailure {
-                        state.update { currentState -> currentState.copy(isLoading = false) }
-                    }
                 }
+            }
+
+            // Fetch remote metadata for owned deck if available
+            runCatching {
+                val cloud = decks.get(userId, deckId)
+                state.update {
+                    it.copy(
+                        visibility = cloud.visibility,
+                        copiedFrom = cloud.copiedFrom,
+                    )
+                }
+            }
+        }
+
+        // someone else's deck, loaded from the cloud, with a check for a copy already saved
+        private suspend fun loadCommunityDeck() {
+            state.update { it.copy(isOwned = false) }
+            val pending = copies.hasPending(userId, deckId)
+            state.update { it.copy(pendingCopy = pending) }
+
+            // Check if local DB already has a copy saved from this deck
+            val localDecks = localDeckDao.listDecksForOwner(userId)
+            val existingCopy =
+                localDecks.find {
+                    // Check if this local deck was copied from source deckId
+                    it.deckId == savedStateHandle["savedCopyId"]
+                }
+            if (existingCopy != null) {
+                state.update { it.copy(savedCopyId = existingCopy.deckId) }
+            }
+
+            runCatching {
+                val remoteDeck = decks.prepare(userId, deckId)
+                val remoteCards = decks.cards(userId, deckId, 0).map { it.toUiModel() }
+                state.update {
+                    it.copy(
+                        deckName = remoteDeck.name,
+                        cardCount = remoteDeck.cardCount,
+                        visibility = remoteDeck.visibility,
+                        copiedFrom = remoteDeck.copiedFrom,
+                        cards = remoteCards,
+                        moreCards = remoteCards.size == 50,
+                        isLoading = false,
+                    )
+                }
+            }.onFailure {
+                state.update { currentState -> currentState.copy(isLoading = false) }
             }
         }
 
