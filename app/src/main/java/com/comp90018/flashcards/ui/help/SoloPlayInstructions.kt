@@ -1,0 +1,20 @@
+package com.comp90018.flashcards.ui.help
+
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.comp90018.flashcards.R
+
+// single root column + modifier param to satisfy compose detekt rules
+@Composable
+fun SoloPlayInstructions(modifier: Modifier = Modifier) {
+    Column(modifier = modifier) {
+        Text(stringResource(R.string.solo_mode_1))
+        Text(stringResource(R.string.solo_mode_2))
+        Text(stringResource(R.string.solo_mode_3))
+        Text(stringResource(R.string.solo_mode_4))
+        Text(stringResource(R.string.solo_mode_5))
+    }
+}

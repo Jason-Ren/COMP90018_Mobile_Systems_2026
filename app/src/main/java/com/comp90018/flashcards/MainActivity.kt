@@ -13,6 +13,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -27,11 +28,17 @@ import com.comp90018.flashcards.data.auth.AuthState
 import com.comp90018.flashcards.ui.auth.LoginScreen
 import com.comp90018.flashcards.ui.auth.SessionViewModel
 import com.comp90018.flashcards.ui.card.AddEditCardScreen
+import com.comp90018.flashcards.ui.connection.NearbyPermissionGate
 import com.comp90018.flashcards.ui.deck.ChooseModeScreen
 import com.comp90018.flashcards.ui.deck.DeckListScreen
 import com.comp90018.flashcards.ui.deck.DeckPageScreen
+import com.comp90018.flashcards.ui.lobby.GameSetupViewModel
+import com.comp90018.flashcards.ui.lobby.GuestLobbyScreen
+import com.comp90018.flashcards.ui.lobby.HostLobbyScreen
+import com.comp90018.flashcards.ui.lobby.JoinGameScreen
 import com.comp90018.flashcards.ui.play.ChooseTimerScreen
 import com.comp90018.flashcards.ui.play.DuoScreen
+import com.comp90018.flashcards.ui.play.TeamGameScreen
 import com.comp90018.flashcards.ui.social.CloudDeckScreen
 import com.comp90018.flashcards.ui.social.CommunityScreen
 import com.comp90018.flashcards.ui.study.StudyScreen
@@ -88,11 +95,14 @@ private fun FlashcardNavHost(
                 onNavigateToDeck = { deckId ->
                     navController.navigate("deck/$deckId")
                 },
+                onJoinGame = { navController.navigate("join") },
             )
         }
         deckPlayRoutes(navController)
         communityRoutes(navController)
         duoRoutes(navController)
+        teamGameRoutes(navController)
+        joinRoutes(navController)
         composable(
             route = "add_edit_card/{deckId}?cardId={cardId}",
             arguments =
@@ -154,6 +164,9 @@ private fun NavGraphBuilder.deckPlayRoutes(navController: NavHostController) {
             onPlayDuo = { deckId ->
                 navController.navigate("choose_timer/$deckId")
             },
+            onPlayTeamMode = { deckId ->
+                navController.navigate("host_lobby/$deckId")
+            },
         )
     }
 }
@@ -211,6 +224,63 @@ private fun NavGraphBuilder.duoRoutes(navController: NavHostController) {
     ) {
         DuoScreen(
             onNavigateBack = { navController.popBackStack("choose_mode/{deckId}", inclusive = false) },
+        )
+    }
+}
+
+/**
+ * The host's team mode flow: lobby, pick the countdown, then play. The guest's flow is in [joinRoutes].
+ * Finishing a game returns to the main screen.
+ */
+private fun NavGraphBuilder.teamGameRoutes(navController: NavHostController) {
+    composable(
+        route = "host_lobby/{deckId}",
+        arguments = listOf(navArgument("deckId") { type = NavType.StringType }),
+    ) { entry ->
+        val deckId = entry.arguments?.getString("deckId").orEmpty()
+        NearbyPermissionGate(onNavigateBack = { navController.popBackStack() }) {
+            HostLobbyScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onStart = { navController.navigate("choose_timer_team/$deckId") },
+            )
+        }
+    }
+    composable(
+        route = "choose_timer_team/{deckId}",
+        arguments = listOf(navArgument("deckId") { type = NavType.StringType }),
+    ) {
+        val gameSetup: GameSetupViewModel = hiltViewModel()
+        ChooseTimerScreen(
+            onNavigateBack = { navController.popBackStack() },
+            onStart = { deckId, seconds ->
+                gameSetup.startGame(deckId, seconds) { navController.navigate("team_game") }
+            },
+        )
+    }
+    composable(route = "team_game") { TeamGameScreen(onNavigateBack = { navController.popBackStack("home", false) }) }
+}
+
+/** The guest's team mode flow: find a host, wait for Start, then play. */
+private fun NavGraphBuilder.joinRoutes(navController: NavHostController) {
+    composable(route = "join") {
+        NearbyPermissionGate(onNavigateBack = { navController.popBackStack() }) {
+            JoinGameScreen(
+                onNavigateBack = { navController.popBackStack() },
+                // the join screen is dropped so back from the game cannot return to it
+                onJoin = { navController.navigate("guest_lobby") { launchSingleTop = true } },
+            )
+        }
+    }
+    composable(route = "guest_lobby") { entry ->
+        // share the join screen's view model, it holds the team names and the host's Start
+        val joinEntry = remember(entry) { navController.getBackStackEntry("join") }
+        GuestLobbyScreen(
+            onNavigateBack = { navController.popBackStack("home", inclusive = false) },
+            // the join and lobby screens are both dropped so back from the game cannot return to them
+            onGameStart = {
+                navController.navigate("team_game") { popUpTo("join") { inclusive = true } }
+            },
+            viewModel = hiltViewModel(joinEntry),
         )
     }
 }

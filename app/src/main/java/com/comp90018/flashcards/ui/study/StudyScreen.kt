@@ -32,6 +32,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.comp90018.flashcards.domain.model.Rating
+import com.comp90018.flashcards.ui.help.HelpTopic
+import com.comp90018.flashcards.ui.help.helpTip
 import com.comp90018.flashcards.ui.study.components.FlashcardComponent
 import com.comp90018.flashcards.ui.study.utils.TiltFlipDetector
 
@@ -70,6 +72,13 @@ fun StudyScreen(
                             contentDescription = "Back",
                         )
                     }
+                },
+                actions = {
+                    helpTip(
+                        topic = HelpTopic.SoloPlayHelp,
+                        modifier = Modifier.padding(end = 12.dp),
+                        size = 36.dp,
+                    )
                 },
             )
         },

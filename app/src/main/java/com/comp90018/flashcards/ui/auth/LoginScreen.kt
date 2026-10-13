@@ -1,5 +1,6 @@
 package com.comp90018.flashcards.ui.auth
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -7,11 +8,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.comp90018.flashcards.R
 
 @Composable
 fun LoginScreen(
@@ -32,7 +36,14 @@ fun LoginScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(text = "Flashcards", style = MaterialTheme.typography.headlineLarge)
+        // logo above the app name
+        Image(
+            painter = painterResource(R.drawable.clashcards_logo),
+            contentDescription = null,
+            modifier = Modifier.size(120.dp),
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        Text(text = stringResource(R.string.app_name), style = MaterialTheme.typography.headlineLarge)
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = "Create an account, or sign in to see your decks.",
