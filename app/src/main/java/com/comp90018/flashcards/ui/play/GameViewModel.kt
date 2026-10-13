@@ -2,6 +2,7 @@ package com.comp90018.flashcards.ui.play
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.comp90018.flashcards.data.audio.AnswerSounds
 import com.comp90018.flashcards.data.local.entity.CardEntity
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -21,11 +22,15 @@ import kotlin.time.Duration.Companion.seconds
  * back is revealed. [onGesture] is where the tilt sensor plugs in. Until then the screen sends it
  * from taps.
  *
+ * Marking a guess plays the right or wrong sound through [sounds], so both modes get it from here.
+ *
  * The countdown can be paused with [pause] (the screen does this when the app goes to the
  * background) and carries on from the same second after [resume].
  */
 abstract class GameViewModel(
     private val secondsPerCard: Int,
+    // plays the right and wrong sounds, shared by every game mode
+    private val sounds: AnswerSounds,
 ) : ViewModel() {
     private val _round = MutableStateFlow(DuoUiState(secondsPerCard = secondsPerCard))
     val round: StateFlow<DuoUiState> = _round.asStateFlow()
@@ -101,6 +106,8 @@ abstract class GameViewModel(
     }
 
     private fun mark(isCorrect: Boolean) {
+        // sound first so it lines up with the tap or tilt
+        sounds.play(isCorrect)
         game.mark(isCorrect)
         if (game.phase == DuoPhase.FRONT) startTimer()
         publish()

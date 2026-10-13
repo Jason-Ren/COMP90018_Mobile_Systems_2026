@@ -1,6 +1,7 @@
 package com.comp90018.flashcards.ui.play
 
 import com.comp90018.flashcards.data.local.entity.CardEntity
+import com.comp90018.flashcards.testutil.FakeAnswerSounds
 import com.comp90018.flashcards.testutil.MainDispatcherRule
 import com.comp90018.flashcards.testutil.passSeconds
 import com.comp90018.flashcards.testutil.testCards
@@ -14,7 +15,8 @@ import org.junit.Test
 // the shared round, played through a tiny subclass that exposes what the real ones use
 private class TestGameViewModel(
     seconds: Int,
-) : GameViewModel(seconds) {
+    sounds: FakeAnswerSounds,
+) : GameViewModel(seconds, sounds) {
     val finishedScores = mutableListOf<Int>()
 
     fun load(cards: List<CardEntity>) = loadCards(cards, "Deck")
@@ -30,10 +32,13 @@ class GameViewModelTest {
     @get:Rule
     val mainRule = MainDispatcherRule()
 
+    // records the sounds the round asks for, instead of playing them
+    private val sounds = FakeAnswerSounds()
+
     private fun game(
         seconds: Int = 3,
         cards: Int = 2,
-    ) = TestGameViewModel(seconds).also { it.load(testCards(cards)) }
+    ) = TestGameViewModel(seconds, sounds).also { it.load(testCards(cards)) }
 
     @Test
     fun `loading cards shows the ready screen with the deck name and size`() {
@@ -110,6 +115,31 @@ class GameViewModelTest {
                 vm.round.value.missed
                     .map { it.front },
             )
+        }
+
+    @Test
+    fun `marking a card plays the right or wrong sound`() =
+        runTest {
+            val vm = game(cards = 2)
+            vm.start()
+
+            vm.reveal()
+            vm.onGesture(TiltGesture.DOWN)
+            vm.reveal()
+            vm.onGesture(TiltGesture.UP)
+
+            assertEquals(listOf(true, false), sounds.played)
+        }
+
+    @Test
+    fun `revealing a card does not play a sound`() =
+        runTest {
+            val vm = game()
+            vm.start()
+
+            vm.reveal()
+
+            assertTrue(sounds.played.isEmpty())
         }
 
     @Test
