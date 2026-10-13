@@ -95,7 +95,7 @@ private fun FlashcardNavHost(
                 onNavigateToDeck = { deckId ->
                     navController.navigate("deck/$deckId")
                 },
-                onJoinGame = { navController.navigate("join") },
+                //onJoinGame = { navController.navigate("join") },
             )
         }
         deckPlayRoutes(navController)

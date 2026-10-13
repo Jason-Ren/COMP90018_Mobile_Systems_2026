@@ -3,23 +3,32 @@ package com.comp90018.flashcards.ui.deck
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.snapping.SnapPosition
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.comp90018.flashcards.data.local.entity.DeckEntity
+import com.comp90018.flashcards.R
+import androidx.compose.ui.res.painterResource
 
 /**
  * Shows list of users decks
@@ -39,7 +48,7 @@ fun DeckListScreen(
 
     Scaffold(
         topBar = {
-            // signout, community notes
+            // sign out, community notes
             DeckListTopBar(onSignOut = viewModel::signOut, onCommunity = onCommunity)
         },
 
@@ -47,19 +56,100 @@ fun DeckListScreen(
             BottomAppBar(
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.height(100.dp),
+
             ) {
-                Text(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                        // add horizontal width
-                    textAlign = TextAlign.Center,
-                    text = "Bottom app bar",
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly, // 👈 Distributes items evenly
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+
+
+                    //Add Button
+                    Column(
+                        //modifier = Modifier.padding(4.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        IconButton(
+                            onClick = { showDialog = true }
+                        ) {
+                            Icon(
+                                painterResource(id = R.drawable.ic_stack),
+                                contentDescription = "Add Deck",
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(text = "DECKS", textAlign = TextAlign.Center)
+                    }
+
+                    //Clash Button
+                    Column(
+                        //modifier = Modifier.padding(4.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        IconButton(
+                            onClick = { showDialog = true }
+                        ) {
+                            Icon(
+                                painterResource(id = R.drawable.ic_swords),
+                                contentDescription = "Join Game",
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(text = "CLASH", textAlign = TextAlign.Center)
+                    }
+
+                    //Search Button
+                    Column(
+                        //modifier = Modifier.padding(4.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        IconButton(
+                            onClick = { showDialog = true }
+                        ) {
+                            Icon(
+                                Icons.Filled.Search,
+                                contentDescription = "Add Deck",
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(text = "DISCOVER", textAlign = TextAlign.Center)
+                    }
+
+                    //------------------------------------------------------Friends Button
+                    Column(
+                        //modifier = Modifier.padding(4.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        IconButton(
+                            onClick = { showDialog = true }
+                        ) {
+                            Icon(
+                                painterResource(id = R.drawable.ic_conversation),
+                                contentDescription = "Add Deck",
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(text = "FRIENDS", textAlign = TextAlign.Center)
+                    }
+
+                }
             }
         },
         floatingActionButton = {
             // to be removed
-
+            ExtendedFloatingActionButton(
+                onClick = { showDialog = true },
+                icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                text = { Text("Create Deck", style = MaterialTheme.typography.titleMedium) },
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            )
         },
     ) { padding ->
         DeckListBody(
@@ -193,13 +283,7 @@ private fun DeckListHeader(displayName: String) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        ExtendedFloatingActionButton(
-            onClick = { showDialog = true },
-            icon = { Icon(Icons.Default.Add, contentDescription = null) },
-            text = { Text("Create Deck", style = MaterialTheme.typography.titleMedium) },
-            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-        )
+
     }
 }
 
