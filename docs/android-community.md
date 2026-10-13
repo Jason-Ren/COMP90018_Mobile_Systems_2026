@@ -2,6 +2,8 @@
 
 The app uses its existing Firebase sign-in for both Firestore and the Python social API. No extra API key, service-account file, or HMAC secret belongs in the Android app.
 
+**Source of truth:** profiles, friendships, shares, and publish state live in **Firestore** (via the social API). They are not stored in Room. Deck content also lives in Firestore; Room is only a local cache for My Decks / study (see [cloud-deck-schema.md](cloud-deck-schema.md)).
+
 ## Use the feature
 
 1. From **My Decks**, open **Community**. **Discover** lists public decks and filters the loaded catalogue by deck name or creator email as you type. Each row offers **Preview deck** and **Save a copy**, and marks your own decks as **Yours**. You can also save from the preview. The copy is private and editable; **Open my saved copy** opens the normal deck screen for editing and study.

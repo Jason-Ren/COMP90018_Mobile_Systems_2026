@@ -26,10 +26,11 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Keeps My Decks consistent for one Firebase account across devices.
+ * Syncs My Decks with Firestore, which is the account's single source of truth for deck content.
  *
- * Local edits go into an outbox and are pushed when online. On each sync, cloud decks owned by
- * the signed-in user are also pulled into Room so a second phone or emulator sees the same list.
+ * Room is an offline cache. Local edits go into an outbox, upload when online, then owned cloud
+ * decks are pulled so every signed-in device mirrors Firestore. Friends/profiles already live in
+ * Firestore via the social API (not Room). Study progress stays on-device only.
  * [DeckSyncWorker] retries after process death or when connectivity returns.
  */
 @Singleton
@@ -91,12 +92,17 @@ class DeckSyncCoordinator
                         authRepository.currentUid != ownerId -> DeckSyncOutcome.RETRY
                         !connectivity.isOnline() -> DeckSyncOutcome.RETRY
                         else -> {
-                            val pull = deckCloudPull.pullOwned(ownerId)
-                            if (pull == DeckSyncStep.Retry || pull == DeckSyncStep.Deferred) {
-                                if (pull == DeckSyncStep.Retry) DeckSyncOutcome.RETRY else DeckSyncOutcome.DEFERRED
+                            // Upload local writes first, then make Room match Firestore (SSOT).
+                            backfill(ownerId)
+                            val pushOutcome = drain(ownerId)
+                            if (pushOutcome != DeckSyncOutcome.UP_TO_DATE) {
+                                pushOutcome
                             } else {
-                                backfill(ownerId)
-                                drain(ownerId)
+                                when (val pull = deckCloudPull.pullOwned(ownerId)) {
+                                    DeckSyncStep.Retry -> DeckSyncOutcome.RETRY
+                                    DeckSyncStep.Deferred -> DeckSyncOutcome.DEFERRED
+                                    else -> DeckSyncOutcome.UP_TO_DATE
+                                }
                             }
                         }
                     }

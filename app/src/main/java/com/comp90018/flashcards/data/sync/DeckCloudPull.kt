@@ -11,10 +11,10 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Imports the signed-in user's cloud decks into Room so My Decks matches across devices.
+ * Makes Room mirror Firestore for the signed-in owner's decks.
  *
- * Decks with a pending outbox row are left alone so local edits are not overwritten before push.
- * Study progress is not downloaded.
+ * Firestore is the account source of truth. Pending outbox rows are left alone so an upload in
+ * flight is not clobbered. Study progress is not downloaded.
  */
 @Singleton
 class DeckCloudPull
@@ -34,7 +34,9 @@ class DeckCloudPull
             ownerId: String,
             remoteDecks: List<RemoteDeck>,
         ): DeckSyncStep {
-            for (remoteDeck in remoteDecks.filter { it.ownerId == ownerId }) {
+            val ownedRemote = remoteDecks.filter { it.ownerId == ownerId }
+            val remoteIds = ownedRemote.map { it.deckId }.toSet()
+            for (remoteDeck in ownedRemote) {
                 if (!shouldPullRemoteDeck(store.outboxDao.find(remoteDeck.deckId)?.operation)) {
                     continue
                 }
@@ -42,6 +44,7 @@ class DeckCloudPull
                 val cards = cardsResult.getOrElse { return syncFailureStep(it) }
                 applyRemoteDeck(ownerId, remoteDeck, cards)
             }
+            removeLocalDecksMissingFromCloud(ownerId, remoteIds)
             return DeckSyncStep.Synced
         }
 
@@ -64,16 +67,38 @@ class DeckCloudPull
                     ),
                 )
                 val localCards = store.cardDao.listCardsByDeckId(remoteDeck.deckId)
-                val remoteIds = cards.map { it.cardId }.toSet()
+                val remoteCardIds = cards.map { it.cardId }.toSet()
                 localCards
-                    .filter { it.cardId !in remoteIds }
+                    .filter { it.cardId !in remoteCardIds }
                     .forEach { store.cardDao.deleteCardAndReviews(it) }
                 cards.forEach { store.cardDao.insertCard(it.toLocalCard()) }
             }
         }
+
+        /**
+         * Drops cached decks that Firestore no longer has (deleted on another device), unless an
+         * outbox row still needs to upload a local create/update/delete.
+         */
+        private suspend fun removeLocalDecksMissingFromCloud(
+            ownerId: String,
+            remoteIds: Set<String>,
+        ) {
+            store.deckDao.listDecksForOwner(ownerId).forEach { local ->
+                if (local.deckId in remoteIds) {
+                    return@forEach
+                }
+                if (!shouldPullRemoteDeck(store.outboxDao.find(local.deckId)?.operation)) {
+                    return@forEach
+                }
+                database.withTransaction {
+                    store.cardDao.listCardsByDeckId(local.deckId).forEach { store.cardDao.deleteCardAndReviews(it) }
+                    store.deckDao.deleteDeck(local)
+                }
+            }
+        }
     }
 
-/** Skip pull when local edits are waiting to upload. */
+/** Skip cloud overwrite when local edits are still waiting to upload. */
 internal fun shouldPullRemoteDeck(pendingOperation: String?): Boolean = pendingOperation == null
 
 internal fun RemoteCard.toLocalCard(): CardEntity =
