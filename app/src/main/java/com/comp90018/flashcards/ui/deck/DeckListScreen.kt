@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -210,8 +211,14 @@ private fun DeckListTopBar(
                 Text("[DEBUG] Emulator mode", style = MaterialTheme.typography.labelSmall)
             }
             TextButton(onClick = onCommunity) { Text("Community") }
-            TextButton(onClick = onAccount) {
-                Text("Account")
+            IconButton(
+                onClick = onAccount,
+                modifier = Modifier.padding(top=12.dp,end=12.dp)) {
+                Icon(
+                    Icons.Default.Settings,
+                    contentDescription = "Account",
+                    modifier = Modifier.size(32.dp)
+                )
             }
         },
     )

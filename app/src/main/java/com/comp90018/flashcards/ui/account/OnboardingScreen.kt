@@ -8,6 +8,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.style.TextAlign
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.comp90018.flashcards.ui.social.SocialStatus
@@ -20,7 +22,10 @@ fun OnboardingScreen(
 ) {
     val task by viewModel.taskState.collectAsStateWithLifecycle()
     Column(
-        modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
+        modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text("Welcome to Clashcards", style = MaterialTheme.typography.headlineLarge)
@@ -38,8 +43,14 @@ fun ProfileConnectionScreen(
     onSignOut: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.Center) {
-        Text(error)
+    Column(
+        modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(error, textAlign = TextAlign.Center, modifier = Modifier.padding(all=24.dp) )
         Button(onClick = onRetry) { Text("Retry") }
         TextButton(onClick = onSignOut) { Text("Log out") }
     }
