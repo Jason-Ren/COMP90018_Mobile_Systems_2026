@@ -5,7 +5,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
-    <!-- Nearby Connections (team mode). The two wifi state ones are needed on every android version -->
+    <!-- Nearby Connections (clash mode). The two wifi state ones are needed on every android version -->
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission
@@ -62,5 +62,5 @@
 </manifest>
 
     <!--
-            android:theme="@style/Theme.Flashcards"
-    android:theme="@style/Theme.Flashcards"-->
+            android:theme="@style/Theme.Clashcards"
+    android:theme="@style/Theme.Clashcards"-->
