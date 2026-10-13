@@ -43,4 +43,7 @@ interface DeckDao {
         """,
     )
     suspend fun listDecksForOwner(ownerId: String): List<DeckEntity>
+
+    @Query("DELETE FROM decks WHERE ownerId = :ownerId")
+    suspend fun deleteForOwner(ownerId: String)
 }

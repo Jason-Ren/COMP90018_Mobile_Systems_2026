@@ -19,7 +19,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
@@ -39,17 +38,12 @@ class DeckListViewModel
         private val debugSettings: DebugSettings,
         private val deckSync: DeckSyncCoordinator,
     ) : ViewModel() {
-        // DEBUG ONLY: the emulator mode tickbox next to log out
+        // DEBUG ONLY: the emulator mode tickbox on the dashboard
         val emulatorMode: StateFlow<Boolean> = debugSettings.emulatorMode
 
         private val syncMutex = Mutex()
         private val _isSyncing = MutableStateFlow(false)
         val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
-
-        val displayName: StateFlow<String> =
-            authRepository.authState
-                .map { state -> state.displayName() }
-                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "")
 
         @OptIn(ExperimentalCoroutinesApi::class)
         val decks: StateFlow<List<DeckEntity>> =
@@ -119,18 +113,7 @@ class DeckListViewModel
 
         fun setEmulatorMode(enabled: Boolean) = debugSettings.setEmulatorMode(enabled)
 
-        fun signOut() {
-            viewModelScope.launch {
-                authRepository.signOut()
-            }
-        }
-
         private companion object {
             const val AUTO_SYNC_INTERVAL_MS = 90_000L
         }
     }
-
-private fun AuthState.displayName(): String {
-    val user = (this as? AuthState.SignedIn)?.user ?: return ""
-    return user.displayName?.takeIf { it.isNotBlank() } ?: user.email.orEmpty()
-}

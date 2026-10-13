@@ -14,6 +14,12 @@ import kotlinx.coroutines.flow.Flow
  */
 @Dao
 interface ReviewDao {
+    @Query("DELETE FROM card_fsrs_states WHERE userId = :userId")
+    suspend fun deleteStatesForUser(userId: String)
+
+    @Query("DELETE FROM review_logs WHERE userId = :userId")
+    suspend fun deleteLogsForUser(userId: String)
+
     @Query(
         """
         SELECT card_fsrs_states.* FROM card_fsrs_states

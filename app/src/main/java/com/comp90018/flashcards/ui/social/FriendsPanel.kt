@@ -26,9 +26,6 @@ internal fun FriendsPanel(viewModel: FriendsViewModel = hiltViewModel()) {
             }
             SocialStatus(task)
         }
-        if (state.loaded) {
-            item { ProfileEditor(state.profile, !task.busy, viewModel::saveProfile) }
-        }
         if (state.profile != null) {
             item { AddFriendForm(!task.busy, viewModel::addFriend) }
             item { Text("Friend requests", style = MaterialTheme.typography.titleMedium) }
@@ -62,46 +59,6 @@ internal fun FriendsPanel(viewModel: FriendsViewModel = hiltViewModel()) {
             },
             onDismiss = { removing = null },
         )
-    }
-}
-
-@Composable
-internal fun ProfileEditor(
-    profile: SocialProfile?,
-    enabled: Boolean,
-    onSave: (String, String) -> Unit,
-) {
-    var username by rememberSaveable(profile?.username) { mutableStateOf(profile?.username.orEmpty()) }
-    var name by rememberSaveable(profile?.displayName) { mutableStateOf(profile?.displayName.orEmpty()) }
-    val valid = Regex("[A-Za-z0-9_]{3,24}").matches(username.trim()) && name.trim().length in 1..80
-    OutlinedCard(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                if (profile == null) "Create your community profile" else "Your profile",
-                style = MaterialTheme.typography.titleMedium,
-            )
-            Text("Friends can find you by username.")
-            OutlinedTextField(
-                value = username,
-                onValueChange = { username = it },
-                enabled = enabled,
-                label = { Text("Username") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                supportingText = { Text("3–24 letters, numbers or underscores") },
-            )
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                enabled = enabled,
-                label = { Text("Display name") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Button(onClick = { onSave(username, name) }, enabled = enabled && valid) {
-                Text(if (profile == null) "Create profile" else "Save profile")
-            }
-        }
     }
 }
 

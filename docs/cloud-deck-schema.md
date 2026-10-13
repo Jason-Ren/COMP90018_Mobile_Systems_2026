@@ -27,6 +27,7 @@ decks/{deckId}
   cards/{cardId}
   shares/{recipientFirebaseUid}  # server-managed permissions
 social_backends/{namespace}/...  # profiles, friendships, private ID mappings, copy receipts
+account_deletions/{FirebaseUid}  # server-only, durable deletion barrier
 ```
 
 ### `decks/{deckId}`
@@ -69,6 +70,7 @@ Committed in [`firestore.rules`](../firestore.rules):
 - Sharing grants read-only access to both the deck and its cards. Only the API may issue or revoke grants, after checking ownership and friendship.
 - Removing a friendship revokes private access; a new friendship requires a new share. Public access remains available to all signed-in users.
 - Social documents and share grants cannot be read or written directly by clients.
+- An account with a deletion marker cannot read or write through the client rules. The API creates the marker before removing cloud data, so stale sync uploads cannot recreate deleted decks. Only the API can access markers; completed markers remain after the Firebase login is deleted.
 - `ownerId` cannot be changed on update.
 - Only the API can create `copiedFrom`; clients cannot add, alter, or remove attribution on updates. Owners can still edit copy contents. The existing Android data source uses merge writes, which preserve this metadata.
 - Unpublishing preserves explicit friend shares. Revoking source access does not delete previously saved copies.
@@ -82,8 +84,9 @@ Committed in [`firestore.indexes.json`](../firestore.indexes.json):
 - `sender_hash` + `status` + `created_at` + `id` — outgoing friend requests
 - `recipient_hash` + `status` + `created_at` + `id` — incoming friend requests
 - `members` (array contains) + `status` + `updated_at` + `id` — accepted friends
+- `shares.recipient_id` (ascending, collection-group field index) — remove incoming shares during account deletion
 
-All five indexes and both access policies are deployed through the root `firebase.json`. Backend emulator tests also use this configuration; no separate backend rules/index files should be deployed.
+All five composite indexes, the share-recipient field index and access policies are deployed through the root `firebase.json`. Backend emulator tests also use this configuration; no separate backend rules/index files should be deployed.
 
 ## Provisioning checklist
 

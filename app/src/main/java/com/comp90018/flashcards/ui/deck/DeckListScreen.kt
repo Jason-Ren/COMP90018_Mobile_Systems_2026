@@ -33,10 +33,11 @@ fun DeckListScreen(
     onNavigateToDeck: (String) -> Unit,
     onJoinGame: () -> Unit,
     onCommunity: () -> Unit,
+    onAccount: () -> Unit,
+    displayName: String,
     viewModel: DeckListViewModel = hiltViewModel(),
 ) {
     val decks by viewModel.decks.collectAsState()
-    val displayName by viewModel.displayName.collectAsState()
     val emulatorMode by viewModel.emulatorMode.collectAsState()
     val isSyncing by viewModel.isSyncing.collectAsState()
     var showDialog by remember { mutableStateOf(false) }
@@ -48,7 +49,7 @@ fun DeckListScreen(
             DeckListTopBar(
                 isSyncing = isSyncing,
                 onSync = viewModel::syncFromCloud,
-                onSignOut = viewModel::signOut,
+                onAccount = onAccount,
                 emulatorMode = emulatorMode,
                 onEmulatorModeChange = viewModel::setEmulatorMode,
                 onCommunity = onCommunity,
@@ -186,7 +187,7 @@ private fun DeckListBody(
 private fun DeckListTopBar(
     isSyncing: Boolean,
     onSync: () -> Unit,
-    onSignOut: () -> Unit,
+    onAccount: () -> Unit,
     emulatorMode: Boolean,
     onEmulatorModeChange: (Boolean) -> Unit,
     onCommunity: () -> Unit,
@@ -209,8 +210,8 @@ private fun DeckListTopBar(
                 Text("[DEBUG] Emulator mode", style = MaterialTheme.typography.labelSmall)
             }
             TextButton(onClick = onCommunity) { Text("Community") }
-            TextButton(onClick = onSignOut) {
-                Text("Log out")
+            TextButton(onClick = onAccount) {
+                Text("Account")
             }
         },
     )

@@ -23,7 +23,7 @@ class TestTokenVerifier:
     def verify(self, token: str) -> Identity:
         if token not in {"alice", "bob", "charlie"}:
             raise ApiError(401, "invalid_token", "Sign in again to continue.")
-        return Identity(uid=f"firebase-uid-{token}")
+        return Identity(uid=f"firebase-uid-{token}", auth_time=int(time.time()))
 
 
 def headers(user):
