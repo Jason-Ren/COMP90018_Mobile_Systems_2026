@@ -12,7 +12,10 @@ interface DeckRemoteDataSource {
         fromServer: Boolean = false,
     ): Result<RemoteDeck?>
 
-    suspend fun listDecksForOwner(ownerId: String): Result<List<RemoteDeck>>
+    suspend fun listDecksForOwner(
+        ownerId: String,
+        fromServer: Boolean = false,
+    ): Result<List<RemoteDeck>>
 
     suspend fun listPublicDecks(): Result<List<RemoteDeck>>
 

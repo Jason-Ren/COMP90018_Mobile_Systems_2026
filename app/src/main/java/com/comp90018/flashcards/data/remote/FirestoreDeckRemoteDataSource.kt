@@ -46,12 +46,15 @@ class FirestoreDeckRemoteDataSource
                     ?.let { RemoteDeckMapper.from(it.id, it.data.orEmpty()) }
             }
 
-        override suspend fun listDecksForOwner(ownerId: String): Result<List<RemoteDeck>> =
+        override suspend fun listDecksForOwner(
+            ownerId: String,
+            fromServer: Boolean,
+        ): Result<List<RemoteDeck>> =
             runRemote {
                 decks()
                     .whereEqualTo(FIELD_OWNER_ID, ownerId)
                     .orderBy(FIELD_UPDATED_AT, Query.Direction.DESCENDING)
-                    .get()
+                    .get(if (fromServer) Source.SERVER else Source.DEFAULT)
                     .await()
                     .documents
                     .map { RemoteDeckMapper.from(it.id, it.data.orEmpty()) }

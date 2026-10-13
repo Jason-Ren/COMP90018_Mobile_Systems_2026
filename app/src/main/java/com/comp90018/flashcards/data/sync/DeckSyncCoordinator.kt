@@ -26,10 +26,11 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Records local deck edits and pushes them when the device is online.
+ * Keeps My Decks consistent for one Firebase account across devices.
  *
- * Callers return as soon as the outbox row is stored. Network work runs on a background
- * coroutine, and [DeckSyncWorker] retries it after the process dies or connectivity returns.
+ * Local edits go into an outbox and are pushed when online. On each sync, cloud decks owned by
+ * the signed-in user are also pulled into Room so a second phone or emulator sees the same list.
+ * [DeckSyncWorker] retries after process death or when connectivity returns.
  */
 @Singleton
 class DeckSyncCoordinator
@@ -38,6 +39,7 @@ class DeckSyncCoordinator
         @ApplicationContext private val context: Context,
         private val store: DeckSyncStore,
         private val deckCloudSync: DeckCloudSync,
+        private val deckCloudPull: DeckCloudPull,
         private val authRepository: AuthRepository,
         private val connectivity: ConnectivityMonitor,
         private val clock: Clock,
@@ -85,11 +87,18 @@ class DeckSyncCoordinator
         suspend fun syncNow(ownerId: String): DeckSyncOutcome =
             try {
                 mutex.withLock {
-                    if (authRepository.currentUid != ownerId) {
-                        DeckSyncOutcome.RETRY
-                    } else {
-                        backfill(ownerId)
-                        if (connectivity.isOnline()) drain(ownerId) else DeckSyncOutcome.RETRY
+                    when {
+                        authRepository.currentUid != ownerId -> DeckSyncOutcome.RETRY
+                        !connectivity.isOnline() -> DeckSyncOutcome.RETRY
+                        else -> {
+                            val pull = deckCloudPull.pullOwned(ownerId)
+                            if (pull == DeckSyncStep.Retry || pull == DeckSyncStep.Deferred) {
+                                if (pull == DeckSyncStep.Retry) DeckSyncOutcome.RETRY else DeckSyncOutcome.DEFERRED
+                            } else {
+                                backfill(ownerId)
+                                drain(ownerId)
+                            }
+                        }
                     }
                 }
             } catch (cancelled: CancellationException) {

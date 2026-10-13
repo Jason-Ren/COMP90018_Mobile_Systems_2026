@@ -98,13 +98,14 @@ firebase deploy --only firestore:rules,firestore:indexes
 
 ## Sync (#19)
 
-Local Room stays the source of truth. Deck and card edits are stored in a local outbox and pushed to Firestore when the device has a network connection. Saving a deck does not wait on the network.
+Local Room is the on-device cache. Deck and card edits are stored in a local outbox and pushed to Firestore when the device has a network connection. Saving a deck does not wait on the network. On each online sync, decks owned by the signed-in user are also **pulled** from Firestore into Room so the same account shows the same My Decks on phone and emulator (#70).
 
-- Study progress (FSRS) is not uploaded.
+- Study progress (FSRS) is not uploaded or downloaded.
 - Cloud document ids stay equal to the local UUIDs.
 - The first push creates the deck as `private`. Later pushes update `name`, cards, `cardCount`, and `updatedAt` only, so a published deck stays public (#20).
 - Deleting a local deck deletes that cloud deck.
 - Decks already on the device are enqueued once per signed-in user.
+- A deck with a pending outbox row is not overwritten by a pull, so in-flight local edits win until they upload.
 
 ## Android client
 
