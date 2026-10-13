@@ -12,6 +12,7 @@ class FakeConnectionController : ConnectionController {
     override val state = MutableStateFlow<ConnectionState>(ConnectionState.Idle)
     override val hosts = MutableStateFlow<List<DiscoveredHost>>(emptyList())
     override val messages = MutableSharedFlow<GameMessage>(extraBufferCapacity = 16)
+    override val opponentScore = MutableStateFlow<Int?>(null)
 
     val hostedAs = mutableListOf<String>()
     val joinedAs = mutableListOf<String>()

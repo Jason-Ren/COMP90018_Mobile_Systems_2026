@@ -86,9 +86,10 @@ internal class FakeTransport : NearbyTransport {
     override fun send(
         endpointId: String,
         message: GameMessage,
+        onFailure: (Exception) -> Unit,
     ) {
         sent += endpointId to message
     }
 
-    override fun decode(payload: Payload): GameMessage? = decoded
+    override suspend fun decode(payload: Payload): GameMessage? = decoded
 }
