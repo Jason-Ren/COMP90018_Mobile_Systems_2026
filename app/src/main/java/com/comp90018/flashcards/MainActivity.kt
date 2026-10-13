@@ -44,7 +44,6 @@ import com.comp90018.flashcards.ui.lobby.JoinGameScreen
 import com.comp90018.flashcards.ui.play.ChooseTimerScreen
 import com.comp90018.flashcards.ui.play.DuoScreen
 import com.comp90018.flashcards.ui.play.TeamGameScreen
-import com.comp90018.flashcards.ui.social.CommunityScreen
 import com.comp90018.flashcards.ui.social.DiscoverScreen
 import com.comp90018.flashcards.ui.social.FriendsScreen
 import com.comp90018.flashcards.ui.study.StudyScreen
@@ -189,8 +188,8 @@ private fun NavGraphBuilder.deckPlayRoutes(navController: NavHostController) {
             },
             onOpenSource = { deckId -> navController.navigate("deck/$deckId") },
             onOpenLocal = { deckId -> navController.navigate("deck/$deckId") },
-            onFriends = { navController.navigate("community/true") },
-            )
+            onFriends = { navController.navigate("friends") },
+        )
     }
     composable(
         route = "choose_mode/{deckId}",
@@ -214,7 +213,6 @@ private fun NavGraphBuilder.deckPlayRoutes(navController: NavHostController) {
 private fun NavGraphBuilder.friendRoutes(navController: NavHostController) {
     composable("friends") {
         FriendsScreen(
-            onBack = { navController.popBackStack() },
             //onOpenDeck = { navController.navigate("deck/$it") },
             //startWithFriends = entry.arguments?.getBoolean("friends") == true,
             onCommunity = { navController.navigate("discovery") },
@@ -240,7 +238,6 @@ private fun NavGraphBuilder.friendRoutes(navController: NavHostController) {
 private fun NavGraphBuilder.discoveryRoutes(navController: NavHostController) {
     composable("discovery") {
         DiscoverScreen(
-            onBack = { navController.popBackStack() },
             onOpenDeck = { navController.navigate("deck/$it") },
             //startWithFriends = entry.arguments?.getBoolean("friends") == true,
             onCommunity = { navController.navigate("discovery") },
