@@ -39,16 +39,27 @@ fun DeckListScreen(
 
     Scaffold(
         topBar = {
+            // signout, community notes
             DeckListTopBar(onSignOut = viewModel::signOut, onCommunity = onCommunity)
         },
+
+        bottomBar = {
+            BottomAppBar(
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.primary,
+            ) {
+                Text(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                        // add horizontal width
+                    textAlign = TextAlign.Center,
+                    text = "Bottom app bar",
+                )
+            }
+        },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = { showDialog = true },
-                icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                text = { Text("Create Deck", style = MaterialTheme.typography.titleMedium) },
-                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-            )
+            // to be removed
+
         },
     ) { padding ->
         DeckListBody(
@@ -182,6 +193,13 @@ private fun DeckListHeader(displayName: String) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+        ExtendedFloatingActionButton(
+            onClick = { showDialog = true },
+            icon = { Icon(Icons.Default.Add, contentDescription = null) },
+            text = { Text("Create Deck", style = MaterialTheme.typography.titleMedium) },
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        )
     }
 }
 
