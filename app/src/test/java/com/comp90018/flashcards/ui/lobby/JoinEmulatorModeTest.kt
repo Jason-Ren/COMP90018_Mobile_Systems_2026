@@ -26,7 +26,7 @@ class JoinEmulatorModeTest {
     private val connection = FakeConnectionController()
     private val debug = DebugSettings().also { it.setEmulatorMode(true) }
     private val session = GameSession()
-    private val fakeHost = DiscoveredHost("debug-host", "Team Plum")
+    private val fakeHost = DiscoveredHost("debug-host", "Team Awesome Plum")
 
     private fun TestScope.viewModel(): JoinGameViewModel {
         val vm = JoinGameViewModel(connection, debug, session)
@@ -52,11 +52,11 @@ class JoinEmulatorModeTest {
             vm.begin()
 
             vm.join(fakeHost)
-            assertEquals(ConnectionState.Requested("Team Plum"), vm.state.value.connection)
+            assertEquals(ConnectionState.Requested("Team Awesome Plum"), vm.state.value.connection)
             assertTrue(connection.requested.isEmpty())
 
             passMillis(1_500)
-            assertEquals(ConnectionState.Connected("Team Plum"), vm.state.value.connection)
+            assertEquals(ConnectionState.Connected("Team Awesome Plum"), vm.state.value.connection)
             assertFalse(vm.state.value.hostStarted)
 
             passMillis(3_000)

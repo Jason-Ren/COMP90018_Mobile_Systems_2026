@@ -8,7 +8,7 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 
 class NearbyHelpersTest {
-    private val generic = "Something went wrong starting nearby\nTry again"
+    private val generic = "Couldn't connect to nearby phones\nCheck Bluetooth and Wi-Fi are on, then try again"
 
     @Test
     fun `the endpoint name splits into id and team`() {
@@ -37,21 +37,24 @@ class NearbyHelpersTest {
                         code
                 },
             ),
-        )
+        ).withoutDebugInfo()
+
+    // friendlyReason adds a "[debug info]" line for now, the tests only care about the message above it
+    private fun String.withoutDebugInfo() = substringBeforeLast("\n[")
 
     @Test
     fun `bluetooth errors say bluetooth is off`() {
-        assertEquals("Bluetooth is off or not available\nTurn it on and try again", reasonFor(8007))
+        assertEquals("Bluetooth or Wi-Fi is off\nTurn both on and try again", reasonFor(8007))
     }
 
     @Test
     fun `location off says location is off`() {
-        assertEquals("Location is off\nTurn it on and try again", reasonFor(8025))
+        assertEquals("Location is turned off\nTurn on Location in your phone's settings and try again", reasonFor(8025))
     }
 
     @Test
     fun `every missing permission code asks for permissions`() {
-        val expected = "Some permissions are missing\nAllow them in the app settings and try again"
+        val expected = "Nearby access isn't allowed\nOpen Settings, allow Location and try again"
 
         listOf(8029, 8032, 8036, 8039).forEach { assertEquals("code $it", expected, reasonFor(it)) }
     }
@@ -65,6 +68,6 @@ class NearbyHelpersTest {
     @Test
     fun `anything else gets the general message`() {
         assertEquals(generic, reasonFor(8000))
-        assertEquals(generic, friendlyReason(IllegalStateException("boom")))
+        assertEquals(generic, friendlyReason(IllegalStateException("boom")).withoutDebugInfo())
     }
 }

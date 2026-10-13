@@ -53,10 +53,10 @@ class LobbyEmulatorModeTest {
             val vm = viewModel()
 
             vm.debugSimulateRequest()
-            assertEquals(GuestSlot.Pending("Team Kiwi"), vm.state.value.guest)
+            assertEquals(GuestSlot.Pending("Team Cool Kiwi"), vm.state.value.guest)
 
             vm.accept()
-            assertEquals(GuestSlot.Joined("Team Kiwi"), vm.state.value.guest)
+            assertEquals(GuestSlot.Joined("Team Cool Kiwi"), vm.state.value.guest)
             assertEquals(0, connection.accepts)
         }
 

@@ -144,7 +144,10 @@ class NearbyHostTest {
             transport.advertiseFailure!!.invoke(IllegalStateException("boom"))
 
             assertEquals(
-                ConnectionState.Failed("Something went wrong starting nearby\nTry again"),
+                ConnectionState.Failed(
+                    "Couldn't connect to nearby phones\n" +
+                        "Check Bluetooth and Wi-Fi are on, then try again\n[IllegalStateException]",
+                ),
                 controller.state.value,
             )
         }

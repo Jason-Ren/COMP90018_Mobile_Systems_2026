@@ -23,9 +23,11 @@ class NearbyMessagingTest {
 
     private fun TestScope.controller() = NearbyConnectionController(transport, backgroundScope)
 
-    private fun NearbyConnectionController.receive(message: GameMessage?) {
+    private fun TestScope.receive(message: GameMessage?) {
         transport.decoded = message
         transport.payloadCallback.onPayloadReceived("e1", mock<Payload>())
+        // the payload is decoded in a launched coroutine, so let it run
+        runCurrent()
     }
 
     @Test
@@ -62,7 +64,7 @@ class NearbyMessagingTest {
                 }
             }
 
-            controller.receive(GameMessage.Finished(3))
+            receive(GameMessage.Finished(3))
 
             assertEquals(listOf<GameMessage>(GameMessage.Finished(3)), received)
         }
@@ -73,7 +75,7 @@ class NearbyMessagingTest {
             val controller = controller()
             controller.hostConnectedTo(transport, "Team B")
 
-            controller.receive(null)
+            receive(null)
 
             assertEquals(ConnectionState.Connected("Team B"), controller.state.value)
         }
@@ -84,7 +86,7 @@ class NearbyMessagingTest {
             val controller = controller()
             controller.hostConnectedTo(transport)
 
-            controller.receive(GameMessage.EndSession)
+            receive(GameMessage.EndSession)
             passMillis(20_000)
 
             assertEquals(ConnectionState.PeerEnded, controller.state.value)
@@ -104,7 +106,7 @@ class NearbyMessagingTest {
                 }
             }
 
-            controller.receive(GameMessage.EndSession)
+            receive(GameMessage.EndSession)
 
             assertTrue(received.isEmpty())
         }
