@@ -88,11 +88,7 @@ private fun DiscoverPanel(
             PublicDeckRow(
                 deck = deck,
                 ownedByMe = deck.ownerId == viewModel.userId,
-                copies = copies,
-                enabled = !task.busy,
-                onPreview = onOpenDeck,
-                onSaveCopy = viewModel::saveCopy,
-                onOpenLocal = onOpenLocal,
+                onOpenDeck = onOpenDeck,
             )
         }
     }
