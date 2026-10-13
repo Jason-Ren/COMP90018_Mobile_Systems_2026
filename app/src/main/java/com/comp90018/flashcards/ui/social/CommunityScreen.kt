@@ -5,6 +5,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -13,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.comp90018.flashcards.ui.deck.PublicDeckRow
+import com.comp90018.flashcards.ui.deck.matchingPublicSearch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,18 +74,26 @@ private fun DiscoverPanel(
                 value = search,
                 onValueChange = { search = it },
                 singleLine = true,
-                label = { Text("Find a deck by name") },
+                label = { Text("Search by name or creator") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                trailingIcon = {
+                    if (search.isNotEmpty()) {
+                        IconButton(onClick = { search = "" }) {
+                            Icon(Icons.Default.Clear, contentDescription = "Clear search")
+                        }
+                    }
+                },
                 modifier = Modifier.fillMaxWidth(),
             )
         }
-        val visible = decks.filter { it.name.contains(search, ignoreCase = true) }
+        val visible = decks.matchingPublicSearch(search)
         if (visible.isEmpty() && !task.busy && task.error == null) {
             item {
                 Text(
                     if (search.isBlank()) {
                         "No public decks yet. Publish one of your own to get started."
                     } else {
-                        "No matching decks."
+                        "No public decks match that search."
                     },
                 )
             }

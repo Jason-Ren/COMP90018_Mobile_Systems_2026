@@ -34,6 +34,15 @@ internal fun PublicDeckRow(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            deck.authorEmail?.takeIf { it.isNotBlank() }?.let { email ->
+                Text(
+                    text = email,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
             TextButton(onClick = { onPreview(deck.deckId) }) { Text("Preview deck") }
             val savedId = copies.saved[deck.deckId]
             FilledTonalButton(

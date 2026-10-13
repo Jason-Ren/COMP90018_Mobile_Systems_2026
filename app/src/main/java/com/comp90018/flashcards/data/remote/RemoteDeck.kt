@@ -12,4 +12,6 @@ data class RemoteDeck(
     val visibility: DeckVisibility,
     val updatedAt: Instant,
     val cardCount: Int,
+    /** Optional creator email for catalogue search. Not stored in Room. */
+    val authorEmail: String? = null,
 )

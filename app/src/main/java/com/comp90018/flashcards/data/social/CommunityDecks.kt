@@ -1,5 +1,6 @@
 package com.comp90018.flashcards.data.social
 
+import com.comp90018.flashcards.data.auth.AuthRepository
 import com.comp90018.flashcards.data.local.dao.DeckDao
 import com.comp90018.flashcards.data.remote.DeckRemoteDataSource
 import com.comp90018.flashcards.data.remote.RemoteDeck
@@ -17,6 +18,7 @@ class CommunityDecks
         private val local: DeckDao,
         private val sync: DeckSyncCoordinator,
         private val session: SocialSession,
+        private val authRepository: AuthRepository,
     ) {
         suspend fun catalogue(uid: String): List<RemoteDeck> {
             session.requireUser(uid)
@@ -58,9 +60,22 @@ class CommunityDecks
             public: Boolean,
         ): SocialDeck {
             if (public) prepare(uid, deckId)
-            return socialJson.decodeFromString(
-                api.request(uid, if (public) "POST" else "DELETE", "/v1/decks/$deckId/publish"),
-            )
+            val published: SocialDeck =
+                socialJson.decodeFromString(
+                    api.request(uid, if (public) "POST" else "DELETE", "/v1/decks/$deckId/publish"),
+                )
+            if (public) {
+                stampAuthorEmail(deckId)
+            }
+            return published
+        }
+
+        /** Stores the publisher's email on the cloud deck so Discover can search by creator. */
+        private suspend fun stampAuthorEmail(deckId: String) {
+            val email = authRepository.currentEmail?.takeIf { it.isNotBlank() } ?: return
+            val deck = remote.getDeck(deckId).getOrNull() ?: return
+            if (deck.authorEmail == email) return
+            remote.upsertDeck(deck.copy(authorEmail = email)).getOrThrow()
         }
 
         suspend fun share(
