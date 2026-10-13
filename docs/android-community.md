@@ -9,12 +9,21 @@ The app uses its existing Firebase sign-in for both Firestore and the Python soc
 After Firebase sign-in, users without a community profile must choose their unique username and display name before reaching **My Decks**. Existing profiles skip this onboarding step. **My Decks → Account** lets users update their display name, log out, or delete their account; profile editing is no longer in Friends. The dashboard shows the community display name.
 
 1. From **My Decks**, open **Community**. **Discover** lists public decks and filters the loaded catalogue by deck name or creator display name as you type. Each row shows the creator's current profile display name and marks your own decks as **Yours**. Open a row to preview the deck and save a copy. The copy is private and editable; **Open my saved copy** opens the normal deck screen for editing and study.
-2. Under **Community → Friends**, find a friend by exact username, send a request, and have the other account accept it. Incoming requests can be accepted/declined; outgoing requests can be cancelled. While Friends is open, the app checks every few seconds and shows `{name} approved your friend request` or `{name} rejected your friend request` as soon as the other person responds. Removing a friend ends private sharing access in both directions.
+2. On the **Friends** screen, find a friend by exact username, send a request, and have the other account accept it. Incoming requests can be accepted/declined; outgoing requests can be cancelled. While Friends is open, the app checks every few seconds and shows `{name} approved your friend request` or `{name} rejected your friend request` as soon as the other person responds. Removing a friend ends private sharing access in both directions.
 3. Open one of your decks, then **⋮ → Share with friends**. The app waits for local changes to sync before loading the community view. Choose **Share with a friend**, select **Share**, and use **Copy deck code**. Send that code to the recipient yourself. They paste it into **Community → Discover → Open shared deck**. A code does not grant permission on its own.
 4. Use **Revoke access** to revoke a friend's share. The API does not list existing share grants, so the sheet offers share/revoke actions without claiming a current grant status. After unfriending, old private grants are already inactive.
 5. On your deck page, **⋮ → Publish / Unpublish** asks for confirmation. Publish syncs local edits first and makes the deck readable by all signed-in users; Unpublish removes public access while preserving explicit friend shares. These actions are also available in the cloud preview and use the same API methods. The deck page shows cloud visibility and a source link for server-created copies when online. Previously saved copies are independent and remain available.
 
 Loading and error messages appear on each screen. Actions are disabled while a request is pending; refresh reloads server state. Publish/unpublish, friend actions, and share/revoke are retryable according to the backend contract. A failed Save-a-copy retains its request UUID so the next attempt retrieves the same server copy rather than creating another one. Reopening that source's code exposes **Retry saving copy** even if source access has since ended: the server can return an already-completed copy that belongs to you.
+
+## Screen integration
+
+Friends and Discover are separate screens in `ui.social`, each with its own title and back button:
+
+- `DiscoverScreen(onBack, onOpenDeck, modifier)` browses and searches public decks and opens shared deck codes. `onOpenDeck` receives the deck ID to preview.
+- `FriendsScreen(onBack, modifier)` manages friend requests and friendships.
+
+Both screens obtain their existing Hilt view models within the destination. Navigation owners can call these composables directly from their separate destinations. There are no screen-switching tabs. `CommunityScreen` remains a compatibility wrapper for the current navigation: `startWithFriends = false` renders Discover; `true` renders Friends. The current `community` and `community?friends=true` routes still work; dashboard buttons and route changes are left to the navigation work.
 
 ## Connection and data handling
 
