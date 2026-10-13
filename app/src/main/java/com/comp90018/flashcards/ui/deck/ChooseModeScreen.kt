@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -68,7 +68,7 @@ private enum class PlayMode(
     @Composable
     fun iconPainter(): Painter =
         when (this) {
-            SOLO -> rememberVectorPainter(Icons.Outlined.Person)
+            SOLO -> rememberVectorPainter(Icons.Default.Person)
             DUO -> painterResource(R.drawable.ic_communication)
             TEAM_MODE -> painterResource(R.drawable.ic_swords)
         }
