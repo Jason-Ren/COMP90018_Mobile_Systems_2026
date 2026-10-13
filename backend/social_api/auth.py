@@ -9,6 +9,7 @@ from social_api.errors import ApiError
 @dataclass(frozen=True)
 class Identity:
     uid: str
+    auth_time: int | None = None
 
 
 class TokenVerifier(Protocol):
@@ -57,7 +58,7 @@ class FirebaseTokenVerifier:
         uid = claims.get("uid")
         if not isinstance(uid, str) or not uid:
             raise ApiError(401, "invalid_token", "Sign in again to continue.")
-        return Identity(uid=uid)
+        return Identity(uid=uid, auth_time=claims.get("auth_time"))
 
     def close(self):
         import firebase_admin

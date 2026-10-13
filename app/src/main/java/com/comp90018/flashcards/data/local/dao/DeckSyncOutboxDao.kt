@@ -9,6 +9,9 @@ import com.comp90018.flashcards.data.local.entity.DeckSyncOutboxEntity
 
 @Dao
 interface DeckSyncOutboxDao {
+    @Query("DELETE FROM deck_sync_outbox WHERE ownerId = :ownerId")
+    suspend fun deleteForOwner(ownerId: String)
+
     @Query(
         "SELECT * FROM deck_sync_outbox WHERE ownerId = :ownerId " +
             "ORDER BY enqueuedAtEpochMillis ASC, revision ASC",

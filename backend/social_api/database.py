@@ -35,6 +35,7 @@ class Database:
         self.request_ids = self.root.collection("request_ids")
         self.copy_requests = self.root.collection("copy_requests")
         self.config = self.root.collection("metadata").document("config")
+        self.deletions = self.client.collection("account_deletions")
 
     def subject_hash(self, uid: str) -> str:
         # Preserve the identity mapping from the original local prototype.
@@ -49,13 +50,24 @@ class Database:
         # Firestore reserves IDs matching __.*__; these are still valid app usernames.
         return self.usernames.document(f"u_{username}")
 
-    def run(self, operation: Callable[..., T], *, read_only=False) -> T:
+    def ensure_active(self, uid: str, transaction=None):
+        if self.deletions.document(uid).get(transaction=transaction).exists:
+            raise ApiError(
+                409, "account_deleting", "Finish deleting this account from Account settings."
+            )
+
+    def run(self, operation: Callable[..., T], *, read_only=False, uid: str | None = None) -> T:
+        def guarded(transaction):
+            if uid is not None:
+                self.ensure_active(uid, transaction)
+            return operation(transaction)
+
         for attempt in range(5):
             try:
                 # Retry whole transactions with jitter, including conflicts during reads.
                 # Immediate retries can repeatedly contend for the same username/pair.
                 transaction = self.client.transaction(read_only=read_only, max_attempts=1)
-                return firestore.transactional(operation)(transaction)
+                return firestore.transactional(guarded)(transaction)
             except Aborted as error:
                 conflict = error
             except ValueError as error:

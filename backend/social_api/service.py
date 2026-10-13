@@ -52,7 +52,7 @@ class SocialService:
             transaction.set(user_ref, row)
             return public_profile(row)
 
-        return self.database.run(update)
+        return self.database.run(update, uid=uid)
 
     def get_profile(self, uid: str):
         subject = self.database.subject_hash(uid)
@@ -67,7 +67,7 @@ class SocialService:
                 transaction.set(ref, {"subject_hash": subject, "firebase_uid": uid})
             return public_profile(row)
 
-        return self.database.run(read)
+        return self.database.run(read, uid=uid)
 
     def find_profile(self, uid: str, username: str):
         username = username.strip().lower()
@@ -82,7 +82,7 @@ class SocialService:
                 raise ApiError(404, "user_not_found", "No profile has that username.")
             return public_profile(self._user(reserved["subject_hash"], transaction))
 
-        return self.database.run(lookup, read_only=True)
+        return self.database.run(lookup, read_only=True, uid=uid)
 
     def send_request(self, uid: str, recipient_id: str):
         sender = self.database.subject_hash(uid)
@@ -122,7 +122,7 @@ class SocialService:
             transaction.set(ref, row)
             return self._request_view(row, sender_profile, recipient_profile)
 
-        return self.database.run(send)
+        return self.database.run(send, uid=uid)
 
     def list_requests(self, uid: str, direction: str, status: str, limit: int, offset: int):
         subject = self.database.subject_hash(uid)
@@ -147,7 +147,7 @@ class SocialService:
                 for row in rows
             ]
 
-        return self.database.run(read, read_only=True)
+        return self.database.run(read, read_only=True, uid=uid)
 
     def respond(self, uid: str, request_id: str, action: str):
         subject = self.database.subject_hash(uid)
@@ -180,7 +180,7 @@ class SocialService:
                 transaction.set(ref, row)
             return self._request_view(row, sender, recipient)
 
-        return self.database.run(respond_to_request)
+        return self.database.run(respond_to_request, uid=uid)
 
     def list_friends(self, uid: str, limit: int, offset: int):
         subject = self.database.subject_hash(uid)
@@ -213,7 +213,7 @@ class SocialService:
                 for row in rows
             ]
 
-        return self.database.run(read, read_only=True)
+        return self.database.run(read, read_only=True, uid=uid)
 
     def remove_friend(self, uid: str, friend_id: str):
         subject = self.database.subject_hash(uid)
@@ -228,12 +228,20 @@ class SocialService:
             if row is not None and row["status"] == "accepted":
                 transaction.update(ref, {"status": "removed", "updated_at": now()})
 
-        self.database.run(remove)
+        self.database.run(remove, uid=uid)
 
     def _user(self, subject, transaction=None):
         row = self.database.users.document(subject).get(transaction=transaction).to_dict()
         if row is None:
             raise ApiError(404, "profile_required", "Create your social profile first.")
+        pointer = self.database.user_ids.document(row["id"]).get(transaction=transaction).to_dict()
+        if pointer and pointer.get("firebase_uid"):
+            if (
+                self.database.deletions.document(pointer["firebase_uid"])
+                .get(transaction=transaction)
+                .exists
+            ):
+                raise ApiError(404, "user_not_found", "The profile is no longer available.")
         return row
 
     def _user_by_id(self, user_id, transaction):

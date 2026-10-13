@@ -34,14 +34,6 @@ class FriendsViewModel
 
         fun refresh() = runAction { load() }
 
-        fun saveProfile(
-            username: String,
-            name: String,
-        ) = runAction("Profile saved.") {
-            repository.saveProfile(userId, username, name)
-            load()
-        }
-
         fun addFriend(username: String) =
             runAction("Friend request sent.") {
                 repository.addFriend(userId, username)

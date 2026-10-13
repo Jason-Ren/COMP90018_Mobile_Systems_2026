@@ -15,6 +15,9 @@ import kotlinx.coroutines.flow.Flow
  */
 @Dao
 interface CardDao {
+    @Query("DELETE FROM cards WHERE deckId IN (SELECT deckId FROM decks WHERE ownerId = :ownerId)")
+    suspend fun deleteForOwner(ownerId: String)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertCard(card: CardEntity)
 

@@ -62,7 +62,7 @@ class DeckService:
                 "created_at": row["created_at"],
             }
 
-        return self.database.run(grant)
+        return self.database.run(grant, uid=uid)
 
     def revoke_share(self, uid: str, deck_id: str, recipient_id: str):
         deck_ref = self.decks.document(deck_id)
@@ -73,7 +73,7 @@ class DeckService:
             # Revocation remains possible after unfriending and is safe to retry.
             transaction.delete(deck_ref.collection("shares").document(recipient["firebase_uid"]))
 
-        self.database.run(revoke)
+        self.database.run(revoke, uid=uid)
 
     def set_published(self, uid: str, deck_id: str, published: bool):
         ref = self.decks.document(deck_id)
@@ -87,7 +87,7 @@ class DeckService:
                 deck = {**deck, **changed}
             return {**deck, "deckId": deck_id}
 
-        return self.database.run(update)
+        return self.database.run(update, uid=uid)
 
     def save_copy(self, uid: str, deck_id: str, body: DeckCopyInput):
         source_ref = self.decks.document(deck_id)
@@ -170,14 +170,14 @@ class DeckService:
             )
             return {**deck, "deckId": copy_ref.id}
 
-        return self.database.run(copy)
+        return self.database.run(copy, uid=uid)
 
     def get_deck(self, uid: str, deck_id: str):
         def read(transaction):
             deck = self._readable_deck(self.decks.document(deck_id), uid, transaction)
             return {**deck, "deckId": deck_id}
 
-        return self.database.run(read, read_only=True)
+        return self.database.run(read, read_only=True, uid=uid)
 
     def list_cards(self, uid: str, deck_id: str, limit: int, offset: int):
         deck_ref = self.decks.document(deck_id)
@@ -196,7 +196,7 @@ class DeckService:
                 for card in query.stream(transaction=transaction)
             ]
 
-        return self.database.run(read, read_only=True)
+        return self.database.run(read, read_only=True, uid=uid)
 
     @staticmethod
     def _deck(ref, transaction):
@@ -223,10 +223,18 @@ class DeckService:
                 "recipient_profile_refresh_required",
                 "Ask your friend to open their social profile once before sharing.",
             )
+        if (
+            self.database.deletions.document(recipient["firebase_uid"])
+            .get(transaction=transaction)
+            .exists
+        ):
+            raise ApiError(404, "user_not_found", "The profile is no longer available.")
         return recipient
 
     def _readable_deck(self, ref, uid, transaction):
         deck = self._deck(ref, transaction)
+        if self.database.deletions.document(deck["ownerId"]).get(transaction=transaction).exists:
+            raise ApiError(404, "deck_not_found", "The deck does not exist or is inaccessible.")
         if deck.get("ownerId") == uid or deck.get("visibility") == "public":
             return deck
         share = ref.collection("shares").document(uid).get(transaction=transaction).to_dict()

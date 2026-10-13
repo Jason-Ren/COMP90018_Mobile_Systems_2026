@@ -9,7 +9,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -23,8 +22,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.comp90018.flashcards.data.auth.AuthState
+import com.comp90018.flashcards.ui.account.AccountScreen
+import com.comp90018.flashcards.ui.account.OnboardingScreen
+import com.comp90018.flashcards.ui.account.ProfileConnectionScreen
 import com.comp90018.flashcards.ui.auth.LoginScreen
+import com.comp90018.flashcards.ui.auth.SessionStage
 import com.comp90018.flashcards.ui.auth.SessionViewModel
 import com.comp90018.flashcards.ui.card.AddEditCardScreen
 import com.comp90018.flashcards.ui.deck.ChooseModeScreen
@@ -57,34 +59,57 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun FlashcardApp(sessionViewModel: SessionViewModel = hiltViewModel()) {
-    val authState by sessionViewModel.authState.collectAsState()
-    if (authState is AuthState.Loading) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
+    val session by sessionViewModel.session.collectAsState()
+    key(session.user?.uid, session.stage) {
+        when (session.stage) {
+            SessionStage.LOADING ->
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            SessionStage.SIGNED_OUT -> LoginScreen()
+            SessionStage.ONBOARDING ->
+                OnboardingScreen(
+                    onSignOut = sessionViewModel::signOut,
+                    viewModel = hiltViewModel(key = "onboarding_${session.user?.uid}"),
+                )
+            SessionStage.DELETING ->
+                AccountScreen(
+                    {},
+                    sessionViewModel::signOut,
+                    deleting = true,
+                    viewModel = hiltViewModel(key = "deleting_${session.user?.uid}"),
+                )
+            SessionStage.UNAVAILABLE ->
+                ProfileConnectionScreen(
+                    session.error.orEmpty(),
+                    sessionViewModel::retry,
+                    sessionViewModel::signOut,
+                )
+            SessionStage.READY ->
+                FlashcardNavHost(
+                    navController = rememberNavController(),
+                    displayName = session.profile?.displayName.orEmpty(),
+                    onSignOut = sessionViewModel::signOut,
+                )
         }
-        return
-    }
-
-    key((authState as? AuthState.SignedIn)?.user?.uid) {
-        val navController = rememberNavController()
-        val startDestination = if (authState is AuthState.SignedIn) "home" else "login"
-        AuthNavigationEffect(authState = authState, navController = navController)
-        FlashcardNavHost(navController = navController, startDestination = startDestination)
     }
 }
 
 @Composable
 private fun FlashcardNavHost(
     navController: NavHostController,
-    startDestination: String,
+    displayName: String,
+    onSignOut: () -> Unit,
 ) {
-    NavHost(navController = navController, startDestination = startDestination) {
-        composable("login") {
-            LoginScreen()
+    NavHost(navController = navController, startDestination = "home") {
+        composable("account") {
+            AccountScreen(onBack = { navController.popBackStack() }, onSignOut = onSignOut)
         }
         composable("home") {
             DeckListScreen(
                 onCommunity = { navController.navigate("community") },
+                onAccount = { navController.navigate("account") },
+                displayName = displayName,
                 onNavigateToDeck = { deckId ->
                     navController.navigate("deck/$deckId")
                 },
@@ -212,27 +237,5 @@ private fun NavGraphBuilder.duoRoutes(navController: NavHostController) {
         DuoScreen(
             onNavigateBack = { navController.popBackStack("choose_mode/{deckId}", inclusive = false) },
         )
-    }
-}
-
-@Composable
-private fun AuthNavigationEffect(
-    authState: AuthState,
-    navController: NavHostController,
-) {
-    LaunchedEffect(authState) {
-        val signedIn = authState is AuthState.SignedIn
-        val route = navController.currentDestination?.route
-        if (!signedIn && route != null && route != "login") {
-            navController.navigate("login") {
-                popUpTo(0) { inclusive = true }
-                launchSingleTop = true
-            }
-        } else if (signedIn && route == "login") {
-            navController.navigate("home") {
-                popUpTo("login") { inclusive = true }
-                launchSingleTop = true
-            }
-        }
     }
 }

@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.comp90018.flashcards.data.auth.AuthRepository
-import com.comp90018.flashcards.data.auth.AuthState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -100,12 +99,3 @@ private fun validate(
 private fun String.isValidEmail(): Boolean = contains("@") && substringAfter("@").contains(".")
 
 private const val MIN_PASSWORD_LENGTH = 6
-
-@HiltViewModel
-class SessionViewModel
-    @Inject
-    constructor(
-        authRepository: AuthRepository,
-    ) : ViewModel() {
-        val authState: StateFlow<AuthState> = authRepository.authState
-    }

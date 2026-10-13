@@ -47,6 +47,17 @@ class DeckSyncCoordinator
         private val started = AtomicBoolean(false)
         private val preferences = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
+        suspend fun setAccountDeleting(
+            uid: String,
+            deleting: Boolean,
+        ) {
+            mutex.withLock {
+                check(preferences.edit().putBoolean("deleting_$uid", deleting).commit()) {
+                    "Could not save account deletion state. Please retry."
+                }
+            }
+        }
+
         fun start() {
             if (!started.compareAndSet(false, true)) {
                 return
@@ -85,7 +96,9 @@ class DeckSyncCoordinator
         suspend fun syncNow(ownerId: String): DeckSyncOutcome =
             try {
                 mutex.withLock {
-                    if (authRepository.currentUid != ownerId) {
+                    if (preferences.getBoolean("deleting_$ownerId", false)) {
+                        DeckSyncOutcome.DEFERRED
+                    } else if (authRepository.currentUid != ownerId) {
                         DeckSyncOutcome.RETRY
                     } else {
                         backfill(ownerId)

@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -29,11 +28,6 @@ class DeckListViewModel
         private val authRepository: AuthRepository,
         private val databaseInitializer: DatabaseInitializer,
     ) : ViewModel() {
-        val displayName: StateFlow<String> =
-            authRepository.authState
-                .map { state -> state.displayName() }
-                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "")
-
         @OptIn(ExperimentalCoroutinesApi::class)
         val decks: StateFlow<List<DeckEntity>> =
             authRepository.authState
@@ -78,15 +72,4 @@ class DeckListViewModel
                 repository.deleteDeck(deck)
             }
         }
-
-        fun signOut() {
-            viewModelScope.launch {
-                authRepository.signOut()
-            }
-        }
     }
-
-private fun AuthState.displayName(): String {
-    val user = (this as? AuthState.SignedIn)?.user ?: return ""
-    return user.displayName?.takeIf { it.isNotBlank() } ?: user.email.orEmpty()
-}

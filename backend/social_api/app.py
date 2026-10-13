@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from google.api_core.exceptions import GoogleAPICallError, RetryError
 
+from social_api.accounts import AccountService
 from social_api.auth import FirebaseTokenVerifier, Identity, TokenVerifier
 from social_api.config import Settings
 from social_api.database import Database
@@ -52,6 +53,7 @@ def create_app(settings: Settings | None = None, verifier: TokenVerifier | None 
     database = Database(settings)
     service = SocialService(database)
     decks = DeckService(database)
+    accounts = AccountService(database)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -68,7 +70,7 @@ def create_app(settings: Settings | None = None, verifier: TokenVerifier | None 
 
     app = FastAPI(
         title="Flashcards Social API",
-        version="0.2.0",
+        version="0.3.0",
         description="Firebase-authenticated profiles, friends, sharing, publishing, and copies.",
         lifespan=lifespan,
         responses={
@@ -128,6 +130,11 @@ def create_app(settings: Settings | None = None, verifier: TokenVerifier | None 
     @app.get("/v1/me", response_model=Profile, tags=["Accounts"])
     def get_profile(user: CurrentUser):
         return service.get_profile(user.uid)
+
+    @app.delete("/v1/me", status_code=204, tags=["Accounts"])
+    def delete_account_data(user: CurrentUser):
+        accounts.delete_data(user)
+        return Response(status_code=204)
 
     @app.get("/v1/users/lookup", response_model=Profile, tags=["Accounts"])
     def lookup(user: CurrentUser, username: Annotated[str, Query(min_length=3, max_length=24)]):

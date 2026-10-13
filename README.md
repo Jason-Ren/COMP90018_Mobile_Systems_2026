@@ -16,6 +16,8 @@ Authentication is Firebase Auth. Users can continue with Google, or register and
 
 `app/google-services.json` is gitignored. Without that file the project still compiles, and the login button explains that sign-in is not configured.
 
+After sign-in, new users choose a community username and display name before entering My Decks. The dashboard's **Account** button opens display-name editing, logout and account deletion with fresh sign-in confirmation. Returning users with a cached profile can study local decks offline. Account deletion requires the updated backend and Firestore configuration; follow [the deployment update guide](backend/DEPLOYMENT.md#updating-an-existing-service-for-onboarding-and-account-deletion).
+
 1. Create a Firebase project and add an Android app with package name `com.comp90018.flashcards`.
 2. From the repo root, run `./gradlew :app:signingReport` and add the **debug** SHA-1 to that Android app. Google sign-in fails with `DEVELOPER_ERROR` (code 10) when the SHA-1 is missing.
 3. In Firebase Authentication, enable the Google provider.
@@ -42,7 +44,7 @@ Rules and indexes live in `firestore.rules` and `firestore.indexes.json`. The An
 
 The [Python social API](backend/README.md) uses the same Firebase Auth project and Firestore database for profiles, friend requests, explicit read-only deck sharing, Publish/unpublish, and Save-a-copy. Deck `ownerId` remains the Firebase UID; copies receive new IDs, private visibility, and protected source attribution. Removing a friendship revokes private source access in both the API and the Firestore rules; previously saved copies remain independent.
 
-The root Firebase configuration includes all five indexes (two deck, three social) and the combined rules. Run `npm run test:emulator` from `backend` after following its setup instructions to test both the API and direct-client access rules. Open **Community** from My Decks for public decks, profiles, and friends; your deck's **⋮** menu offers **Publish / Unpublish** and **Share with friends**. Public catalogue rows and previews save copies through the same API workflow. See [Android community setup and usage](docs/android-community.md). API and rules updates need separate deployment; see the [Cloud Run guide](backend/DEPLOYMENT.md).
+The root Firebase configuration includes five composite indexes (two deck, three social), a share-recipient collection-group field index, and the combined rules. Run `npm run test:emulator` from `backend` after following its setup instructions to test both the API and direct-client access rules. Open **Community** from My Decks for public decks and friends, or **Account** to manage your profile; your deck's **⋮** menu offers **Publish / Unpublish** and **Share with friends**. Public catalogue rows and previews save copies through the same API workflow. See [Android community setup and usage](docs/android-community.md). API and rules updates need separate deployment; see the [Cloud Run guide](backend/DEPLOYMENT.md).
 
 ## Building & running
 
