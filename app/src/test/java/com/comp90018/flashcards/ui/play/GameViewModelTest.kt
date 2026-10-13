@@ -325,6 +325,26 @@ class GameViewModelTest {
         }
 
     @Test
+    fun `starting with a countdown shows 3, 2, 1 and then the first card`() =
+        runTest {
+            val vm = game(seconds = 5, cards = 2)
+
+            vm.startWithCountdown()
+            assertEquals(3, vm.round.value.startCountdown)
+            assertEquals(DuoPhase.READY, vm.round.value.phase)
+
+            passSeconds(1)
+            assertEquals(2, vm.round.value.startCountdown)
+            passSeconds(1)
+            assertEquals(1, vm.round.value.startCountdown)
+            passSeconds(1)
+
+            assertEquals(0, vm.round.value.startCountdown)
+            assertEquals(DuoPhase.FRONT, vm.round.value.phase)
+            assertEquals(5, vm.round.value.secondsLeft)
+        }
+
+    @Test
     fun `a deck with no cards is finished straight away`() {
         val vm = game(cards = 0)
 

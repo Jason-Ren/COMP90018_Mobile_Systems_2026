@@ -6,7 +6,9 @@ import com.comp90018.flashcards.testutil.FakeAnswerSounds
 import com.comp90018.flashcards.testutil.FakeCardRepository
 import com.comp90018.flashcards.testutil.FakeGameVibration
 import com.comp90018.flashcards.testutil.MainDispatcherRule
+import com.comp90018.flashcards.testutil.passSeconds
 import com.comp90018.flashcards.testutil.testCards
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Rule
@@ -83,18 +85,21 @@ class DuoViewModelTest {
     }
 
     @Test
-    fun `playing again starts a new round with the same cards`() {
-        val vm = viewModel()
-        vm.playAll(TiltGesture.DOWN)
+    fun `playing again starts a new round with the same cards`() =
+        runTest {
+            val vm = viewModel()
+            vm.playAll(TiltGesture.DOWN)
 
-        vm.playAgain()
+            vm.playAgain()
+            // the 3, 2, 1 comes before the first card
+            passSeconds(3)
 
-        val state = vm.uiState.value
-        assertEquals(DuoPhase.FRONT, state.phase)
-        assertEquals(0, state.correctCount)
-        assertEquals(3, state.totalCount)
-        assertEquals(emptyList<String>(), state.missed.map { it.cardId })
-    }
+            val state = vm.uiState.value
+            assertEquals(DuoPhase.FRONT, state.phase)
+            assertEquals(0, state.correctCount)
+            assertEquals(3, state.totalCount)
+            assertEquals(emptyList<String>(), state.missed.map { it.cardId })
+        }
 
     @Test
     fun `an empty deck finishes straight away`() {

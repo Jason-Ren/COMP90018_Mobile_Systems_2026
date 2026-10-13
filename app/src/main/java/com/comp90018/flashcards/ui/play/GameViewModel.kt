@@ -44,6 +44,7 @@ abstract class GameViewModel(
     // coerced because a clash whose setup was lost has no countdown, and the timer needs one
     private val timer = CardTimer(secondsPerCard.coerceAtLeast(1))
     private var timerJob: Job? = null
+    private var startCountdownJob: Job? = null
 
     // two reasons to hold the countdown: the player left the app, or the link to the other phone is down
     private var pausedByPlayer = false
@@ -55,6 +56,7 @@ abstract class GameViewModel(
         deckName: String,
     ) {
         timerJob?.cancel()
+        startCountdownJob?.cancel()
         timer.reset()
         pausedByPlayer = false
         game = DuoGame(cards)
@@ -70,7 +72,21 @@ abstract class GameViewModel(
         applyPause()
     }
 
-    /** Starts the round, called from the Ready screen. */
+    /** Counts 3, 2, 1 on the screen and then starts the round, called from the Ready screen. */
+    fun startWithCountdown() {
+        if (startCountdownJob?.isActive == true) return
+        startCountdownJob =
+            viewModelScope.launch {
+                for (number in START_COUNTDOWN_FROM downTo 1) {
+                    _round.update { it.copy(startCountdown = number) }
+                    delay(1.seconds)
+                }
+                _round.update { it.copy(startCountdown = 0) }
+                start()
+            }
+    }
+
+    /** Starts the round straight away. */
     fun start() {
         game.start()
         if (game.phase == DuoPhase.FRONT) startTimer()
@@ -181,3 +197,6 @@ abstract class GameViewModel(
         }
     }
 }
+
+// the number the countdown before a round starts from
+private const val START_COUNTDOWN_FROM = 3

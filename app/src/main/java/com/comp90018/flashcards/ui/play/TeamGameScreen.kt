@@ -54,7 +54,8 @@ fun TeamGameScreen(
         // paused comes first, so the Paused screen stays until the player taps Resume
         when {
             round.isPaused -> PausedContent(round, viewModel::resume)
-            round.phase == DuoPhase.READY -> ReadyContent(round, viewModel::start)
+            round.startCountdown > 0 -> StartCountdownContent(round.startCountdown)
+            round.phase == DuoPhase.READY -> ReadyContent(round, viewModel::startWithCountdown)
             round.phase == DuoPhase.FRONT -> FrontContent(round, viewModel::reveal)
             round.phase == DuoPhase.BACK -> BackContent(round, viewModel::onGesture)
             else -> ResultContent(state, onFinish = leave)

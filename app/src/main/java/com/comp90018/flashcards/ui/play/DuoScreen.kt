@@ -34,6 +34,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.comp90018.flashcards.data.local.entity.CardEntity
@@ -41,6 +42,7 @@ import com.comp90018.flashcards.ui.help.HelpTopic
 import com.comp90018.flashcards.ui.help.helpTip
 
 private val MISSED_LIST_MAX_WIDTH = 560.dp
+private val START_COUNTDOWN_FONT_SIZE = 160.sp
 
 /**
  * The 2-player screen, locked to landscape: rules, then one card at a time, then the results.
@@ -59,13 +61,14 @@ fun DuoScreen(
         Box(modifier = Modifier.fillMaxSize()) {
             when {
                 uiState.isLoading -> LoadingContent()
-                uiState.phase == DuoPhase.READY -> ReadyContent(uiState, viewModel::start)
+                uiState.startCountdown > 0 -> StartCountdownContent(uiState.startCountdown)
+                uiState.phase == DuoPhase.READY -> ReadyContent(uiState, viewModel::startWithCountdown)
                 uiState.phase == DuoPhase.FRONT -> FrontContent(uiState, viewModel::reveal)
                 uiState.phase == DuoPhase.BACK -> BackContent(uiState, viewModel::onGesture)
                 else -> FinishedContent(uiState, viewModel::playAgain, onNavigateBack)
             }
             val inPlay = uiState.phase == DuoPhase.FRONT || uiState.phase == DuoPhase.BACK
-            if (!uiState.isLoading && !inPlay) {
+            if (!uiState.isLoading && !inPlay && uiState.startCountdown == 0) {
                 helpTip(
                     topic = HelpTopic.DuoPlayHelp,
                     modifier =
@@ -83,6 +86,18 @@ fun DuoScreen(
 internal fun LoadingContent() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         CircularProgressIndicator()
+    }
+}
+
+/** A big 3, 2, 1 before the first card. */
+@Composable
+internal fun StartCountdownContent(number: Int) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text(
+            text = number.toString(),
+            style = MaterialTheme.typography.displayLarge.copy(fontSize = START_COUNTDOWN_FONT_SIZE),
+            fontWeight = FontWeight.Bold,
+        )
     }
 }
 
