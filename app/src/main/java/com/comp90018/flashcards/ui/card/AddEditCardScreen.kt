@@ -39,12 +39,14 @@ fun AddEditCardScreen(
             OutlinedTextField(
                 value = uiState.front,
                 onValueChange = { viewModel.onFrontChange(it) },
+                minLines = 3,
                 label = { Text("Front") },
                 modifier = Modifier.fillMaxWidth(),
             )
             OutlinedTextField(
                 value = uiState.back,
                 onValueChange = { viewModel.onBackChange(it) },
+                minLines = 3,
                 label = { Text("Back") },
                 modifier = Modifier.fillMaxWidth(),
             )

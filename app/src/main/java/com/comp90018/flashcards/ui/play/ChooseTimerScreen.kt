@@ -38,6 +38,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.comp90018.flashcards.ui.deck.DeckSummaryViewModel
+import com.comp90018.flashcards.ui.help.HelpTopic
+import com.comp90018.flashcards.ui.help.helpTip
 
 private const val MAX_DIGITS = 3
 
@@ -74,14 +76,21 @@ fun ChooseTimerScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text(uiState.deckName.ifBlank { "Deck" })
-                        Text(text = "Choose countdown", style = MaterialTheme.typography.labelMedium)
+                        Text(text = "Choose countdown")
+                        Text(uiState.deckName.ifBlank { "Deck" }, style = MaterialTheme.typography.labelMedium)
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
+                },
+                actions = {
+                    helpTip(
+                        topic = HelpTopic.DuoPlayHelp,
+                        modifier = Modifier.padding(end = 12.dp),
+                        size = 36.dp,
+                    )
                 },
             )
         },
@@ -91,7 +100,7 @@ fun ChooseTimerScreen(
                 Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .padding(16.dp),
+                    .padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 48.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
         ) {
             TimerOption.entries.forEach { option ->
@@ -136,7 +145,10 @@ private fun TimerOptionButton(
             text = option.description,
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp, bottom = 12.dp),
         )
     }
 }

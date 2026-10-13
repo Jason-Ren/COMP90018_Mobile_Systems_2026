@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,6 +21,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.comp90018.flashcards.data.local.entity.DeckEntity
+import com.comp90018.flashcards.debug.DEBUG_TOOLS_ENABLED
 
 /**
  * Shows list of users decks
@@ -28,28 +30,29 @@ import com.comp90018.flashcards.data.local.entity.DeckEntity
 @Composable
 fun DeckListScreen(
     onNavigateToDeck: (String) -> Unit,
+    onJoinGame: () -> Unit,
     onCommunity: () -> Unit,
     onAccount: () -> Unit,
     displayName: String,
     viewModel: DeckListViewModel = hiltViewModel(),
 ) {
     val decks by viewModel.decks.collectAsState()
+    val emulatorMode by viewModel.emulatorMode.collectAsState()
     var showDialog by remember { mutableStateOf(false) }
     var newDeckName by remember { mutableStateOf("") }
     var newDeckDescription by remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
-            DeckListTopBar(onAccount = onAccount, onCommunity = onCommunity)
+            DeckListTopBar(
+                onAccount = onAccount,
+                emulatorMode = emulatorMode,
+                onEmulatorModeChange = viewModel::setEmulatorMode,
+                onCommunity = onCommunity,
+            )
         },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = { showDialog = true },
-                icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                text = { Text("Create Deck", style = MaterialTheme.typography.titleMedium) },
-                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-            )
+            DeckListButtons(onJoinGame = onJoinGame, onCreateDeck = { showDialog = true })
         },
     ) { padding ->
         DeckListBody(
@@ -79,6 +82,30 @@ fun DeckListScreen(
                 newDeckDescription = ""
                 showDialog = false
             },
+        )
+    }
+}
+
+/** Join Game sits above Create Deck. */
+@Composable
+private fun DeckListButtons(
+    onJoinGame: () -> Unit,
+    onCreateDeck: () -> Unit,
+) {
+    Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        ExtendedFloatingActionButton(
+            onClick = onJoinGame,
+            icon = { Icon(Icons.Default.PlayArrow, contentDescription = null) },
+            text = { Text("Join Game", style = MaterialTheme.typography.titleMedium) },
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        )
+        ExtendedFloatingActionButton(
+            onClick = onCreateDeck,
+            icon = { Icon(Icons.Default.Add, contentDescription = null) },
+            text = { Text("Create Deck", style = MaterialTheme.typography.titleMedium) },
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
         )
     }
 }
@@ -150,11 +177,18 @@ private fun DeckListBody(
 @Composable
 private fun DeckListTopBar(
     onAccount: () -> Unit,
+    emulatorMode: Boolean,
+    onEmulatorModeChange: (Boolean) -> Unit,
     onCommunity: () -> Unit,
 ) {
     TopAppBar(
         title = {},
         actions = {
+            // DEBUG ONLY: lets team mode be tried on an emulator, hide it with DEBUG_TOOLS_ENABLED
+            if (DEBUG_TOOLS_ENABLED) {
+                Checkbox(checked = emulatorMode, onCheckedChange = onEmulatorModeChange)
+                Text("[DEBUG] Emulator mode", style = MaterialTheme.typography.labelSmall)
+            }
             TextButton(onClick = onCommunity) { Text("Community") }
             TextButton(onClick = onAccount) {
                 Text("Account")
