@@ -67,7 +67,7 @@ def create_app(settings: Settings | None = None, verifier: TokenVerifier | None 
                 active_verifier.close()
 
     app = FastAPI(
-        title="Flashcards Social API",
+        title="Clashcards Social API",
         version="0.2.0",
         description="Firebase-authenticated profiles, friends, sharing, publishing, and copies.",
         lifespan=lifespan,

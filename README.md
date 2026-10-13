@@ -1,7 +1,7 @@
 # COMP90018_Mobile_Systems_2026
 COMP90018 Mobile Computing Systems Programming Sem 2 2026 Group Project
 
-A spaced-repetition flashcard app built with Jetpack Compose, Room, Hilt, and Navigation Compose.
+Clashcards is a spaced-repetition flashcard app built with Jetpack Compose, Room, Hilt, and Navigation Compose.
 
 ## Requirements
 

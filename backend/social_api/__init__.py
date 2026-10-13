@@ -1,1 +1,1 @@
-"""Account profiles and friend graph for the Flashcards Android app."""
+"""Account profiles and friend graph for the Clashcards Android app."""
