@@ -82,7 +82,7 @@ private fun TeamContainer(
 fun LobbyTopBar(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
-    title: String = "Team Mode",
+    title: String = "Clash Mode",
 ) {
     TopAppBar(
         modifier = modifier,

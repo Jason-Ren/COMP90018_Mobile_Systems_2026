@@ -28,7 +28,7 @@ import com.comp90018.flashcards.ui.connection.ConnectionOverlay
 import com.comp90018.flashcards.ui.connection.DebugConnectionButtons
 
 /**
- * The team mode game screen, locked to landscape. It plays like Duo, then compares the two teams' scores.
+ * The clash mode game screen, locked to landscape. It plays like Duo, then compares the two teams' scores.
  */
 @Composable
 fun TeamGameScreen(
@@ -68,7 +68,7 @@ fun TeamGameScreen(
     if (showLeaveConfirm) {
         AlertDialog(
             onDismissRequest = { showLeaveConfirm = false },
-            title = { Text("Leave the game?") },
+            title = { Text("Leave the clash?") },
             text = { Text("The other team will be disconnected") },
             confirmButton = { Button(onClick = leave) { Text("Leave") } },
             dismissButton = { TextButton(onClick = { showLeaveConfirm = false }) { Text("Stay") } },

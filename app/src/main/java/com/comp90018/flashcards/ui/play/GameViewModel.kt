@@ -13,9 +13,9 @@ import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
 /**
- * The round that Duo and team mode share: one card at a time, a countdown on each front, then the players
+ * The round that Duo and clash mode share: one card at a time, a countdown on each front, then the players
  * mark the guess right or wrong. The subclasses decide where the cards come from and what happens
- * around the round (Duo can play again, team mode compares scores with the other team).
+ * around the round (Duo can play again, clash mode compares scores with the other team).
  *
  * Each card gets a countdown of [secondsPerCard]. When it runs out, or the Guesser acts first, the
  * back is revealed. [onGesture] is where the tilt sensor plugs in. Until then the screen sends it
@@ -32,7 +32,7 @@ abstract class GameViewModel(
 
     private var game = DuoGame(emptyList())
 
-    // coerced because a team game whose setup was lost has no countdown, and the timer needs one
+    // coerced because a clash whose setup was lost has no countdown, and the timer needs one
     private val timer = CardTimer(secondsPerCard.coerceAtLeast(1))
     private var timerJob: Job? = null
 
