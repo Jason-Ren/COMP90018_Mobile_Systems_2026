@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.comp90018.flashcards.data.p2p.ConnectionState
+import com.comp90018.flashcards.ui.components.NavBar
 import com.comp90018.flashcards.ui.connection.ConnectionOverlay
 
 /**
@@ -41,6 +42,7 @@ fun GuestLobbyScreen(
     onGameStart: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: JoinGameViewModel = hiltViewModel(),
+
 ) {
     val state by viewModel.state.collectAsState()
 

@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.comp90018.flashcards.ui.components.NavBar
 import com.comp90018.flashcards.ui.deck.PublicDeckRow
 import com.comp90018.flashcards.ui.deck.matchingPublicSearch
 
@@ -23,6 +24,10 @@ fun DiscoverScreen(
     onBack: () -> Unit,
     onOpenDeck: (String) -> Unit,
     modifier: Modifier = Modifier,
+    onCommunity: () -> Unit,
+    onHome: () -> Unit,
+    onJoinGame: () -> Unit,
+    onFriends: () -> Unit
 ) {
     Scaffold(
         modifier = modifier,
@@ -30,6 +35,9 @@ fun DiscoverScreen(
             TopAppBar(title = { Text("Discover") }, navigationIcon = {
                 IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") }
             })
+        },
+        bottomBar = {
+            NavBar(onCommunity, onHome, onJoinGame, onFriends)
         },
     ) { padding ->
         Box(Modifier.padding(padding).fillMaxSize()) {

@@ -118,10 +118,10 @@ private fun FlashcardNavHost(
                     navController.navigate("deck/$deckId")
                 },
                 onJoinGame = { navController.navigate("join") },
-                onNavigateBack = {navController.popBackStack()},
-                onHome = {navController.navigate("home")} ,
+                onHome = {navController.navigate("home")},
+                onFriends = { navController.navigate("community?friends=true") },
 
-            )
+                )
         }
         deckPlayRoutes(navController)
         communityRoutes(navController)
@@ -155,11 +155,10 @@ private fun FlashcardNavHost(
         composable("NaviBar"){
             NavBar(
                 onCommunity = { navController.navigate("community") },
-                onHome = {navController.navigate("home")},
+                onHome = { navController.navigate("home") },
                 onJoinGame = { navController.navigate("join") },
-
-                )
-
+                onFriends = { navController.navigate("community?friends=true") },
+            )
         }
     }
 }
@@ -222,6 +221,10 @@ private fun NavGraphBuilder.communityRoutes(navController: NavHostController) {
             onBack = { navController.popBackStack() },
             onOpenDeck = { navController.navigate("deck/$it") },
             startWithFriends = entry.arguments?.getBoolean("friends") == true,
+            onCommunity = { navController.navigate("community") },
+            onHome = { navController.navigate("home") },
+            onJoinGame = { navController.navigate("join") },
+            onFriends = { navController.navigate("community?friends=true") },
         )
     }
     composable("cloud_deck/{deckId}", arguments = listOf(navArgument("deckId") { type = NavType.StringType })) {
@@ -306,7 +309,11 @@ private fun NavGraphBuilder.joinRoutes(navController: NavHostController) {
                 onNavigateBack = { navController.popBackStack() },
                 // the join screen is dropped so back from the game cannot return to it
                 onJoin = { navController.navigate("guest_lobby") { launchSingleTop = true } },
-            )
+                onCommunity = { navController.navigate("community") },
+                onHome = { navController.navigate("home") },
+                onJoinGame = { navController.navigate("join") },
+                onFriends = { navController.navigate("community?friends=true") },
+                )
         }
     }
     composable(route = "guest_lobby") { entry ->

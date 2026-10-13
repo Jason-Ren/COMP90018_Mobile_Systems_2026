@@ -10,10 +10,15 @@ fun CommunityScreen(
     onOpenDeck: (String) -> Unit,
     modifier: Modifier = Modifier,
     startWithFriends: Boolean = false,
+    onCommunity: () -> Unit,
+    onHome: () -> Unit,
+    onJoinGame: () -> Unit,
+    onFriends: () -> Unit
+
 ) {
     if (startWithFriends) {
-        FriendsScreen(onBack = onBack, modifier = modifier)
+        FriendsScreen(onBack = onBack, modifier = modifier,onCommunity, onHome, onJoinGame, onFriends)
     } else {
-        DiscoverScreen(onBack = onBack, onOpenDeck = onOpenDeck, modifier = modifier)
+        DiscoverScreen(onBack = onBack, onOpenDeck = onOpenDeck, modifier = modifier,onCommunity, onHome, onJoinGame, onFriends)
     }
 }

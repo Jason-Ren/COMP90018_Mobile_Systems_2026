@@ -40,7 +40,7 @@ import com.comp90018.flashcards.debug.DEBUG_TOOLS_ENABLED
 fun DeckListScreen(
     onNavigateToDeck: (String) -> Unit,
     onCommunity: () -> Unit,
-    onNavigateBack: () -> Unit,
+    onFriends: () -> Unit,
     onHome: () -> Unit,
     onJoinGame: () -> Unit,
     onAccount: () -> Unit,
@@ -65,7 +65,7 @@ fun DeckListScreen(
             )
         },
         bottomBar = {
-            NavBar(onCommunity, onHome, onJoinGame)
+            NavBar(onCommunity, onHome, onJoinGame, onFriends)
         },
 
     ) { padding ->
