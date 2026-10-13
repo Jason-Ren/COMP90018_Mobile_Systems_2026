@@ -51,46 +51,24 @@ fun AccountScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 SocialStatus(task)
-                if (deleting) {
-                    Text("Account deletion is pending", style = MaterialTheme.typography.titleLarge)
-                    Text("Your account is being removed. Confirm your sign-in again to finish. You can retry safely.")
-                } else {
-                    profile?.let { ProfileDetails(it, !task.busy, viewModel::updateName) }
-                    if (profile == null) TextButton(onClick = viewModel::refresh, enabled = !task.busy) { Text("Retry") }
-                }
-                OutlinedButton(
+                AccountProfileSection(
+                    profile = profile,
+                    enabled = !task.busy,
+                    deleting = deleting,
+                    onSave = viewModel::updateName,
+                    onRetry = viewModel::refresh,
+                )
+                LogOutButton(
                     onClick = { loggingOut = true },
                     enabled = !task.busy,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                        contentColor = MaterialTheme.colorScheme.onSurface,
-                    ),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                ) {
-                    Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        "Log out",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
-            }
-            Spacer(Modifier.height(16.dp))
-            val errorColor = MaterialTheme.colorScheme.error
-            OutlinedButton(
-                onClick = { confirming = true },
-                enabled = !task.busy,
-                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = errorColor),
-                border = BorderStroke(1.dp, if (task.busy) errorColor.copy(alpha = 0.12f) else errorColor),
-            ) {
-                Text(
-                    if (deleting) "Finish deleting account" else "Delete account",
-                    style = MaterialTheme.typography.titleMedium,
                 )
             }
+            Spacer(Modifier.height(16.dp))
+            DeleteAccountButton(
+                onClick = { confirming = true },
+                enabled = !task.busy,
+                deleting = deleting,
+            )
         }
     }
     if (loggingOut) {
@@ -111,6 +89,74 @@ fun AccountScreen(
                 viewModel.deleteAccount(context, it)
             },
             onDismiss = { confirming = false },
+        )
+    }
+}
+
+@Composable
+private fun ColumnScope.AccountProfileSection(
+    profile: SocialProfile?,
+    enabled: Boolean,
+    deleting: Boolean,
+    onSave: (String) -> Unit,
+    onRetry: () -> Unit,
+) {
+    if (deleting) {
+        Text("Account deletion is pending", style = MaterialTheme.typography.titleLarge)
+        Text("Your account is being removed. Confirm your sign-in again to finish. You can retry safely.")
+    } else {
+        profile?.let { ProfileDetails(it, enabled, onSave) }
+        if (profile == null) {
+            TextButton(onClick = onRetry, enabled = enabled) { Text("Retry") }
+        }
+    }
+}
+
+@Composable
+private fun DeleteAccountButton(
+    onClick: () -> Unit,
+    enabled: Boolean,
+    deleting: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val errorColor = MaterialTheme.colorScheme.error
+    OutlinedButton(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier.fillMaxWidth().heightIn(min = 56.dp),
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = errorColor),
+        border = BorderStroke(1.dp, if (enabled) errorColor else errorColor.copy(alpha = 0.12f)),
+    ) {
+        Text(
+            if (deleting) "Finish deleting account" else "Delete account",
+            style = MaterialTheme.typography.titleMedium,
+        )
+    }
+}
+
+@Composable
+private fun LogOutButton(
+    onClick: () -> Unit,
+    enabled: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    OutlinedButton(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier.fillMaxWidth().heightIn(min = 56.dp),
+        colors =
+            ButtonDefaults.outlinedButtonColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+            ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    ) {
+        Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null)
+        Spacer(Modifier.width(8.dp))
+        Text(
+            "Log out",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
         )
     }
 }

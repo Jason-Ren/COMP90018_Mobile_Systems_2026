@@ -213,11 +213,12 @@ private fun DeckListTopBar(
             TextButton(onClick = onCommunity) { Text("Community") }
             IconButton(
                 onClick = onAccount,
-                modifier = Modifier.padding(top=12.dp,end=12.dp)) {
+                modifier = Modifier.padding(top = 12.dp, end = 12.dp),
+            ) {
                 Icon(
                     Icons.Default.Settings,
                     contentDescription = "Account",
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(32.dp),
                 )
             }
         },

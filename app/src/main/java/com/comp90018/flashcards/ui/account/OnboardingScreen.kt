@@ -6,10 +6,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.comp90018.flashcards.ui.social.SocialStatus
@@ -50,7 +50,7 @@ fun ProfileConnectionScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(error, textAlign = TextAlign.Center, modifier = Modifier.padding(all=24.dp) )
+        Text(error, textAlign = TextAlign.Center, modifier = Modifier.padding(all = 24.dp))
         Button(onClick = onRetry) { Text("Retry") }
         TextButton(onClick = onSignOut) { Text("Log out") }
     }
