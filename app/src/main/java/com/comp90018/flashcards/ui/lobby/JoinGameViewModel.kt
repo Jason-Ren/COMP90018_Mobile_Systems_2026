@@ -85,6 +85,7 @@ class JoinGameViewModel
                 debugSettings.emulatorMode,
             ) { args: Array<Any?> ->
                 val name = args[0] as String
+
                 @Suppress("UNCHECKED_CAST")
                 val currentHosts = args[1] as List<DiscoveredHost>
                 val currentLink = args[2] as ConnectionState

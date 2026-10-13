@@ -89,9 +89,9 @@ fun ChooseTimerScreen(
                     helpTip(
                         topic = HelpTopic.DuoPlayHelp,
                         modifier = Modifier.padding(end = 12.dp),
-                        size = 36.dp
+                        size = 36.dp,
                     )
-                }
+                },
             )
         },
     ) { padding ->

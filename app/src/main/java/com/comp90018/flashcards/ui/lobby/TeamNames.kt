@@ -1,6 +1,5 @@
 package com.comp90018.flashcards.ui.lobby
 
-
 private val TEAM_ADJECTIVES =
     listOf("Cute", "Smart", "Flying", "Lazy", "Bright", "Funny", "Awesome", "Cool", "Curious", "Wise")
 private val TEAM_NOUNS =

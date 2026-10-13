@@ -47,7 +47,8 @@ fun DeckListScreen(
                 onSignOut = viewModel::signOut,
                 emulatorMode = emulatorMode,
                 onEmulatorModeChange = viewModel::setEmulatorMode,
-                onCommunity = onCommunity)
+                onCommunity = onCommunity,
+            )
         },
         floatingActionButton = {
             DeckListButtons(onJoinGame = onJoinGame, onCreateDeck = { showDialog = true })

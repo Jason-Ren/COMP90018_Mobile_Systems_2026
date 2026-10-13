@@ -77,9 +77,9 @@ fun StudyScreen(
                     helpTip(
                         topic = HelpTopic.SoloPlayHelp,
                         modifier = Modifier.padding(end = 12.dp),
-                        size = 36.dp
+                        size = 36.dp,
                     )
-                }
+                },
             )
         },
     ) { padding ->

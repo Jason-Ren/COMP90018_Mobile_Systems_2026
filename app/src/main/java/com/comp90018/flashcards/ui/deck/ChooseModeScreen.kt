@@ -43,20 +43,27 @@ private enum class PlayMode(
     val isAvailable: Boolean,
     val helpTip: HelpTopic,
 ) {
-    SOLO("Solo",
+    SOLO(
+        "Solo",
         "Study the deck on your own, at your own pace." +
             "\nKeeps track of your progress for effective revision.",
         isAvailable = true,
-        HelpTopic.SoloPlayHelp),
-    DUO("Duo",
+        HelpTopic.SoloPlayHelp,
+    ),
+    DUO(
+        "Duo",
         "Study together with a friend. One player describes the card, the other guesses the answer.",
         isAvailable = true,
-        HelpTopic.DuoPlayHelp),
-    TEAM_MODE("Clash",
+        HelpTopic.DuoPlayHelp,
+    ),
+    TEAM_MODE(
+        "Clash",
         "A competitive Duo match for 2 teams of two." +
             "\n Requires 2 devices with ClashCards installed.",
         isAvailable = true,
-        HelpTopic.MultiPlayHelp);
+        HelpTopic.MultiPlayHelp,
+    ),
+    ;
 
     @Composable
     fun iconPainter(): Painter =

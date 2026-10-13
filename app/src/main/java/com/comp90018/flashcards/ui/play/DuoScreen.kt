@@ -68,10 +68,12 @@ fun DuoScreen(
             if (!uiState.isLoading && !inPlay) {
                 helpTip(
                     topic = HelpTopic.DuoPlayHelp,
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(16.dp),
-                    size = 36.dp,)
+                    modifier =
+                        Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(16.dp),
+                    size = 36.dp,
+                )
             }
         }
     }
