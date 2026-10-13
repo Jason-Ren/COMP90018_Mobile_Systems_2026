@@ -37,6 +37,7 @@ social_backends/{namespace}/...  # profiles, friendships, private ID mappings, c
 | `visibility` | string | `"private"` or `"public"` (publish for search / Save-a-copy) |
 | `updatedAt` | timestamp | UTC; used for ordering and conflict hints |
 | `cardCount` | number | Denormalised count for catalogue lists |
+| `authorEmail` | string? | Optional creator email for Discover search; stamped on Publish |
 | `copiedFrom` | map? | API-issued source attribution on saved copies; absent on original decks |
 
 Document id = same UUID as local `DeckEntity.deckId` so sync can match rows later.

@@ -50,6 +50,8 @@ internal object DeckSyncPlanner {
                             visibility = remoteDeck?.visibility ?: DeckVisibility.PRIVATE,
                             updatedAt = now,
                             cardCount = cards.size,
+                            // Keep catalogue search metadata; sync does not own this field.
+                            authorEmail = remoteDeck?.authorEmail,
                         ),
                     cards = cards,
                     deleteCardIds = staleCardIds(remoteCards, cards),
