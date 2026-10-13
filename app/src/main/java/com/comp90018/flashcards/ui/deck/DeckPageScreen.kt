@@ -3,18 +3,52 @@ package com.comp90018.flashcards.ui.deck
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -24,7 +58,18 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.comp90018.flashcards.data.local.entity.CardEntity
+import com.comp90018.flashcards.ui.social.PublishConfirmation
+import com.comp90018.flashcards.ui.social.SocialTaskState
+
+// which dialog or sheet is open, held together so the screen can hand it to the pieces that draw them
+private class DeckPageDialogState {
+    var showEdit by mutableStateOf(false)
+    var showDelete by mutableStateOf(false)
+    var showPublish by mutableStateOf(false)
+    var showShare by mutableStateOf(false)
+    var showOptions by mutableStateOf(false)
+    var readOnlyCard by mutableStateOf<CardUiModel?>(null)
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,82 +78,60 @@ fun DeckPageScreen(
     onPlay: (String) -> Unit,
     onAddCard: (String) -> Unit,
     onEditCard: (String, String) -> Unit,
-    onCommunity: (String) -> Unit,
+    onOpenSource: (String) -> Unit,
     modifier: Modifier = Modifier,
+    onOpenLocal: (String) -> Unit = {},
+    onFriends: () -> Unit = {},
     viewModel: DeckSummaryViewModel = hiltViewModel(),
     onJoinGame: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val taskState by viewModel.taskState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val dialogs = remember { DeckPageDialogState() }
 
-    var showEditDialog by remember { mutableStateOf(false) }
-    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+    LaunchedEffect(taskState.message) {
+        taskState.message?.let { snackbarHostState.showSnackbar(it) }
+    }
+    LaunchedEffect(taskState.error) {
+        taskState.error?.let { snackbarHostState.showSnackbar(it) }
+    }
 
     Scaffold(
         modifier = modifier,
-        topBar = {
-            DeckPageTopBar(
-                onNavigateBack = onNavigateBack,
-                onEditDeckInfo = { showEditDialog = true },
-                onDeleteDeck = { showDeleteConfirmDialog = true },
-                onCommunity = { onCommunity(viewModel.deckId) },
-            )
-        },
+        topBar = { DeckPageTopBar(onNavigateBack) },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-        ) {
-            DeckPageBody(
-                uiState = uiState,
-                onOpenSource = onCommunity,
-                onAddCard = { onAddCard(viewModel.deckId) },
-                onEditCard = { cardId -> onEditCard(viewModel.deckId, cardId) },
-            )
-
-            PlayBottomBar(
-                canPlay = uiState.cardCount > 0,
-                onPlay = { onPlay(viewModel.deckId) },
-                modifier = Modifier.align(Alignment.BottomCenter),
-            )
-        }
-    }
-
-    if (showEditDialog) {
-        EditDeckDialog(
-            currentName = uiState.deckName,
-            currentDescription = uiState.deckDescription,
-            onConfirm = { newName, newDescription ->
-                viewModel.updateDeck(newName, newDescription)
-                showEditDialog = false
-            },
-            onDismiss = { showEditDialog = false },
+        DeckPageContent(
+            uiState = uiState,
+            taskBusy = taskState.busy,
+            deckId = viewModel.deckId,
+            dialogs = dialogs,
+            onPlay = onPlay,
+            onAddCard = onAddCard,
+            onEditCard = onEditCard,
+            onOpenSource = onOpenSource,
+            onOpenLocal = onOpenLocal,
+            onSaveCopy = viewModel::saveCopy,
+            onMoreCards = viewModel::moreCards,
+            onLoadFriends = viewModel::loadFriends,
+            modifier = Modifier.padding(padding),
         )
     }
 
-    if (showDeleteConfirmDialog) {
-        DeleteDeckDialog(
-            deckName = uiState.deckName,
-            onConfirm = {
-                showDeleteConfirmDialog = false
-                viewModel.deleteDeck(onDeleted = onNavigateBack)
-            },
-            onDismiss = { showDeleteConfirmDialog = false },
-        )
-    }
+    DeckPageSheets(uiState, taskState, viewModel.deckId, dialogs, onFriends, viewModel::share, viewModel::loadFriends)
+    DeckPageDialogs(
+        uiState = uiState,
+        dialogs = dialogs,
+        onUpdate = viewModel::updateDeck,
+        onPublish = viewModel::publish,
+        onDelete = { viewModel.deleteDeck(onDeleted = onNavigateBack) },
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DeckPageTopBar(
-    onNavigateBack: () -> Unit,
-    onEditDeckInfo: () -> Unit,
-    onDeleteDeck: () -> Unit,
-    onCommunity: () -> Unit,
-) {
-    var showMenu by remember { mutableStateOf(false) }
-
+private fun DeckPageTopBar(onNavigateBack: () -> Unit) {
     TopAppBar(
         title = {},
         navigationIcon = {
@@ -116,57 +139,160 @@ private fun DeckPageTopBar(
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
             }
         },
-        actions = {
-            Box {
-                IconButton(onClick = { showMenu = true }) {
-                    Icon(Icons.Default.MoreVert, contentDescription = "More Options")
-                }
-                DropdownMenu(
-                    expanded = showMenu,
-                    onDismissRequest = { showMenu = false },
-                ) {
-                    DeckPublicationMenu(onDismissMenu = { showMenu = false })
-                    DropdownMenuItem(
-                        text = { Text("Share with friends") },
-                        onClick = {
-                            showMenu = false
-                            onCommunity()
-                        },
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Edit Deck Info") },
-                        leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
-                        onClick = {
-                            showMenu = false
-                            onEditDeckInfo()
-                        },
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Delete Deck", color = MaterialTheme.colorScheme.error) },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Default.Delete,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.error,
-                            )
-                        },
-                        onClick = {
-                            showMenu = false
-                            onDeleteDeck()
-                        },
-                    )
-                }
-            }
-        },
     )
+}
+
+// the deck itself, with the play bar over the bottom when the deck is the player's own
+@Composable
+private fun DeckPageContent(
+    uiState: DeckSummaryUiState,
+    taskBusy: Boolean,
+    deckId: String,
+    dialogs: DeckPageDialogState,
+    onPlay: (String) -> Unit,
+    onAddCard: (String) -> Unit,
+    onEditCard: (String, String) -> Unit,
+    onOpenSource: (String) -> Unit,
+    onOpenLocal: (String) -> Unit,
+    onSaveCopy: () -> Unit,
+    onMoreCards: () -> Unit,
+    onLoadFriends: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(modifier = modifier.fillMaxSize()) {
+        if (uiState.isLoading) {
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            return@Box
+        }
+
+        DeckPageBody(
+            uiState = uiState,
+            taskBusy = taskBusy,
+            onOpenSource = onOpenSource,
+            onOpenLocal = onOpenLocal,
+            onSaveCopy = onSaveCopy,
+            onMoreCards = onMoreCards,
+            onAddCard = { onAddCard(deckId) },
+            onEditCard = { cardId -> onEditCard(deckId, cardId) },
+            onSelectReadOnlyCard = { card -> dialogs.readOnlyCard = card },
+            onShareClick = {
+                dialogs.showShare = true
+                onLoadFriends()
+            },
+            onOptionsClick = { dialogs.showOptions = true },
+        )
+
+        if (uiState.isOwned) {
+            PlayBottomBar(
+                canPlay = uiState.cardCount > 0,
+                onPlay = { onPlay(deckId) },
+                modifier = Modifier.align(Alignment.BottomCenter),
+            )
+        }
+    }
+}
+
+// the two bottom sheets, share and options
+@Composable
+private fun DeckPageSheets(
+    uiState: DeckSummaryUiState,
+    taskState: SocialTaskState,
+    deckId: String,
+    dialogs: DeckPageDialogState,
+    onFriends: () -> Unit,
+    onShare: (String, Boolean) -> Unit,
+    onRefresh: () -> Unit,
+) {
+    if (dialogs.showShare) {
+        UnifiedDeckShareSheet(
+            deckId = deckId,
+            friends = uiState.friends,
+            task = taskState,
+            onDismiss = { dialogs.showShare = false },
+            onFriends = {
+                dialogs.showShare = false
+                onFriends()
+            },
+            onShare = onShare,
+            onRefresh = onRefresh,
+        )
+    }
+
+    if (dialogs.showOptions) {
+        DeckOptionsBottomSheet(
+            isPublic = uiState.visibility == "public",
+            onDismiss = { dialogs.showOptions = false },
+            onEditDeckInfo = { dialogs.showEdit = true },
+            onEditVisibility = { dialogs.showPublish = true },
+            onDeleteDeck = { dialogs.showDelete = true },
+        )
+    }
+}
+
+// edit, publish, delete and the read-only card dialogs
+@Composable
+private fun DeckPageDialogs(
+    uiState: DeckSummaryUiState,
+    dialogs: DeckPageDialogState,
+    onUpdate: (String, String) -> Unit,
+    onPublish: (Boolean) -> Unit,
+    onDelete: () -> Unit,
+) {
+    if (dialogs.showEdit) {
+        EditDeckDialog(
+            currentName = uiState.deckName,
+            currentDescription = uiState.deckDescription,
+            onConfirm = { newName, newDescription ->
+                onUpdate(newName, newDescription)
+                dialogs.showEdit = false
+            },
+            onDismiss = { dialogs.showEdit = false },
+        )
+    }
+
+    if (dialogs.showPublish) {
+        PublishConfirmation(
+            public = uiState.visibility != "public",
+            onConfirm = {
+                dialogs.showPublish = false
+                onPublish(uiState.visibility != "public")
+            },
+            onDismiss = { dialogs.showPublish = false },
+        )
+    }
+
+    if (dialogs.showDelete) {
+        DeleteDeckDialog(
+            deckName = uiState.deckName,
+            onConfirm = {
+                dialogs.showDelete = false
+                onDelete()
+            },
+            onDismiss = { dialogs.showDelete = false },
+        )
+    }
+
+    dialogs.readOnlyCard?.let { card ->
+        ReadOnlyCardDialog(
+            card = card,
+            onDismiss = { dialogs.readOnlyCard = null },
+        )
+    }
 }
 
 @Composable
 private fun DeckPageBody(
     uiState: DeckSummaryUiState,
+    taskBusy: Boolean,
     onOpenSource: (String) -> Unit,
+    onOpenLocal: (String) -> Unit,
+    onSaveCopy: () -> Unit,
+    onMoreCards: () -> Unit,
     onAddCard: () -> Unit,
     onEditCard: (String) -> Unit,
+    onSelectReadOnlyCard: (CardUiModel) -> Unit,
+    onShareClick: () -> Unit,
+    onOptionsClick: () -> Unit,
 ) {
     Column(
         modifier =
@@ -175,8 +301,21 @@ private fun DeckPageBody(
                 .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        DeckHeaderSection(uiState = uiState)
-        DeckPublicationStatus(onOpenSource = onOpenSource)
+        DeckHeaderSection(
+            uiState = uiState,
+            onOpenSource = onOpenSource,
+            onShareClick = onShareClick,
+            onOptionsClick = onOptionsClick,
+        )
+
+        if (!uiState.isOwned) {
+            CommunityCopyActionSection(
+                uiState = uiState,
+                taskBusy = taskBusy,
+                onSaveCopy = onSaveCopy,
+                onOpenLocal = onOpenLocal,
+            )
+        }
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -190,29 +329,76 @@ private fun DeckPageBody(
                 color = MaterialTheme.colorScheme.onSurface,
             )
 
-            FilledTonalButton(
-                onClick = onAddCard,
-                modifier = Modifier.height(48.dp),
-                contentPadding = PaddingValues(start = 16.dp, end = 20.dp),
-            ) {
-                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(24.dp))
-                Spacer(Modifier.width(8.dp))
-                Text("Add Card", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            if (uiState.isOwned) {
+                FilledTonalButton(
+                    onClick = onAddCard,
+                    modifier = Modifier.height(48.dp),
+                    contentPadding = PaddingValues(start = 16.dp, end = 20.dp),
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(24.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Add Card", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                }
             }
         }
 
         CardsListSection(
             cards = uiState.cards,
+            isOwned = uiState.isOwned,
+            moreCards = uiState.moreCards,
+            taskBusy = taskBusy,
+            onMoreCards = onMoreCards,
             onEditCard = onEditCard,
+            onSelectReadOnlyCard = onSelectReadOnlyCard,
             modifier = Modifier.weight(1f),
         )
     }
 }
 
 @Composable
+private fun CommunityCopyActionSection(
+    uiState: DeckSummaryUiState,
+    taskBusy: Boolean,
+    onSaveCopy: () -> Unit,
+    onOpenLocal: (String) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (uiState.savedCopyId != null) {
+            Button(
+                onClick = { onOpenLocal(uiState.savedCopyId) },
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+            ) {
+                Text("View my copy", style = MaterialTheme.typography.titleMedium)
+            }
+        } else {
+            Button(
+                onClick = onSaveCopy,
+                enabled = !taskBusy,
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+            ) {
+                Text(
+                    if (uiState.pendingCopy) "Retry saving copy" else "Save a copy to My Decks",
+                    style = MaterialTheme.typography.titleMedium,
+                )
+            }
+            Text(
+                text = "Your copy is private and editable, with fresh study progress.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
 private fun CardsListSection(
-    cards: List<CardEntity>,
+    cards: List<CardUiModel>,
+    isOwned: Boolean,
+    moreCards: Boolean,
+    taskBusy: Boolean,
+    onMoreCards: () -> Unit,
     onEditCard: (String) -> Unit,
+    onSelectReadOnlyCard: (CardUiModel) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (cards.isEmpty()) {
@@ -221,7 +407,12 @@ private fun CardsListSection(
             contentAlignment = Alignment.Center,
         ) {
             Text(
-                text = "No cards in this deck yet.\nTap 'Add Card' above to create cards.",
+                text =
+                    if (isOwned) {
+                        "No cards in this deck yet.\nTap 'Add Card' above to create cards."
+                    } else {
+                        "This deck has no cards yet."
+                    },
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -232,13 +423,26 @@ private fun CardsListSection(
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(top = 16.dp, bottom = 120.dp),
+                contentPadding = PaddingValues(top = 8.dp, bottom = if (isOwned) 120.dp else 24.dp),
             ) {
                 items(cards, key = { it.cardId }) { card ->
                     CardItemView(
                         card = card,
-                        onClick = { onEditCard(card.cardId) },
+                        onClick = {
+                            if (isOwned) onEditCard(card.cardId) else onSelectReadOnlyCard(card)
+                        },
                     )
+                }
+                if (moreCards && !isOwned) {
+                    item {
+                        TextButton(
+                            onClick = onMoreCards,
+                            enabled = !taskBusy,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text("Load more cards")
+                        }
+                    }
                 }
             }
 
@@ -289,7 +493,12 @@ private fun PlayBottomBar(
 }
 
 @Composable
-private fun DeckHeaderSection(uiState: DeckSummaryUiState) {
+private fun DeckHeaderSection(
+    uiState: DeckSummaryUiState,
+    onOpenSource: (String) -> Unit,
+    onShareClick: () -> Unit,
+    onOptionsClick: () -> Unit,
+) {
     Column(
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -298,11 +507,18 @@ private fun DeckHeaderSection(uiState: DeckSummaryUiState) {
                 .fillMaxWidth()
                 .padding(vertical = 4.dp),
     ) {
-        Text(
-            text = uiState.deckName.ifBlank { "Deck" },
-            style = MaterialTheme.typography.headlineLarge,
-            fontWeight = FontWeight.Bold,
-        )
+        DeckTitleRow(uiState, onShareClick, onOptionsClick)
+
+        DeckInfoRow(uiState)
+
+        uiState.copiedFrom?.let { source ->
+            TextButton(
+                onClick = { onOpenSource(source.deckId) },
+                contentPadding = PaddingValues(0.dp),
+            ) {
+                Text("View source deck")
+            }
+        }
 
         if (uiState.deckDescription.isNotBlank()) {
             Text(
@@ -314,9 +530,69 @@ private fun DeckHeaderSection(uiState: DeckSummaryUiState) {
     }
 }
 
+// deck name on the left, share and options on the right
+@Composable
+private fun DeckTitleRow(
+    uiState: DeckSummaryUiState,
+    onShareClick: () -> Unit,
+    onOptionsClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = uiState.deckName.ifBlank { "Deck" },
+            style = MaterialTheme.typography.headlineLarge,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.weight(1f),
+        )
+
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onShareClick) {
+                Icon(Icons.Default.Share, contentDescription = "Share")
+            }
+            if (uiState.isOwned) {
+                IconButton(onClick = onOptionsClick) {
+                    Icon(Icons.Default.MoreVert, contentDescription = "Options")
+                }
+            }
+        }
+    }
+}
+
+// public or private, card count and author on one line
+@Composable
+private fun DeckInfoRow(uiState: DeckSummaryUiState) {
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(
+            text = if (uiState.visibility == "public") "Public" else "Private",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        Text(
+            text = "· ${uiState.cardCount} cards",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        uiState.creatorDisplayName?.takeIf { it.isNotBlank() }?.let { name ->
+            Text(
+                text = "· Created by $name",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
 @Composable
 private fun CardItemView(
-    card: CardEntity,
+    card: CardUiModel,
     onClick: () -> Unit,
 ) {
     Card(
@@ -346,6 +622,13 @@ private fun CardItemView(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
+            if (card.frontImageUri != null || card.backImageUri != null) {
+                Text(
+                    text = "Contains image attachment",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
         }
     }
 }

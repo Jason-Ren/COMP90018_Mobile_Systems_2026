@@ -37,7 +37,7 @@ $env:SOCIAL_IDENTITY_HMAC_KEY = (Get-Content secrets/identity-hmac-key.txt -Raw)
 
 Open [interactive API documentation](http://127.0.0.1:8000/docs). `/health` is unauthenticated; `/v1/*` requires a Firebase ID token. Missing identity-key/project configuration stops startup. A schema-version and key-fingerprint document is checked at startup; changing the key for existing social data stops startup to avoid orphaning profiles. The project ID, database ID, and namespace select the data location, so keep all three stable between deployments. Selecting another location selects a separate dataset. Environment variables must be set in the shell; no `.env` file is loaded automatically.
 
-The repository-root [`firebase.json`](../firebase.json), [`firestore.rules`](../firestore.rules), and [`firestore.indexes.json`](../firestore.indexes.json) are the single deployment configuration. They contain the two deck indexes and three relationship indexes. There is no separate backend rules/index configuration. Before testing against a live database, an administrator should deploy the root configuration and wait until all five indexes are ready. After installing the local CLI with `npm ci`, run from `backend`:
+The repository-root [`firebase.json`](../firebase.json), [`firestore.rules`](../firestore.rules), and [`firestore.indexes.json`](../firestore.indexes.json) are the single deployment configuration. They contain the two deck and three relationship composite indexes, plus a collection-group field index on `shares.recipient_id` for account deletion. There is no separate backend rules/index configuration. Before testing against a live database, deploy the root configuration and wait until all indexes are ready. After installing the local CLI with `npm ci`, run from `backend`:
 
 ```powershell
 npx firebase deploy --config ../firebase.json --only firestore:rules,firestore:indexes --project com-comp90018-flashcards
@@ -68,6 +68,7 @@ Firebase handles account registration, passwords, password reset, and Google sig
 |---|---|---|
 | PUT | `/v1/me` | Create/update the current user's username and display name |
 | GET | `/v1/me` | Read the current profile |
+| DELETE | `/v1/me` | Delete this user's application data after recent reauthentication; client then deletes the Firebase login |
 | GET | `/v1/users/lookup?username=bob` | Exact, case-insensitive username lookup |
 | POST | `/v1/friend-requests` | Send a request with `{"recipient_id":"<public UUID>"}` |
 | GET | `/v1/friend-requests` | List your incoming pending requests |
@@ -80,11 +81,22 @@ Firebase handles account registration, passwords, password reset, and Google sig
 | DELETE | `/v1/decks/{deck_id}/publish` | Owner makes a deck private; keeps explicit shares; returns the deck |
 | POST | `/v1/decks/{deck_id}/copies` | Save an accessible deck as a private copy: `{"request_id":"<new UUID>","name":"Optional name"}` |
 | GET | `/v1/decks/{deck_id}` | Read a deck as its owner, an explicit shared friend, or a signed-in public reader |
+| GET | `/v1/decks/public` | List public decks in newest-update order, with current owner profile display names |
 | GET | `/v1/decks/{deck_id}/cards` | Read cards with the same access check; `limit` and `offset` supported |
 
 Usernames are trimmed, lowercased, unique, and 3–24 ASCII letters, digits, or underscores. Display names are trimmed and 1–80 characters. A profile must exist before performing friend actions or looking up users. Profile responses contain only `id`, `username`, `display_name`, `created_at`, and `updated_at`; emails, tokens, and Firebase UIDs are not returned.
 
 List endpoints support `limit` (1–100, default 50) and `offset` (0–10000, default 0). Requests also support `direction=incoming|outgoing` and `status=pending|accepted|declined|cancelled|removed`. Requests sort newest-created-first; friends sort newest-accepted-first, with request ID ascending as a stable tie-breaker. Cards sort by `position` then document ID. Friend ordering changed from the SQLite prototype's alphabetical order so Firestore can page without reading every friend's profile. Fetch another page by increasing the offset by the page size; an empty page ends the list. Concurrent changes can shift offset-based pages, so refresh from offset zero after a mutation. Firestore charges reads for skipped offsets; cursor pagination can replace this contract if lists grow large.
+
+## Account onboarding and deletion
+
+Android checks `GET /v1/me` immediately after sign-in. A `404 profile_required` opens mandatory username/display-name onboarding; an existing profile opens the dashboard. The dashboard's Account page updates only the display name through `PUT /v1/me`, preserving the username.
+
+`DELETE /v1/me` requires a verified token with an `auth_time` within the last five minutes; missing/stale authentication returns `403 recent_login_required` before any data changes. Refreshing a token alone does not count as reauthentication. The endpoint returns `204` after application-data cleanup; it does **not** delete the Firebase Authentication user. The Android client reauthenticates first, pauses sync, calls this endpoint, clears that user's local data and upload queue, and finally calls `FirebaseUser.delete()`.
+
+Cleanup removes owned decks and their subcollections, incoming share grants, relationships/request pointers, username reservation, public-ID mapping, social profile and that user's copy receipts. Other users' saved copies and copy receipts remain independent. A server-only `account_deletions/{Firebase UID}` marker is committed before cleanup; API transactions and Firestore rules read it to prevent stale clients from recreating data. A partial cleanup is resumable with the same identity, even after its social profile is removed. Repeated successful calls return `204`. Completed markers retain only namespace, completion status and timestamp; keeping the UID marker prevents stale-token resurrection. Do not reuse a deleted Firebase UID for a different account. This is a minimal deletion barrier rather than a complete erasure of every reference in other users' copied-deck attribution or backups.
+
+The API returns `409 account_deleting` for other actions after deletion starts. Clients should show the recovery screen and retry deletion after reauthentication. Deploy the updated rules and the `shares.recipient_id` collection-group index before API `0.3.0`. No Firebase Auth administrator role is needed: the backend retains its existing read-only Auth permission, and the authenticated Firebase client deletes its own login.
 
 ## Deck sharing contract
 
@@ -94,7 +106,7 @@ Sharing leaves `visibility` as `private` or `public`, leaves the owner unchanged
 
 Grants live in `decks/{deckId}/shares/{recipientFirebaseUid}`. Each records the owner UID, recipient public UUID, social namespace, relationship pair ID, current friend-request ID, participant hashes, and creation timestamp. Rules look up the grant and the accepted relationship; clients cannot read or write grant documents directly. The API grants within its configured social namespace, and reads evaluate the namespace recorded in the grant, just as the rules do. Firestore does not automatically delete subcollections when a deck is deleted, so deck IDs must not be reused for unrelated decks. A grant is also bound to its owner UID, preventing it from authorizing a different owner who recreates that ID.
 
-API deck/card responses preserve the existing camelCase fields and add `deckId` / `cardId` from the document IDs. Firestore `updatedAt` is returned as an ISO timestamp over HTTP. Android opens shared private decks by a pasted deck code; the original owner/public catalogue queries remain unchanged. A shared-deck inbox and notifications are not included yet.
+API deck/card responses preserve the existing camelCase fields and add `deckId` / `cardId` from the document IDs. Firestore `updatedAt` and optional `createdAt` are returned as ISO timestamps over HTTP. Deck detail and public catalogue reads add optional `ownerDisplayName`, resolved from the current social profile. The catalogue resolves each distinct owner once, omits legacy creator emails, and excludes decks owned by deleting accounts; it never includes private decks, including the caller's own or shared decks. Android opens shared private decks by a pasted deck code and loads Discover through `/v1/decks/public`. A shared-deck inbox and notifications are not included yet.
 
 ## Publish and Save-a-copy contract
 
@@ -206,7 +218,7 @@ This replaces the documents' vague “salted/hashed friend graph” idea with a 
 
 Back up the identity key separately from Firestore. Key rotation requires a planned identity migration; changing the environment value is not a migration. Firestore schema version 1 is recorded in `metadata/config`, and unknown versions are rejected.
 
-For Cloud Run, use its attached service account and Application Default Credentials instead of shipping a service-account JSON. That identity needs Firestore data access (for example, `roles/datastore.user`) and permission to read Firebase Auth users for revocation checks (for example, `roles/firebaseauth.viewer`). Supply the stable HMAC key through Secret Manager. Do not set `FIRESTORE_EMULATOR_HOST` in a deployed service; the API rejects it when running on Cloud Run. Deployment is described in [DEPLOYMENT.md](DEPLOYMENT.md). Rate limits/abuse controls, block lists, account deletion, and a general schema/data migration process are not configured here.
+For Cloud Run, use its attached service account and Application Default Credentials instead of shipping a service-account JSON. That identity needs Firestore data access (for example, `roles/datastore.user`) and permission to read Firebase Auth users for revocation checks (for example, `roles/firebaseauth.viewer`). Supply the stable HMAC key through Secret Manager. Do not set `FIRESTORE_EMULATOR_HOST` in a deployed service; the API rejects it when running on Cloud Run. Deployment is described in [DEPLOYMENT.md](DEPLOYMENT.md). Rate limits/abuse controls, block lists, and a general schema/data migration process are not configured here.
 
 ## Tests
 
@@ -224,7 +236,7 @@ The first run downloads the Firestore emulator. Subsequent tests need no live Fi
 
 Tests exercise account ownership, validation, atomic username reservations, request permissions, symmetric friendship, duplicate retries, concurrent requests across separate app instances, pagination, persistence across app restarts, and rejection of changed identity configuration. Deck tests exercise both the API and authenticated client requests against the canonical root rules: owner/public/private reads, share/revoke/unfriend/refriend, publish/unpublish, copied content and attribution, concurrent copy retries, independent copies, and atomic failure with no partial writes. They also cover forbidden edits and forged grants/attribution, identity-mapping upgrades, and existing catalogue queries. Auth adapter tests mock the Firebase SDK boundary and check revocation/error handling; they do not replace a live Firebase smoke test. CI runs the emulator and these checks independently of the Android build.
 
-The emulator does not enforce production composite-index requirements. Deploy the checked-in indexes before the live smoke test; emulator success alone does not verify production IAM, index readiness, or Firebase credentials.
+Deletion tests cover recent authentication, scoped cleanup, retention of others' copies, username reuse, interruption/retry, and the Firestore deletion barrier. The emulator does not enforce production index requirements. Deploy the checked-in indexes before the live smoke test; emulator success alone does not verify production IAM, index readiness, or Firebase credentials.
 
 ## Further integration work
 

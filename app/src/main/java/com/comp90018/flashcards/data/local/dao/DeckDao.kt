@@ -11,7 +11,13 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface DeckDao {
-    @Query("SELECT * FROM decks WHERE ownerId = :ownerId")
+    @Query(
+        """
+        SELECT * FROM decks
+        WHERE ownerId = :ownerId
+        ORDER BY createdAtEpochMillis DESC, deckId DESC
+        """,
+    )
     fun getAllDecks(ownerId: String): Flow<List<DeckEntity>>
 
     @Query("SELECT COUNT(*) FROM decks WHERE ownerId = :ownerId")
@@ -29,6 +35,15 @@ interface DeckDao {
     @Query("SELECT * FROM decks WHERE deckId = :deckId")
     suspend fun getDeckById(deckId: String): DeckEntity?
 
-    @Query("SELECT * FROM decks WHERE ownerId = :ownerId")
+    @Query(
+        """
+        SELECT * FROM decks
+        WHERE ownerId = :ownerId
+        ORDER BY createdAtEpochMillis DESC, deckId DESC
+        """,
+    )
     suspend fun listDecksForOwner(ownerId: String): List<DeckEntity>
+
+    @Query("DELETE FROM decks WHERE ownerId = :ownerId")
+    suspend fun deleteForOwner(ownerId: String)
 }

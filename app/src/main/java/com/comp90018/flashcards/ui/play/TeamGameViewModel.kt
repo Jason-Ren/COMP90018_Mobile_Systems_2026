@@ -1,10 +1,12 @@
 package com.comp90018.flashcards.ui.play
 
 import androidx.lifecycle.viewModelScope
+import com.comp90018.flashcards.data.audio.AnswerSounds
 import com.comp90018.flashcards.data.p2p.ConnectionController
 import com.comp90018.flashcards.data.p2p.ConnectionState
 import com.comp90018.flashcards.data.p2p.GameMessage
 import com.comp90018.flashcards.data.p2p.GameSession
+import com.comp90018.flashcards.data.vibration.GameVibration
 import com.comp90018.flashcards.debug.DebugSettings
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -17,7 +19,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.random.Random
 
-/** One phone's view of a team mode game: its own round, the other team's score once known, and the link. */
+/** One phone's view of a clash mode game: its own round, the other team's score once known, and the link. */
 data class TeamGameUiState(
     val round: DuoUiState = DuoUiState(),
     // null until the other team has finished its deck
@@ -39,7 +41,7 @@ data class TeamGameUiState(
 }
 
 /**
- * ViewModel for a team mode game. Each team plays its own round exactly like Duo (the round is in
+ * ViewModel for a clash mode game. Each team plays its own round exactly like Duo (the round is in
  * [GameViewModel]) on its own order of the deck, and the two scores are compared at the end.
  */
 @HiltViewModel
@@ -49,7 +51,10 @@ class TeamGameViewModel
         private val connection: ConnectionController,
         session: GameSession,
         private val debugSettings: DebugSettings,
-    ) : GameViewModel(secondsPerCard = session.setup?.secondsPerCard ?: 0) {
+        // handed to the shared round, which plays it on every marked guess
+        sounds: AnswerSounds,
+        vibration: GameVibration,
+    ) : GameViewModel(secondsPerCard = session.setup?.secondsPerCard ?: 0, sounds = sounds, vibration = vibration) {
         private val setup = session.setup
 
         // false when the app was restarted mid game and the setup is gone, the screen then leaves

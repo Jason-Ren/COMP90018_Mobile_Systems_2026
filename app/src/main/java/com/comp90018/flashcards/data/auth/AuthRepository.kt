@@ -13,10 +13,12 @@ import com.comp90018.flashcards.R
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthException
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.auth.UserProfileChangeRequest
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -70,6 +72,49 @@ class AuthRepository
 
         val currentEmail: String?
             get() = firebaseAuth?.currentUser?.email
+
+        val usesPassword: Boolean
+            get() = firebaseAuth?.currentUser?.providerData?.any { it.providerId == "password" } == true
+
+        suspend fun updateDisplayName(
+            uid: String,
+            name: String,
+        ): Result<Unit> =
+            runAuth { auth ->
+                val user = checkNotNull(auth.currentUser)
+                check(user.uid == uid) { "Your account changed. Open Account again." }
+                user.updateProfile(UserProfileChangeRequest.Builder().setDisplayName(name).build()).await()
+            }
+
+        suspend fun reauthenticate(
+            context: Context,
+            uid: String,
+            password: String,
+        ): Result<Unit> =
+            runAuth { auth ->
+                val user = checkNotNull(auth.currentUser)
+                check(user.uid == uid) { "Your account changed. Open Account again." }
+                val credential =
+                    if (usesPassword) {
+                        EmailAuthProvider.getCredential(checkNotNull(user.email), password)
+                    } else {
+                        GoogleAuthProvider.getCredential(
+                            requestGoogleIdToken(context, context.getString(R.string.web_client_id)),
+                            null,
+                        )
+                    }
+                user.reauthenticate(credential).await()
+                check(auth.currentUser?.uid == uid) { "Your account changed. Open Account again." }
+                user.getIdToken(true).await()
+            }
+
+        suspend fun deleteCurrentUser(uid: String): Result<Unit> =
+            runAuth { auth ->
+                val user = checkNotNull(auth.currentUser)
+                check(user.uid == uid) { "Your account changed. Open Account again." }
+                user.delete().await()
+                clearStoredCredential()
+            }
 
         @Suppress("TooGenericExceptionCaught")
         suspend fun signInWithGoogle(context: Context): Result<Unit> {
@@ -169,17 +214,6 @@ class AuthRepository
             }
         }
 
-        private fun FirebaseUser?.toAuthState(): AuthState {
-            val user = this ?: return AuthState.SignedOut
-            return AuthState.SignedIn(
-                SignedInUser(
-                    uid = user.uid,
-                    displayName = user.displayName,
-                    email = user.email,
-                ),
-            )
-        }
-
         @Suppress("TooGenericExceptionCaught")
         private suspend fun runAuth(block: suspend (FirebaseAuth) -> Unit): Result<Unit> {
             val auth = firebaseAuth ?: return Result.failure(IllegalStateException(NOT_CONFIGURED_MESSAGE))
@@ -205,15 +239,26 @@ class AuthRepository
                 "ERROR_INVALID_CREDENTIAL",
                 -> "Email or password is incorrect."
                 "ERROR_OPERATION_NOT_ALLOWED" -> "Email sign-in is not enabled in Firebase."
+                "ERROR_REQUIRES_RECENT_LOGIN" -> "Confirm your sign-in again to finish deleting your account."
                 else -> error.message ?: "Sign-in failed"
             }
 
-        private fun String.isConfigured(): Boolean = isNotBlank() && this != MISSING_WEB_CLIENT_ID
-
         private companion object {
             const val TAG = "AuthRepository"
-            const val MISSING_WEB_CLIENT_ID = "MISSING_WEB_CLIENT_ID"
             const val NOT_CONFIGURED_MESSAGE =
                 "Google sign-in is not configured. Add app/google-services.json and rebuild."
         }
     }
+
+private fun FirebaseUser?.toAuthState(): AuthState {
+    val user = this ?: return AuthState.SignedOut
+    return AuthState.SignedIn(
+        SignedInUser(
+            uid = user.uid,
+            displayName = user.displayName,
+            email = user.email,
+        ),
+    )
+}
+
+private fun String.isConfigured(): Boolean = isNotBlank() && this != "MISSING_WEB_CLIENT_ID"

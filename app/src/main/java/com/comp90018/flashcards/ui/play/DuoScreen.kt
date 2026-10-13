@@ -34,6 +34,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.comp90018.flashcards.data.local.entity.CardEntity
@@ -41,9 +42,11 @@ import com.comp90018.flashcards.ui.help.HelpTopic
 import com.comp90018.flashcards.ui.help.helpTip
 
 private val MISSED_LIST_MAX_WIDTH = 560.dp
+private val START_COUNTDOWN_FONT_SIZE = 160.sp
 
 /**
- * The 2-player screen, locked to landscape: rules, then one card at a time, then the results.
+ * The 2-player screen: rules, then one card at a time, then the results.
+ * Landscape from the countdown until the last card, portrait otherwise.
  */
 @Composable
 fun DuoScreen(
@@ -51,21 +54,27 @@ fun DuoScreen(
     modifier: Modifier = Modifier,
     viewModel: DuoViewModel = hiltViewModel(),
 ) {
-    LockLandscape()
     PauseWhenBackgrounded(viewModel::pause)
     val uiState by viewModel.uiState.collectAsState()
+    val poseAvailable = observeForeheadPose(viewModel::onForeheadPose)
+    // landscape only from the countdown until the last card
+    val inPlay = uiState.phase == DuoPhase.FRONT || uiState.phase == DuoPhase.BACK
+    GameOrientation(landscape = uiState.startCountdown > 0 || inPlay)
+    // no touches during play, so stop the screen dimming
+    KeepScreenOn(enabled = uiState.startCountdown > 0 || inPlay)
 
     Surface(modifier = modifier.fillMaxSize()) {
         Box(modifier = Modifier.fillMaxSize()) {
             when {
                 uiState.isLoading -> LoadingContent()
-                uiState.phase == DuoPhase.READY -> ReadyContent(uiState, viewModel::start)
+                uiState.isPaused -> PausedContent(uiState, viewModel::resume)
+                uiState.startCountdown > 0 -> StartCountdownContent(uiState.startCountdown)
+                uiState.phase == DuoPhase.READY -> ReadyContent(uiState, viewModel::startWithCountdown, poseAvailable)
                 uiState.phase == DuoPhase.FRONT -> FrontContent(uiState, viewModel::reveal)
                 uiState.phase == DuoPhase.BACK -> BackContent(uiState, viewModel::onGesture)
                 else -> FinishedContent(uiState, viewModel::playAgain, onNavigateBack)
             }
-            val inPlay = uiState.phase == DuoPhase.FRONT || uiState.phase == DuoPhase.BACK
-            if (!uiState.isLoading && !inPlay) {
+            if (!uiState.isLoading && !inPlay && uiState.startCountdown == 0) {
                 helpTip(
                     topic = HelpTopic.DuoPlayHelp,
                     modifier =
@@ -86,7 +95,19 @@ internal fun LoadingContent() {
     }
 }
 
-/** Shown after the app was in the background, so the Guesser can get ready before the clock runs. */
+/** A big 3, 2, 1 before the first card. */
+@Composable
+internal fun StartCountdownContent(number: Int) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text(
+            text = number.toString(),
+            style = MaterialTheme.typography.displayLarge.copy(fontSize = START_COUNTDOWN_FONT_SIZE),
+            fontWeight = FontWeight.Bold,
+        )
+    }
+}
+
+/** Shown while a background, connection or forehead-pose pause holds the round. */
 @Composable
 internal fun PausedContent(
     uiState: DuoUiState,
@@ -101,8 +122,25 @@ internal fun PausedContent(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(text = "Paused", style = MaterialTheme.typography.headlineMedium)
-        Text(text = "${formatCountdown(uiState.secondsLeft)} left", style = MaterialTheme.typography.titleMedium)
-        Button(onClick = onResume) { Text("Resume") }
+        Text(
+            text =
+                if (uiState.startCountdown > 0) {
+                    "Round starts in ${uiState.startCountdown}"
+                } else {
+                    "${formatCountdown(uiState.secondsLeft)} left"
+                },
+            style = MaterialTheme.typography.titleMedium,
+        )
+        if (uiState.isPosePaused) {
+            Text(
+                text =
+                    "Hold the phone sideways above your forehead, " +
+                        "with the screen facing the other player, to resume.",
+                textAlign = TextAlign.Center,
+            )
+        } else {
+            Button(onClick = onResume) { Text("Resume") }
+        }
     }
 }
 
@@ -110,6 +148,7 @@ internal fun PausedContent(
 internal fun ReadyContent(
     uiState: DuoUiState,
     onStart: () -> Unit,
+    poseAvailable: Boolean = false,
 ) {
     Column(
         modifier =
@@ -122,11 +161,20 @@ internal fun ReadyContent(
     ) {
         Text(text = uiState.deckName, style = MaterialTheme.typography.headlineMedium)
         Text(text = "Tap \"?\" to learn how to play.", style = MaterialTheme.typography.bodyLarge)
+        if (poseAvailable) {
+            Text(
+                text =
+                    "Hold the phone sideways above your forehead, " +
+                        "with the screen facing the other player, to start.",
+                textAlign = TextAlign.Center,
+            )
+            Text(text = "Lower it to pause. You can also tap Start to play manually.")
+        }
         Button(onClick = onStart) { Text("Start") }
     }
 }
 
-/** The front of the card. Tapping anywhere reveals the back early. */
+/** The back of the card, shown first. Tapping anywhere reveals the front early. */
 @Composable
 internal fun FrontContent(
     uiState: DuoUiState,
@@ -150,13 +198,13 @@ internal fun FrontContent(
             Text(text = formatCountdown(uiState.secondsLeft), style = MaterialTheme.typography.headlineSmall)
         }
         Text(
-            text = uiState.current?.front.orEmpty(),
+            text = uiState.current?.back.orEmpty(),
             style = MaterialTheme.typography.displayMedium,
             textAlign = TextAlign.Center,
             modifier = Modifier.align(Alignment.Center),
         )
         Text(
-            text = "Tap to reveal the back",
+            text = "Tap to reveal the front",
             style = MaterialTheme.typography.bodySmall,
             modifier = Modifier.align(Alignment.BottomCenter),
         )
@@ -229,9 +277,9 @@ private fun CardFaces(card: CardEntity?) {
                 .padding(horizontal = 24.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(text = card?.front.orEmpty(), style = MaterialTheme.typography.titleMedium)
+        Text(text = card?.back.orEmpty(), style = MaterialTheme.typography.titleMedium)
         Text(
-            text = card?.back.orEmpty(),
+            text = card?.front.orEmpty(),
             style = MaterialTheme.typography.headlineLarge,
             textAlign = TextAlign.Center,
         )

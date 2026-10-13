@@ -7,7 +7,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
@@ -29,6 +33,14 @@ fun FlashcardComponent(
         animationSpec = tween(durationMillis = 500),
         label = "cardFlip",
     )
+
+    // Only pick up a new back face while the card is flipped. When the next card loads,
+    // isFlipped resets and the card animates back to the front; during the first half of
+    // that animation the previous card's back stays visible instead of the new card's answer.
+    var shownBack by remember { mutableStateOf(back to backImageUri) }
+    if (isFlipped) {
+        SideEffect { shownBack = back to backImageUri }
+    }
 
     ElevatedCard(
         onClick = onFlip,
@@ -56,8 +68,8 @@ fun FlashcardComponent(
             } else {
                 // Back content (mirrored to look correct after flip)
                 CardContent(
-                    text = back,
-                    imageUri = backImageUri,
+                    text = shownBack.first,
+                    imageUri = shownBack.second,
                     modifier =
                         Modifier
                             .fillMaxSize()

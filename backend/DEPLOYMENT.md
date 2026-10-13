@@ -64,7 +64,7 @@ If the secret already exists, reuse its existing version. The deployment below p
 
 ## 4. Deploy the combined Firestore configuration
 
-From `backend`, install the checked-in Firebase tooling, sign in with project access, and deploy the root rules and all five indexes:
+From `backend`, install the checked-in Firebase tooling, sign in with project access, and deploy the root rules, all five composite indexes, and the `shares.recipient_id` collection-group field index:
 
 ```powershell
 npm ci --no-audit --no-fund
@@ -126,3 +126,14 @@ Deploy the updated root Firestore rules (step 4) before deploying API version `0
 Update the existing Cloud Run service rather than creating another service. For the current Melbourne deployment, the service name is `comp90018-mobile-systems-2026` and the region is `australia-southeast2`; substitute those for the example service name and region above. Keep the existing runtime/build identities, database, namespace, and `SOCIAL_IDENTITY_HMAC_KEY`. If using a repository-connected Cloud Build trigger, build the commit containing this change with its existing backend Dockerfile configuration.
 
 After deployment, `/openapi.json` should report version `0.2.0` and include `/v1/decks/{deck_id}/publish` and `/v1/decks/{deck_id}/copies`. Use the authenticated [two-user walkthrough](README.md#two-user-walkthrough) to verify sharing, copying, publishing, and revocation on disposable test decks. Emulator tests do not verify deployed credentials or IAM permissions.
+
+## Updating an existing service for onboarding and account deletion
+
+This Android update adds mandatory profile onboarding and the dashboard Account page. Onboarding and display-name editing use the existing profile endpoints. Deletion requires the new `DELETE /v1/me` endpoint in API `0.3.0`.
+
+1. Deploy the root rules and indexes with step 4. The five composite indexes remain unchanged; wait for the new collection-group field index on `shares.recipient_id` to become ready. Updated rules block client reads/writes for accounts with a server deletion marker, preventing uploads from recreating deleted data.
+2. Redeploy the existing `comp90018-mobile-systems-2026` Cloud Run service in `australia-southeast2`, using step 5 or the existing repository-connected Cloud Build trigger. Preserve its database, namespace, service accounts and identity secret. No additional Firebase Auth IAM role is required.
+3. Confirm `/openapi.json` reports `0.3.0` and includes `DELETE /v1/me`. Rebuild/install the Android app. Check onboarding with a new account and Account display-name editing with an existing account.
+4. To verify deletion end to end, use a disposable test account and confirm fresh password/Google sign-in in Account. The API cleans application data; the Android Firebase client deletes the login afterward. Verify that its owned decks/profile/relationships are removed and another user's previously saved copy remains. This is a destructive live check; automated tests only use the emulator and local test databases.
+
+Interrupted cleanup keeps a deletion marker and the Android recovery screen offers a safe retry. Keep completed markers: removing them could let stale clients recreate data. Deploying only the Android app against the old API disables successful deletion with an update-required error; it does not remove the Firebase login prematurely. No live deployment or real account deletion is performed by the checks in this repository.

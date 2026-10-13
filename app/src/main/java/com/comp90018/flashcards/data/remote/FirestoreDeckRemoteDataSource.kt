@@ -46,12 +46,15 @@ class FirestoreDeckRemoteDataSource
                     ?.let { RemoteDeckMapper.from(it.id, it.data.orEmpty()) }
             }
 
-        override suspend fun listDecksForOwner(ownerId: String): Result<List<RemoteDeck>> =
+        override suspend fun listDecksForOwner(
+            ownerId: String,
+            fromServer: Boolean,
+        ): Result<List<RemoteDeck>> =
             runRemote {
                 decks()
                     .whereEqualTo(FIELD_OWNER_ID, ownerId)
                     .orderBy(FIELD_UPDATED_AT, Query.Direction.DESCENDING)
-                    .get()
+                    .get(if (fromServer) Source.SERVER else Source.DEFAULT)
                     .await()
                     .documents
                     .map { RemoteDeckMapper.from(it.id, it.data.orEmpty()) }
@@ -206,6 +209,7 @@ internal object RemoteDeckMapper {
             updatedAt = (data["updatedAt"] as? Timestamp)?.toDate()?.toInstant() ?: Instant.EPOCH,
             cardCount = (data["cardCount"] as? Number)?.toInt() ?: 0,
             authorEmail = (data["authorEmail"] as? String)?.takeIf { it.isNotBlank() },
+            createdAt = (data["createdAt"] as? Timestamp)?.toDate()?.toInstant(),
         )
 }
 
@@ -234,6 +238,7 @@ internal fun RemoteDeck.toFirestoreMap(): Map<String, Any?> =
         put("updatedAt", Timestamp(updatedAt.epochSecond, updatedAt.nano))
         put("cardCount", cardCount)
         authorEmail?.takeIf { it.isNotBlank() }?.let { put("authorEmail", it) }
+        createdAt?.let { put("createdAt", Timestamp(it.epochSecond, it.nano)) }
     }
 
 internal fun RemoteDeck.toContentUpdateMap(): Map<String, Any?> =
@@ -242,6 +247,7 @@ internal fun RemoteDeck.toContentUpdateMap(): Map<String, Any?> =
         put("updatedAt", Timestamp(updatedAt.epochSecond, updatedAt.nano))
         put("cardCount", cardCount)
         authorEmail?.takeIf { it.isNotBlank() }?.let { put("authorEmail", it) }
+        createdAt?.let { put("createdAt", Timestamp(it.epochSecond, it.nano)) }
     }
 
 internal fun RemoteCard.toFirestoreMap(): Map<String, Any?> =

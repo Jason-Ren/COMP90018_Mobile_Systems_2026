@@ -1,6 +1,8 @@
 package com.comp90018.flashcards.ui.play
 
 import com.comp90018.flashcards.data.local.entity.CardEntity
+import com.comp90018.flashcards.testutil.FakeAnswerSounds
+import com.comp90018.flashcards.testutil.FakeGameVibration
 import com.comp90018.flashcards.testutil.MainDispatcherRule
 import com.comp90018.flashcards.testutil.passSeconds
 import com.comp90018.flashcards.testutil.testCards
@@ -14,7 +16,9 @@ import org.junit.Test
 // the shared round, played through a tiny subclass that exposes what the real ones use
 private class TestGameViewModel(
     seconds: Int,
-) : GameViewModel(seconds) {
+    sounds: FakeAnswerSounds,
+    vibration: FakeGameVibration,
+) : GameViewModel(seconds, sounds, vibration) {
     val finishedScores = mutableListOf<Int>()
 
     fun load(cards: List<CardEntity>) = loadCards(cards, "Deck")
@@ -30,10 +34,16 @@ class GameViewModelTest {
     @get:Rule
     val mainRule = MainDispatcherRule()
 
+    // records the sounds the round asks for, instead of playing them
+    private val sounds = FakeAnswerSounds()
+
+    // records the buzzes the round asks for, instead of vibrating
+    private val vibration = FakeGameVibration()
+
     private fun game(
         seconds: Int = 3,
         cards: Int = 2,
-    ) = TestGameViewModel(seconds).also { it.load(testCards(cards)) }
+    ) = TestGameViewModel(seconds, sounds, vibration).also { it.load(testCards(cards)) }
 
     @Test
     fun `loading cards shows the ready screen with the deck name and size`() {
@@ -110,6 +120,83 @@ class GameViewModelTest {
                 vm.round.value.missed
                     .map { it.front },
             )
+        }
+
+    @Test
+    fun `marking a card plays the right or wrong sound and buzz`() =
+        runTest {
+            val vm = game(cards = 2)
+            vm.start()
+
+            vm.reveal()
+            vm.onGesture(TiltGesture.DOWN)
+            vm.reveal()
+            vm.onGesture(TiltGesture.UP)
+
+            assertEquals(listOf(true, false), sounds.played)
+            assertEquals(listOf(true, false), vibration.buzzed)
+        }
+
+    @Test
+    fun `revealing a card buzzes once but plays no sound`() =
+        runTest {
+            val vm = game()
+            vm.start()
+
+            vm.reveal()
+
+            assertEquals(1, vibration.reveals)
+            assertTrue(sounds.played.isEmpty())
+            assertTrue(vibration.buzzed.isEmpty())
+        }
+
+    @Test
+    fun `the countdown running out buzzes once as time up, not as a reveal`() =
+        runTest {
+            val vm = game(seconds = 3)
+            vm.start()
+
+            passSeconds(3)
+
+            assertEquals(DuoPhase.BACK, vm.round.value.phase)
+            assertEquals(1, vibration.timeUps)
+            assertEquals(0, vibration.reveals)
+        }
+
+    @Test
+    fun `revealing early means no time up buzz later`() =
+        runTest {
+            val vm = game(seconds = 3)
+            vm.start()
+
+            vm.reveal()
+            passSeconds(5)
+
+            assertEquals(0, vibration.timeUps)
+        }
+
+    @Test
+    fun `a paused countdown does not buzz`() =
+        runTest {
+            val vm = game(seconds = 3)
+            vm.start()
+            vm.pause()
+
+            passSeconds(5)
+
+            assertEquals(0, vibration.timeUps)
+        }
+
+    @Test
+    fun `revealing while paused does not buzz`() =
+        runTest {
+            val vm = game()
+            vm.start()
+            vm.pause()
+
+            vm.reveal()
+
+            assertEquals(0, vibration.reveals)
         }
 
     @Test
@@ -238,6 +325,26 @@ class GameViewModelTest {
         }
 
     @Test
+    fun `starting with a countdown shows 3, 2, 1 and then the first card`() =
+        runTest {
+            val vm = game(seconds = 5, cards = 2)
+
+            vm.startWithCountdown()
+            assertEquals(3, vm.round.value.startCountdown)
+            assertEquals(DuoPhase.READY, vm.round.value.phase)
+
+            passSeconds(1)
+            assertEquals(2, vm.round.value.startCountdown)
+            passSeconds(1)
+            assertEquals(1, vm.round.value.startCountdown)
+            passSeconds(1)
+
+            assertEquals(0, vm.round.value.startCountdown)
+            assertEquals(DuoPhase.FRONT, vm.round.value.phase)
+            assertEquals(5, vm.round.value.secondsLeft)
+        }
+
+    @Test
     fun `a deck with no cards is finished straight away`() {
         val vm = game(cards = 0)
 
@@ -245,4 +352,43 @@ class GameViewModelTest {
 
         assertEquals(DuoPhase.FINISHED, vm.round.value.phase)
     }
+
+    @Test
+    fun `pose and connection holds must both clear before the clock resumes`() =
+        runTest {
+            val vm = game()
+            vm.onForeheadPose(true)
+            passSeconds(3)
+            vm.onForeheadPose(false)
+            vm.linkDown(true)
+
+            vm.onForeheadPose(true)
+            passSeconds(5)
+            assertTrue(vm.round.value.isPaused)
+            assertEquals(3, vm.round.value.secondsLeft)
+            vm.onForeheadPose(false)
+            vm.linkDown(false)
+            assertTrue(vm.round.value.isPaused)
+
+            vm.onForeheadPose(true)
+            passSeconds(3)
+            assertEquals(DuoPhase.BACK, vm.round.value.phase)
+        }
+
+    @Test
+    fun `leaving pose during the last countdown number cannot start a round`() =
+        runTest {
+            val vm = game()
+            vm.onForeheadPose(true)
+            passSeconds(2)
+            vm.onForeheadPose(false)
+            passSeconds(5)
+            assertEquals(1, vm.round.value.startCountdown)
+            assertEquals(DuoPhase.READY, vm.round.value.phase)
+            assertEquals(0, vibration.timeUps)
+
+            vm.onForeheadPose(true)
+            passSeconds(1)
+            assertEquals(DuoPhase.FRONT, vm.round.value.phase)
+        }
 }

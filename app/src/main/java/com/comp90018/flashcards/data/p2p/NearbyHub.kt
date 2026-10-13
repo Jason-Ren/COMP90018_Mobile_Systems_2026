@@ -26,7 +26,7 @@ private const val TAG = "NearbyHub"
 // nearby allows a bytes payload of 32 KB (ConnectionsClient.MAX_BYTES_DATA_SIZE), stay under it
 private const val MAX_BYTES_PAYLOAD = 30_000
 
-// team mode is strictly two phones, so point to point
+// clash mode is strictly two phones, so point to point
 private val STRATEGY = Strategy.P2P_POINT_TO_POINT
 
 // the name shown to the other phone is "id|team" so the id rides along for reconnecting

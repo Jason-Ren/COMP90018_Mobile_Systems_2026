@@ -32,7 +32,7 @@ import com.comp90018.flashcards.data.p2p.ConnectionState
 import com.comp90018.flashcards.ui.connection.ConnectionOverlay
 
 /**
- * The guest's team mode lobby: host on top, guest ("My Team") below, waiting indicator and Leave at the bottom.
+ * The guest's clash mode lobby: host on top, guest ("My Team") below, waiting indicator and Leave at the bottom.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,7 +68,7 @@ fun GuestLobbyScreen(
 
     Scaffold(
         modifier = modifier,
-        topBar = { LobbyTopBar(title = "Team Mode", onBack = { requestLeave() }) },
+        topBar = { LobbyTopBar(title = "Clash Mode", onBack = { requestLeave() }) },
     ) { padding ->
         LobbyLayout(
             topSlot = {
@@ -122,7 +122,7 @@ private fun GuestActions(onLeave: () -> Unit) {
 
         TextButton(onClick = onLeave, modifier = Modifier.fillMaxWidth()) {
             Text(
-                "Leave Game",
+                "Leave Clash",
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.titleMedium,
             )
@@ -137,7 +137,7 @@ private fun LeaveGameDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Leave game?") },
+        title = { Text("Leave clash?") },
         text = { Text("You will be disconnected from the host.") },
         confirmButton = { Button(onClick = onConfirm) { Text("Leave") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Stay") } },

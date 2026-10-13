@@ -9,12 +9,19 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import com.comp90018.flashcards.data.social.SocialDeck
+import com.comp90018.flashcards.ui.account.ProfileEditor
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 
 class SocialUiTest {
     @get:Rule val compose = createComposeRule()
+
+    @Test
+    fun friendOutcomeNoticeShowsTheLiveMessage() {
+        compose.setContent { MaterialTheme { FriendOutcomeNotice("Bob approved your friend request") } }
+        compose.onNodeWithText("Bob approved your friend request").assertExists()
+    }
 
     @Test
     fun sharedCodeValidationAndNavigation() {
@@ -41,12 +48,12 @@ class SocialUiTest {
                 ) { username, name -> saved = username to name }
             }
         }
-        compose.onNodeWithText("Create profile").assertIsNotEnabled()
+        compose.onNodeWithText("Continue").assertIsNotEnabled()
         compose.onNodeWithText("Username").performTextInput("al")
         compose.onNodeWithText("Display name").performTextInput("Alice")
-        compose.onNodeWithText("Create profile").assertIsNotEnabled()
+        compose.onNodeWithText("Continue").assertIsNotEnabled()
         compose.onNodeWithText("Username").performTextReplacement("alice")
-        compose.onNodeWithText("Create profile").assertIsEnabled().performClick()
+        compose.onNodeWithText("Continue").assertIsEnabled().performClick()
         assertEquals("alice" to "Alice", saved)
     }
 

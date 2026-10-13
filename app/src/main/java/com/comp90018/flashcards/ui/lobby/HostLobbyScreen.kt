@@ -27,7 +27,7 @@ import com.comp90018.flashcards.ui.connection.ConnectionOverlay
 import com.comp90018.flashcards.ui.deck.DeckSummaryViewModel
 
 /**
- * The host's team mode lobby: host on top, guest slot below, Start and Cancel at the bottom.
+ * The host's clash mode lobby: host on top, guest slot below, Start and Cancel at the bottom.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,7 +60,7 @@ fun HostLobbyScreen(
 
     Scaffold(
         modifier = modifier,
-        topBar = { LobbyTopBar(title = "Team Mode", onBack = { requestLeave() }) },
+        topBar = { LobbyTopBar(title = "Clash Mode", onBack = { requestLeave() }) },
     ) { padding ->
         LobbyLayout(
             deckName = summary.deckName.ifBlank { "Deck" },

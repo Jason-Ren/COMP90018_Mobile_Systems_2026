@@ -52,6 +52,12 @@ internal object DeckSyncPlanner {
                             cardCount = cards.size,
                             // Keep catalogue search metadata; sync does not own this field.
                             authorEmail = remoteDeck?.authorEmail,
+                            createdAt =
+                                remoteDeck?.createdAt
+                                    ?: localDeck.createdAtEpochMillis
+                                        .takeIf { it > 0L }
+                                        ?.let(Instant::ofEpochMilli)
+                                    ?: now,
                         ),
                     cards = cards,
                     deleteCardIds = staleCardIds(remoteCards, cards),

@@ -43,7 +43,7 @@ import com.comp90018.flashcards.ui.connection.ConnectionOverlay
 import com.comp90018.flashcards.ui.connection.DebugConnectionButtons
 
 /**
- * The guest's side of team mode: list hosts nearby, ask to join, and once accepted display [GuestLobbyScreen].
+ * The guest's side of clash mode: list hosts nearby, ask to join, and once accepted display [GuestLobbyScreen].
  */
 
 private val JOIN_CARD_HEIGHT = 100.dp
@@ -76,7 +76,7 @@ fun JoinGameScreen(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text("Join game") },
+                title = { Text("Join clash") },
                 navigationIcon = {
                     IconButton(onClick = leave) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -142,7 +142,7 @@ private fun JoinBody(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(
-                        text = "Nearby Games",
+                        text = "Nearby Clashes",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.outline,
@@ -168,7 +168,7 @@ private fun HostList(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-            Text("Looking for games nearby…", style = MaterialTheme.typography.bodyLarge)
+            Text("Looking for clashes nearby…", style = MaterialTheme.typography.bodyLarge)
         }
     } else {
         LazyColumn(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {

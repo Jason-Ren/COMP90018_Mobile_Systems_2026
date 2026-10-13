@@ -5,7 +5,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.random.Random
 
-/** what one phone needs to play a team mode game: its own cards in its own order, and the countdown */
+/** what one phone needs to play a clash mode game: its own cards in its own order, and the countdown */
 data class GameSetup(
     val deckName: String,
     val secondsPerCard: Int,

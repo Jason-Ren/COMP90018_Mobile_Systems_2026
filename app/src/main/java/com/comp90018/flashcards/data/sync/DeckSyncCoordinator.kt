@@ -26,10 +26,12 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Records local deck edits and pushes them when the device is online.
+ * Syncs My Decks with Firestore, which is the account's single source of truth for deck content.
  *
- * Callers return as soon as the outbox row is stored. Network work runs on a background
- * coroutine, and [DeckSyncWorker] retries it after the process dies or connectivity returns.
+ * Room is an offline cache. Local edits go into an outbox, upload when online, then owned cloud
+ * decks are pulled so every signed-in device mirrors Firestore. Friends/profiles already live in
+ * Firestore via the social API (not Room). Study progress stays on-device only.
+ * [DeckSyncWorker] retries after process death or when connectivity returns.
  */
 @Singleton
 class DeckSyncCoordinator
@@ -38,6 +40,7 @@ class DeckSyncCoordinator
         @ApplicationContext private val context: Context,
         private val store: DeckSyncStore,
         private val deckCloudSync: DeckCloudSync,
+        private val deckCloudPull: DeckCloudPull,
         private val authRepository: AuthRepository,
         private val connectivity: ConnectivityMonitor,
         private val clock: Clock,
@@ -46,6 +49,17 @@ class DeckSyncCoordinator
         private val mutex = Mutex()
         private val started = AtomicBoolean(false)
         private val preferences = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+
+        suspend fun setAccountDeleting(
+            uid: String,
+            deleting: Boolean,
+        ) {
+            mutex.withLock {
+                check(preferences.edit().putBoolean("deleting_$uid", deleting).commit()) {
+                    "Could not save account deletion state. Please retry."
+                }
+            }
+        }
 
         fun start() {
             if (!started.compareAndSet(false, true)) {
@@ -85,11 +99,24 @@ class DeckSyncCoordinator
         suspend fun syncNow(ownerId: String): DeckSyncOutcome =
             try {
                 mutex.withLock {
-                    if (authRepository.currentUid != ownerId) {
-                        DeckSyncOutcome.RETRY
-                    } else {
-                        backfill(ownerId)
-                        if (connectivity.isOnline()) drain(ownerId) else DeckSyncOutcome.RETRY
+                    when {
+                        preferences.getBoolean("deleting_$ownerId", false) -> DeckSyncOutcome.DEFERRED
+                        authRepository.currentUid != ownerId -> DeckSyncOutcome.RETRY
+                        !connectivity.isOnline() -> DeckSyncOutcome.RETRY
+                        else -> {
+                            // Upload local writes first, then make Room match Firestore (SSOT).
+                            backfill(ownerId)
+                            val pushOutcome = drain(ownerId)
+                            if (pushOutcome != DeckSyncOutcome.UP_TO_DATE) {
+                                pushOutcome
+                            } else {
+                                when (val pull = deckCloudPull.pullOwned(ownerId)) {
+                                    DeckSyncStep.Retry -> DeckSyncOutcome.RETRY
+                                    DeckSyncStep.Deferred -> DeckSyncOutcome.DEFERRED
+                                    else -> DeckSyncOutcome.UP_TO_DATE
+                                }
+                            }
+                        }
                     }
                 }
             } catch (cancelled: CancellationException) {

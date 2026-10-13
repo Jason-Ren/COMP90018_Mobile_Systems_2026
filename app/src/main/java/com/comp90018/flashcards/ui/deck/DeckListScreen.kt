@@ -12,6 +12,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.comp90018.flashcards.data.local.entity.DeckEntity
 import com.comp90018.flashcards.ui.components.NavBar
+import com.comp90018.flashcards.debug.DEBUG_TOOLS_ENABLED
 
 /**
  * Shows list of users decks
@@ -39,18 +43,28 @@ fun DeckListScreen(
     onNavigateBack: () -> Unit,
     onHome: () -> Unit,
     onJoinGame: () -> Unit,
+    onAccount: () -> Unit,
+    displayName: String,
     viewModel: DeckListViewModel = hiltViewModel(),
 ) {
     val decks by viewModel.decks.collectAsState()
     val displayName by viewModel.displayName.collectAsState()
+    val emulatorMode by viewModel.emulatorMode.collectAsState()
+    val isSyncing by viewModel.isSyncing.collectAsState()
     var showDialog by remember { mutableStateOf(false) }
     var newDeckName by remember { mutableStateOf("") }
     var newDeckDescription by remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
-            // sign out, community notes
-            DeckListTopBar(onSignOut = viewModel::signOut, onCommunity = onCommunity)
+            DeckListTopBar(
+                isSyncing = isSyncing,
+                onSync = viewModel::syncFromCloud,
+                onAccount = onAccount,
+                emulatorMode = emulatorMode,
+                onEmulatorModeChange = viewModel::setEmulatorMode,
+                onCommunity = onCommunity,
+            )
         },
         bottomBar = {
             NavBar(onCommunity, onHome, onJoinGame)
@@ -60,6 +74,7 @@ fun DeckListScreen(
         DeckListBody(
             displayName = displayName,
             decks = decks,
+            isSyncing = isSyncing,
             onNavigateToDeck = onNavigateToDeck,
             onShowDialog = { showDialog = true },
             modifier = Modifier.padding(padding),
@@ -93,6 +108,7 @@ fun DeckListScreen(
 private fun DeckListBody(
     displayName: String,
     decks: List<DeckEntity>,
+    isSyncing: Boolean,
     onNavigateToDeck: (String) -> Unit,
     onShowDialog: () -> Unit,
     modifier: Modifier = Modifier,
@@ -104,6 +120,10 @@ private fun DeckListBody(
                 .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        DeckListHeader(displayName = displayName)
+        if (isSyncing) {
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+        }
         DeckListHeader(onShowDialog = onShowDialog)
 
         if (decks.isEmpty()) {
@@ -156,15 +176,40 @@ private fun DeckListBody(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DeckListTopBar(
-    onSignOut: () -> Unit,
+    isSyncing: Boolean,
+    onSync: () -> Unit,
+    onAccount: () -> Unit,
+    emulatorMode: Boolean,
+    onEmulatorModeChange: (Boolean) -> Unit,
     onCommunity: () -> Unit,
 ) {
     TopAppBar(
         title = {},
         actions = {
+            TextButton(onClick = onSync, enabled = !isSyncing) {
+                Icon(
+                    imageVector = Icons.Default.Refresh,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(if (isSyncing) "Syncing…" else "Sync")
+            }
+            // DEBUG ONLY: lets clash mode be tried on an emulator, hide it with DEBUG_TOOLS_ENABLED
+            if (DEBUG_TOOLS_ENABLED) {
+                Checkbox(checked = emulatorMode, onCheckedChange = onEmulatorModeChange)
+                Text("[DEBUG] Emulator mode", style = MaterialTheme.typography.labelSmall)
+            }
             TextButton(onClick = onCommunity) { Text("Community") }
-            TextButton(onClick = onSignOut) {
-                Text("Log out")
+            IconButton(
+                onClick = onAccount,
+                modifier = Modifier.padding(top = 12.dp, end = 12.dp),
+            ) {
+                Icon(
+                    Icons.Default.Settings,
+                    contentDescription = "Account",
+                    modifier = Modifier.size(32.dp),
+                )
             }
         },
     )

@@ -28,7 +28,8 @@ import com.comp90018.flashcards.ui.connection.ConnectionOverlay
 import com.comp90018.flashcards.ui.connection.DebugConnectionButtons
 
 /**
- * The team mode game screen, locked to landscape. It plays like Duo, then compares the two teams' scores.
+ * The clash mode game screen. It plays like Duo, then compares the two teams' scores.
+ * Landscape from the countdown until the last card, portrait otherwise.
  */
 @Composable
 fun TeamGameScreen(
@@ -36,9 +37,14 @@ fun TeamGameScreen(
     modifier: Modifier = Modifier,
     viewModel: TeamGameViewModel = hiltViewModel(),
 ) {
-    LockLandscape()
     PauseWhenBackgrounded(viewModel::pause)
     val state by viewModel.uiState.collectAsState()
+    val poseAvailable = observeForeheadPose(viewModel::onForeheadPose)
+    // landscape only from the countdown until the last card
+    val inPlay = state.round.phase == DuoPhase.FRONT || state.round.phase == DuoPhase.BACK
+    GameOrientation(landscape = state.round.startCountdown > 0 || inPlay)
+    // no touches during play, so stop the screen dimming
+    KeepScreenOn(enabled = state.round.startCountdown > 0 || inPlay)
     var showLeaveConfirm by remember { mutableStateOf(false) }
     val leave = {
         viewModel.leave()
@@ -51,10 +57,11 @@ fun TeamGameScreen(
 
     Surface(modifier = modifier.fillMaxSize()) {
         val round = state.round
-        // paused comes first, so the Paused screen stays until the player taps Resume
+        // Pauses take precedence over countdowns and cards.
         when {
             round.isPaused -> PausedContent(round, viewModel::resume)
-            round.phase == DuoPhase.READY -> ReadyContent(round, viewModel::start)
+            round.startCountdown > 0 -> StartCountdownContent(round.startCountdown)
+            round.phase == DuoPhase.READY -> ReadyContent(round, viewModel::startWithCountdown, poseAvailable)
             round.phase == DuoPhase.FRONT -> FrontContent(round, viewModel::reveal)
             round.phase == DuoPhase.BACK -> BackContent(round, viewModel::onGesture)
             else -> ResultContent(state, onFinish = leave)
@@ -68,7 +75,7 @@ fun TeamGameScreen(
     if (showLeaveConfirm) {
         AlertDialog(
             onDismissRequest = { showLeaveConfirm = false },
-            title = { Text("Leave the game?") },
+            title = { Text("Leave the clash?") },
             text = { Text("The other team will be disconnected") },
             confirmButton = { Button(onClick = leave) { Text("Leave") } },
             dismissButton = { TextButton(onClick = { showLeaveConfirm = false }) { Text("Stay") } },

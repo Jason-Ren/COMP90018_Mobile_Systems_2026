@@ -2,7 +2,8 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function isSignedIn() {
-      return request.auth != null;
+      return request.auth != null
+        && !exists(/databases/$(database)/documents/account_deletions/$(request.auth.uid));
     }
 
     function isOwner(ownerId) {
@@ -34,6 +35,10 @@ service cloud.firestore {
     // Authenticated API requests use the Admin SDK; mobile/web clients cannot
     // edit friendships, identity mappings, or issue their own share grants.
     match /social_backends/{namespace}/{document=**} {
+      allow read, write: if false;
+    }
+
+    match /account_deletions/{uid} {
       allow read, write: if false;
     }
 

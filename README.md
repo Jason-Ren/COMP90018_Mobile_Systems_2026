@@ -16,6 +16,8 @@ Authentication is Firebase Auth. Users can continue with Google, or register and
 
 `app/google-services.json` is gitignored. Without that file the project still compiles, and the login button explains that sign-in is not configured.
 
+After sign-in, new users choose a community username and display name before entering My Decks. The dashboard's **Account** button opens display-name editing, logout and account deletion with fresh sign-in confirmation. Returning users with a cached profile can study local decks offline. Account deletion requires the updated backend and Firestore configuration; follow [the deployment update guide](backend/DEPLOYMENT.md#updating-an-existing-service-for-onboarding-and-account-deletion).
+
 1. Create a Firebase project and add an Android app with package name `com.comp90018.flashcards`.
 2. From the repo root, run `./gradlew :app:signingReport` and add the **debug** SHA-1 to that Android app. Google sign-in fails with `DEVELOPER_ERROR` (code 10) when the SHA-1 is missing.
 3. In Firebase Authentication, enable the Google provider.
@@ -24,7 +26,7 @@ Authentication is Firebase Auth. Users can continue with Google, or register and
 
 ## Cloud decks (Firestore)
 
-Shared deck storage uses **Cloud Firestore** in the same Firebase project as Auth (`com-comp90018-flashcards`). Local Room remains the source of truth on device. Deck and card edits are pushed in the background when the device is online. Community screens now support friend sharing, publishing, and saving independent copies into My Decks.
+**Cloud Firestore is the single source of truth** for each account's decks and friends (same Firebase project as Auth: `com-comp90018-flashcards`). Room only caches deck/card content for offline My Decks and study; friends and profiles are loaded from the social API. Sync pushes local deck edits, then pulls owned cloud decks so phone and emulator stay aligned. Study progress stays on-device.
 
 Schema, security rules, and provisioning steps: [docs/cloud-deck-schema.md](docs/cloud-deck-schema.md).
 
@@ -36,15 +38,18 @@ firebase use com-comp90018-flashcards
 firebase deploy --only firestore:rules,firestore:indexes
 ```
 
-Rules and indexes live in `firestore.rules` and `firestore.indexes.json`. The Android client depends on `firebase-firestore`. `DeckSyncCoordinator` pushes local deck changes when the network is available. Study progress stays in Room.
+Rules and indexes live in `firestore.rules` and `firestore.indexes.json`. The Android client depends on `firebase-firestore`. `DeckSyncCoordinator` uploads the outbox, then refreshes Room from Firestore when online. Study progress stays in Room only.
 
 ## Social API and deck actions
 
 The [Python social API](backend/README.md) uses the same Firebase Auth project and Firestore database for profiles, friend requests, explicit read-only deck sharing, Publish/unpublish, and Save-a-copy. Deck `ownerId` remains the Firebase UID; copies receive new IDs, private visibility, and protected source attribution. Removing a friendship revokes private source access in both the API and the Firestore rules; previously saved copies remain independent.
 
-The root Firebase configuration includes all five indexes (two deck, three social) and the combined rules. Run `npm run test:emulator` from `backend` after following its setup instructions to test both the API and direct-client access rules. Open **Community** from My Decks for public decks, profiles, and friends; your deck's **⋮** menu offers **Publish / Unpublish** and **Share with friends**. Public catalogue rows and previews save copies through the same API workflow. See [Android community setup and usage](docs/android-community.md). API and rules updates need separate deployment; see the [Cloud Run guide](backend/DEPLOYMENT.md).
+The root Firebase configuration includes five composite indexes (two deck, three social), a share-recipient collection-group field index, and the combined rules. Run `npm run test:emulator` from `backend` after following its setup instructions to test both the API and direct-client access rules. Open **Community** from My Decks for public decks and friends, or **Account** to manage your profile; your deck's **⋮** menu offers **Publish / Unpublish** and **Share with friends**. Public catalogue rows and previews save copies through the same API workflow. See [Android community setup and usage](docs/android-community.md). API and rules updates need separate deployment; see the [Cloud Run guide](backend/DEPLOYMENT.md).
 
 ## Building & running
+
+Duo and clash rounds support automatic start/pause from the forehead pose, with
+manual Start available. See [pose behavior and device checks](docs/heads-up-pose.md).
 
 ```bash
 ./gradlew assembleDebug   # build a debug APK
