@@ -53,7 +53,7 @@ fun DeckListScreen(
             DeckListTopBar(onSignOut = viewModel::signOut, onCommunity = onCommunity)
         },
         bottomBar = {
-            NavBar(onCommunity, onHome)
+            NavBar(onCommunity, onHome, onJoinGame)
         },
 
     ) { padding ->

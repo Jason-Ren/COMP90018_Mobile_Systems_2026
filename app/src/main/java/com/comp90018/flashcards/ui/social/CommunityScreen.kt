@@ -29,6 +29,7 @@ fun CommunityScreen(
     onCommunity: () -> Unit,
     onNavigateBack: () -> Unit,
     onHome: () -> Unit,
+    onJoinGame: () -> Unit
 
     ) {
     var tab by rememberSaveable { mutableIntStateOf(if (startWithFriends) 1 else 0) }
@@ -40,7 +41,7 @@ fun CommunityScreen(
             })
         },
         bottomBar = {
-            NavBar(onCommunity, onHome)
+            NavBar(onCommunity, onHome, onJoinGame)
         },
     ) {
         padding ->

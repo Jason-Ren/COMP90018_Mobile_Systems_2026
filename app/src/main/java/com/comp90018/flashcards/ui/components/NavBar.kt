@@ -20,24 +20,21 @@ import com.comp90018.flashcards.R
 fun NavBar(
     onCommunity: () -> Unit,
     onHome: () -> Unit,
+    onJoinGame: () -> Unit,
 
-) {
+
+    ) {
     NavigationBar(containerColor = MaterialTheme.colorScheme.primaryContainer) {
         NavigationBarItem(
             selected = false,
-            onClick = { /**/ },
+            onClick = onHome,
             icon = {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_stack),
-                    contentDescription = "Add Deck",
-                    modifier = Modifier.fillMaxWidth(0.20f)
-                )
-            },
-            label = { Text("DECKS") }
+                Icon(painter = painterResource(id = R.drawable.ic_stack), contentDescription = "Add Deck",)},
+            label = { Text("Decks") }
         )
         NavigationBarItem(
             selected = false,
-            onClick = { /**/ },
+            onClick = onJoinGame,
             icon = { Icon(painterResource(R.drawable.ic_swords), contentDescription = "Clash") },
             label = { Text("Clash") }
         )

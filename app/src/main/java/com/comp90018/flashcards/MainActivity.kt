@@ -98,7 +98,7 @@ private fun FlashcardNavHost(
                 },
                 onJoinGame = { navController.navigate("join") },
                 onNavigateBack = {navController.popBackStack()},
-                onHome = {navController.navigate("home")}
+                onHome = {navController.navigate("home")} ,
 
             )
         }
@@ -134,8 +134,10 @@ private fun FlashcardNavHost(
         composable("NaviBar"){
             NavBar(
                 onCommunity = { navController.navigate("community") },
-                onHome = {navController.navigate("home")}
-            )
+                onHome = {navController.navigate("home")},
+                onJoinGame = { navController.navigate("join") },
+
+                )
 
         }
     }
@@ -203,7 +205,8 @@ private fun NavGraphBuilder.communityRoutes(navController: NavHostController) {
             startWithFriends = entry.arguments?.getBoolean("friends") == true,
             onNavigateBack = { navController.popBackStack() },
             onCommunity = { navController.navigate("community?friends=true") },
-            onHome = { navController.navigate("home")}
+            onHome = { navController.navigate("home")} ,
+            onJoinGame = { navController.navigate("join") },
 
 
 
