@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.comp90018.flashcards.data.audio.AnswerSounds
 import com.comp90018.flashcards.data.local.entity.CardEntity
+import com.comp90018.flashcards.data.vibration.GameVibration
 import com.comp90018.flashcards.domain.repository.CardRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.StateFlow
@@ -39,8 +40,13 @@ class DuoViewModel
         savedStateHandle: SavedStateHandle,
         // handed to the shared round, which plays it on every marked guess
         sounds: AnswerSounds,
+        vibration: GameVibration,
         // how long the Guesser has for each card, picked on the choose-countdown page
-    ) : GameViewModel(secondsPerCard = checkNotNull(savedStateHandle.get<Int>("seconds")), sounds = sounds) {
+    ) : GameViewModel(
+            secondsPerCard = checkNotNull(savedStateHandle.get<Int>("seconds")),
+            sounds = sounds,
+            vibration = vibration,
+        ) {
         // The deckId is passed via navigation arguments
         private val deckId: String = checkNotNull(savedStateHandle["deckId"])
 

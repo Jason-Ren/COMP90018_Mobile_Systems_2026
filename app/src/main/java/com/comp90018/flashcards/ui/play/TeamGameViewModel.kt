@@ -6,6 +6,7 @@ import com.comp90018.flashcards.data.p2p.ConnectionController
 import com.comp90018.flashcards.data.p2p.ConnectionState
 import com.comp90018.flashcards.data.p2p.GameMessage
 import com.comp90018.flashcards.data.p2p.GameSession
+import com.comp90018.flashcards.data.vibration.GameVibration
 import com.comp90018.flashcards.debug.DebugSettings
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -52,7 +53,8 @@ class TeamGameViewModel
         private val debugSettings: DebugSettings,
         // handed to the shared round, which plays it on every marked guess
         sounds: AnswerSounds,
-    ) : GameViewModel(secondsPerCard = session.setup?.secondsPerCard ?: 0, sounds = sounds) {
+        vibration: GameVibration,
+    ) : GameViewModel(secondsPerCard = session.setup?.secondsPerCard ?: 0, sounds = sounds, vibration = vibration) {
         private val setup = session.setup
 
         // false when the app was restarted mid game and the setup is gone, the screen then leaves

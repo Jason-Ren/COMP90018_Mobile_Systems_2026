@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import com.comp90018.flashcards.data.local.entity.DeckEntity
 import com.comp90018.flashcards.testutil.FakeAnswerSounds
 import com.comp90018.flashcards.testutil.FakeCardRepository
+import com.comp90018.flashcards.testutil.FakeGameVibration
 import com.comp90018.flashcards.testutil.MainDispatcherRule
 import com.comp90018.flashcards.testutil.testCards
 import org.junit.Assert.assertEquals
@@ -21,8 +22,9 @@ class DuoViewModelTest {
         DuoViewModel(
             repository = FakeCardRepository(deck, testCards(cardCount)),
             savedStateHandle = SavedStateHandle(mapOf("deckId" to "deck", "seconds" to 5)),
-            // no real audio in a unit test
+            // no real audio or vibrator in a unit test
             sounds = FakeAnswerSounds(),
+            vibration = FakeGameVibration(),
         )
 
     // goes through the whole round, marking every card the same way, and returns the cards in the order shown

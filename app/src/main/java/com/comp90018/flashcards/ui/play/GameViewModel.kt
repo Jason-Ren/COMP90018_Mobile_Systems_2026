@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.comp90018.flashcards.data.audio.AnswerSounds
 import com.comp90018.flashcards.data.local.entity.CardEntity
+import com.comp90018.flashcards.data.vibration.GameVibration
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,7 +23,8 @@ import kotlin.time.Duration.Companion.seconds
  * back is revealed. [onGesture] is where the tilt sensor plugs in. Until then the screen sends it
  * from taps.
  *
- * Marking a guess plays the right or wrong sound through [sounds], so both modes get it from here.
+ * Marking a guess plays the right or wrong sound through [sounds] and buzzes through [vibration].
+ * Revealing early and running out of time buzz too. Both modes get this from here.
  *
  * The countdown can be paused with [pause] (the screen does this when the app goes to the
  * background) and carries on from the same second after [resume].
@@ -31,6 +33,8 @@ abstract class GameViewModel(
     private val secondsPerCard: Int,
     // plays the right and wrong sounds, shared by every game mode
     private val sounds: AnswerSounds,
+    // buzzes the phone for a right or wrong guess, shared by every game mode
+    private val vibration: GameVibration,
 ) : ViewModel() {
     private val _round = MutableStateFlow(DuoUiState(secondsPerCard = secondsPerCard))
     val round: StateFlow<DuoUiState> = _round.asStateFlow()
@@ -76,6 +80,8 @@ abstract class GameViewModel(
     /** Shows the back of the current card, ahead of the countdown. Ignored while paused. */
     fun reveal() {
         if (timer.isPaused) return
+        // a light tick, running out of time has its own longer buzz
+        vibration.vibrateReveal()
         timerJob?.cancel()
         showBack()
     }
@@ -106,8 +112,9 @@ abstract class GameViewModel(
     }
 
     private fun mark(isCorrect: Boolean) {
-        // sound first so it lines up with the tap or tilt
+        // sound and buzz first so they line up with the tap or tilt
         sounds.play(isCorrect)
+        vibration.vibrate(isCorrect)
         game.mark(isCorrect)
         if (game.phase == DuoPhase.FRONT) startTimer()
         publish()
@@ -135,6 +142,7 @@ abstract class GameViewModel(
                     timer.tick()
                     publish()
                 }
+                vibration.vibrateTimeUp()
                 showBack()
             }
     }
