@@ -119,7 +119,7 @@ private fun CloudDeckTopBar(
 }
 
 @Composable
-private fun PublishConfirmation(
+internal fun PublishConfirmation(
     public: Boolean,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,

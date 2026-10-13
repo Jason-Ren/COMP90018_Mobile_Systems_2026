@@ -172,6 +172,7 @@ private fun NavGraphBuilder.communityRoutes(navController: NavHostController) {
         CommunityScreen(
             onBack = { navController.popBackStack() },
             onOpenDeck = { navController.navigate("cloud_deck/$it") },
+            onOpenLocal = { navController.navigate("deck/$it") },
             startWithFriends = entry.arguments?.getBoolean("friends") == true,
         )
     }

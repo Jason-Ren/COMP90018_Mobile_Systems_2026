@@ -42,7 +42,7 @@ Rules and indexes live in `firestore.rules` and `firestore.indexes.json`. The An
 
 The [Python social API](backend/README.md) uses the same Firebase Auth project and Firestore database for profiles, friend requests, explicit read-only deck sharing, Publish/unpublish, and Save-a-copy. Deck `ownerId` remains the Firebase UID; copies receive new IDs, private visibility, and protected source attribution. Removing a friendship revokes private source access in both the API and the Firestore rules; previously saved copies remain independent.
 
-The root Firebase configuration includes all five indexes (two deck, three social) and the combined rules. Run `npm run test:emulator` from `backend` after following its setup instructions to test both the API and direct-client access rules. Open **Community** from My Decks for public decks, profiles, and friends; open **⋮ → Share & publish** on your own deck for sharing controls. See [Android community setup and usage](docs/android-community.md). API and rules updates need separate deployment; see the [Cloud Run guide](backend/DEPLOYMENT.md).
+The root Firebase configuration includes all five indexes (two deck, three social) and the combined rules. Run `npm run test:emulator` from `backend` after following its setup instructions to test both the API and direct-client access rules. Open **Community** from My Decks for public decks, profiles, and friends; your deck's **⋮** menu offers **Publish / Unpublish** and **Share with friends**. Public catalogue rows and previews save copies through the same API workflow. See [Android community setup and usage](docs/android-community.md). API and rules updates need separate deployment; see the [Cloud Run guide](backend/DEPLOYMENT.md).
 
 ## Building & running
 

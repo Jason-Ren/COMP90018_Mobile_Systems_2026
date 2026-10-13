@@ -61,6 +61,7 @@ fun DeckPageScreen(
         ) {
             DeckPageBody(
                 uiState = uiState,
+                onOpenSource = onCommunity,
                 onAddCard = { onAddCard(viewModel.deckId) },
                 onEditCard = { cardId -> onEditCard(viewModel.deckId, cardId) },
             )
@@ -123,8 +124,9 @@ private fun DeckPageTopBar(
                     expanded = showMenu,
                     onDismissRequest = { showMenu = false },
                 ) {
+                    DeckPublicationMenu(onDismissMenu = { showMenu = false })
                     DropdownMenuItem(
-                        text = { Text("Share & publish") },
+                        text = { Text("Share with friends") },
                         onClick = {
                             showMenu = false
                             onCommunity()
@@ -161,6 +163,7 @@ private fun DeckPageTopBar(
 @Composable
 private fun DeckPageBody(
     uiState: DeckSummaryUiState,
+    onOpenSource: (String) -> Unit,
     onAddCard: () -> Unit,
     onEditCard: (String) -> Unit,
 ) {
@@ -172,6 +175,7 @@ private fun DeckPageBody(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         DeckHeaderSection(uiState = uiState)
+        DeckPublicationStatus(onOpenSource = onOpenSource)
 
         Row(
             modifier = Modifier.fillMaxWidth(),

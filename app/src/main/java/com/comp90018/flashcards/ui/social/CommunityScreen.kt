@@ -9,17 +9,17 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.comp90018.flashcards.data.remote.RemoteDeck
+import com.comp90018.flashcards.ui.deck.PublicDeckRow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CommunityScreen(
     onBack: () -> Unit,
     onOpenDeck: (String) -> Unit,
+    onOpenLocal: (String) -> Unit,
     modifier: Modifier = Modifier,
     startWithFriends: Boolean = false,
 ) {
@@ -37,7 +37,7 @@ fun CommunityScreen(
                 Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("Discover") })
                 Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("Friends") })
             }
-            if (tab == 0) DiscoverPanel(onOpenDeck = onOpenDeck) else FriendsPanel()
+            if (tab == 0) DiscoverPanel(onOpenDeck = onOpenDeck, onOpenLocal = onOpenLocal) else FriendsPanel()
         }
     }
 }
@@ -45,10 +45,12 @@ fun CommunityScreen(
 @Composable
 private fun DiscoverPanel(
     onOpenDeck: (String) -> Unit,
+    onOpenLocal: (String) -> Unit,
     viewModel: CommunityViewModel = hiltViewModel(),
 ) {
     val decks by viewModel.decks.collectAsStateWithLifecycle()
     val task by viewModel.taskState.collectAsStateWithLifecycle()
+    val copies by viewModel.copyActions.collectAsStateWithLifecycle()
     var search by rememberSaveable { mutableStateOf("") }
     LazyColumn(
         contentPadding = PaddingValues(16.dp),
@@ -85,7 +87,17 @@ private fun DiscoverPanel(
                 )
             }
         }
-        items(visible, key = { it.deckId }) { deck -> PublicDeckCard(deck, onOpenDeck) }
+        items(visible, key = { it.deckId }) { deck ->
+            PublicDeckRow(
+                deck = deck,
+                ownedByMe = deck.ownerId == viewModel.userId,
+                copies = copies,
+                enabled = !task.busy,
+                onPreview = onOpenDeck,
+                onSaveCopy = viewModel::saveCopy,
+                onOpenLocal = onOpenLocal,
+            )
+        }
     }
 }
 
@@ -112,25 +124,6 @@ internal fun SharedDeckCode(onOpenDeck: (String) -> Unit) {
                 val id = sharedDeckId(code)
                 if (id == null) invalid = true else onOpenDeck(id)
             }, enabled = code.isNotBlank()) { Text("Open shared deck") }
-        }
-    }
-}
-
-@Composable
-private fun PublicDeckCard(
-    deck: RemoteDeck,
-    onOpenDeck: (String) -> Unit,
-) {
-    Card(onClick = { onOpenDeck(deck.deckId) }, modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(
-                deck.name,
-                style = MaterialTheme.typography.titleMedium,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text("${deck.cardCount} cards · Public", style = MaterialTheme.typography.bodyMedium)
-            Text("Preview deck", color = MaterialTheme.colorScheme.primary)
         }
     }
 }
