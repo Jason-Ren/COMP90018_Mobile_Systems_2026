@@ -72,10 +72,11 @@ class CommunityDecks
 
         /** Stores the publisher's email on the cloud deck so Discover can search by creator. */
         private suspend fun stampAuthorEmail(deckId: String) {
-            val email = authRepository.currentEmail?.takeIf { it.isNotBlank() } ?: return
-            val deck = remote.getDeck(deckId).getOrNull() ?: return
-            if (deck.authorEmail == email) return
-            remote.upsertDeck(deck.copy(authorEmail = email)).getOrThrow()
+            val email = authRepository.currentEmail?.takeIf { it.isNotBlank() }
+            val deck = email?.let { remote.getDeck(deckId).getOrNull() }
+            if (email != null && deck != null && deck.authorEmail != email) {
+                remote.upsertDeck(deck.copy(authorEmail = email)).getOrThrow()
+            }
         }
 
         suspend fun share(

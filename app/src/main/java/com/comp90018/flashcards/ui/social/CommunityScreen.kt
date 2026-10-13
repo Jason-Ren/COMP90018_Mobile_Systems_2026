@@ -70,21 +70,7 @@ private fun DiscoverPanel(
                 TextButton(onClick = viewModel::refresh, enabled = !task.busy) { Text("Refresh") }
             }
             SocialStatus(task)
-            OutlinedTextField(
-                value = search,
-                onValueChange = { search = it },
-                singleLine = true,
-                label = { Text("Search by name or creator") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                trailingIcon = {
-                    if (search.isNotEmpty()) {
-                        IconButton(onClick = { search = "" }) {
-                            Icon(Icons.Default.Clear, contentDescription = "Clear search")
-                        }
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-            )
+            DiscoverSearchField(query = search, onQueryChange = { search = it })
         }
         val visible = decks.matchingPublicSearch(search)
         if (visible.isEmpty() && !task.busy && task.error == null) {
@@ -110,6 +96,28 @@ private fun DiscoverPanel(
             )
         }
     }
+}
+
+@Composable
+private fun DiscoverSearchField(
+    query: String,
+    onQueryChange: (String) -> Unit,
+) {
+    OutlinedTextField(
+        value = query,
+        onValueChange = onQueryChange,
+        singleLine = true,
+        label = { Text("Search by name or creator") },
+        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+        trailingIcon = {
+            if (query.isNotEmpty()) {
+                IconButton(onClick = { onQueryChange("") }) {
+                    Icon(Icons.Default.Clear, contentDescription = "Clear search")
+                }
+            }
+        },
+        modifier = Modifier.fillMaxWidth(),
+    )
 }
 
 @Composable
