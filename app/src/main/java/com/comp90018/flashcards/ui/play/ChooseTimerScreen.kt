@@ -65,6 +65,7 @@ fun ChooseTimerScreen(
     onNavigateBack: () -> Unit,
     onStart: (String, Int) -> Unit,
     modifier: Modifier = Modifier,
+    helpTopic: HelpTopic = HelpTopic.DuoPlayHelp,
     viewModel: DeckSummaryViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -87,7 +88,7 @@ fun ChooseTimerScreen(
                 },
                 actions = {
                     helpTip(
-                        topic = HelpTopic.DuoPlayHelp,
+                        topic = helpTopic,
                         modifier = Modifier.padding(end = 12.dp),
                         size = 36.dp,
                     )

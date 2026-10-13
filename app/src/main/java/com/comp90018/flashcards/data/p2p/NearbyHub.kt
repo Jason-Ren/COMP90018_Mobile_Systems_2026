@@ -48,7 +48,7 @@ internal fun friendlyReason(e: Exception): String {
             ConnectionsStatusCodes.MISSING_SETTING_LOCATION_MUST_BE_ON ->
                 "Location is turned off\nTurn on Location in your phone's settings and try again"
             in MISSING_PERMISSION_CODES ->
-                "Nearby access isn't allowed\nOpen Settings, allow $permissionName and try again"
+                "Nearby devices or Location is turned off\nOpen Settings, turn on permissions and try again"
             else ->
                 "Couldn't connect to nearby phones\nCheck Bluetooth and Wi-Fi are on, then try again"
         }

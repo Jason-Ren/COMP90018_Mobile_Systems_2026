@@ -34,6 +34,8 @@ import com.comp90018.flashcards.ui.connection.NearbyPermissionGate
 import com.comp90018.flashcards.ui.deck.ChooseModeScreen
 import com.comp90018.flashcards.ui.deck.DeckListScreen
 import com.comp90018.flashcards.ui.deck.DeckPageScreen
+import com.comp90018.flashcards.ui.help.HelpTopic
+import com.comp90018.flashcards.ui.help.helpTip
 import com.comp90018.flashcards.ui.lobby.GameSetupViewModel
 import com.comp90018.flashcards.ui.lobby.GuestLobbyScreen
 import com.comp90018.flashcards.ui.lobby.HostLobbyScreen
@@ -283,6 +285,7 @@ private fun NavGraphBuilder.teamGameRoutes(navController: NavHostController) {
             onStart = { deckId, seconds ->
                 gameSetup.startGame(deckId, seconds) { navController.navigate("team_game") }
             },
+            helpTopic = HelpTopic.MultiGameHelp,
         )
     }
     composable(route = "team_game") { TeamGameScreen(onNavigateBack = { navController.popBackStack("home", false) }) }

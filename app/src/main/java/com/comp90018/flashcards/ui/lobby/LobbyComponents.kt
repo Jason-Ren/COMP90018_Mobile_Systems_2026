@@ -38,10 +38,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.comp90018.flashcards.R
 import com.comp90018.flashcards.ui.connection.DebugConnectionButtons
+import com.comp90018.flashcards.ui.help.HelpTopic
+import com.comp90018.flashcards.ui.help.helpTip
 
 // every team container is this tall, whatever is inside, so the lobby does not jump around
 private val TEAM_SLOT_HEIGHT = 150.dp
-private const val TINT_ALPHA = 0.1f
+private const val TINT_ALPHA = 0.18f
 
 /** Top team blue, bottom team red. A see-through wash over the surface, so it suits light and dark. */
 enum class TeamTint(
@@ -91,6 +93,13 @@ fun LobbyTopBar(
             IconButton(onClick = onBack) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
             }
+        },
+        actions = {
+            helpTip(
+                topic = HelpTopic.MultiSetupHelp,
+                modifier = Modifier.padding(end = 12.dp),
+                size = 36.dp,
+            )
         },
     )
 }

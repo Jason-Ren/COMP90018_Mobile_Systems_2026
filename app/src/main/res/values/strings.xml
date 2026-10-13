@@ -1,32 +1,49 @@
 <resources>
     <string name="app_name">Clashcards</string>
 
-    <!-- Gameplay Instructions-->
+    <!-- Gameplay Instructions -->
 
-    <!-- Solo Mode-->
+    <!-- Solo Mode -->
     <string name="solo_mode_title">Playing Solo Mode</string>
-    <string name="solo_mode_1">1. You will be shown a card with a text prompt.</string>
-    <string name="solo_mode_2">2. Aim to guess what could be the answer to this prompt - it could be something such as a definition of the word in the prompt.</string>
-    <string name="solo_mode_3">3. When you know the answer, flip your phone towards you. Alternatively, you can press the screen.</string>
-    <string name="solo_mode_4">4. On flip, the answer is now visible to you.</string>
-    <string name="solo_mode_5">5. Using the rating system on the bottom on the page, select the difficulty of the card based on what you answered.</string>
+    <string-array name="solo_mode_steps">
+        <item>You will be shown a card with a text prompt.</item>
+        <item>Aim to guess what could be the answer to this prompt - it could be something such as a definition of the word in the prompt.</item>
+        <item>When you know the answer, flip your phone towards you. Alternatively, you can press the screen.</item>
+        <item>On flip, the answer is now visible to you.</item>
+        <item>Rate the difficulty of the card. Clashcards keeps track of this to help you revise more difficult cards more often.</item>
+    </string-array>
 
-    <!-- Duo Mode-->
+    <!-- Duo Mode -->
     <string name="duo_mode_title">Playing Duo Mode</string>
-    <string name="duo_mode_1">1. With 2 people, one person will be the \'Describer\', and the other \'Guesser\'.</string>
-    <string name="duo_mode_2">2. The Guesser will be the one who will hold the phone, up to their forehead. The screen faces the Describer.</string>
-    <string name="duo_mode_3">3. The Describer can see the prompt on the held phone, and will begin to describe the concept without explicitly telling the Guesser.</string>
-    <string name="duo_mode_4">4. The Guesser has until the timer runs out to figure out the answer to the prompt.</string>
-    <string name="duo_mode_5">5. When the timer runs out, or if the Guesser already gets the correct answer, they will tilt the phone according to their response: Down for Correct, and Up for False.</string>
-    <string name="duo_mode_6">6. This will repeat until the deck is complete.</string>
+    <string-array name="duo_mode_steps">
+        <item>With 2 players, one is the \'Describer\' and the other the \'Guesser\'.</item>
+        <item>The Guesser holds the phone up in front of them, with the screen facing the Describer.</item>
+        <item>The Describer sees the prompt and describes it without saying it. For example, for \"Apple\", say \"a red fruit\".</item>
+        <item>The Guesser tries to guess the prompt until the timer runs out.</item>
+        <item>The explanation is revealed when the timer runs out. If the prompt is guessed early, or to skip the question, tap the screen to reveal.</item>
+        <item>The Describer reviews the explanation, then the Guesser tilts the screen Down for Correct or Up for Wrong.</item>
+        <item>Repeat until the deck is complete.</item>
+    </string-array>
 
-    <!-- Multi Mode-->
-    <string name="multi_mode_title">Playing Clash Mode</string>
-    <string name="multi_mode_1">1. One team sets up the game by selecting \'Clash Mode\' in the desired Deck.</string>
-    <string name="multi_mode_2">2. Once the lobby is set up, the other team can join the game via the homepage of the application (Join Clash).</string>
-    <string name="multi_mode_3">3. The host team will accept the requests, and set the timer for both teams.</string>
-    <string name="multi_mode_4">4. When ready, the teams will split into their roles as per a Duo mode game - one person will be the \'Describer\', and the other \'Guesser\'.</string>
-    <string name="multi_mode_5">5. Play out this game and see who can get a better score!</string>
+    <!-- Multi Mode Setup -->
+    <string name="multi_setup_title">Setting Up Clash Mode</string>
+    <string-array name="multi_setup_steps">
+        <item>One team sets up the game by selecting \'Clash Mode\' from the desired Deck.</item>
+        <item>Once the lobby is set up, the other team can join the game via the \'Clash\' tab in the navigation bar.</item>
+        <item>The host team will accept the requests, and set the timer for both teams.</item>
+        <item>When ready, the teams will split into their roles as per a Duo mode game - one person will be the \'Describer\', and the other \'Guesser\'.</item>
+        <item>Play out this game and see who can get a better score!</item>
+    </string-array>
 
-
+    <!-- Multi Mode Gameplay -->
+    <string name="multi_game_title">Playing Clash Mode</string>
+    <string-array name="multi_game_steps">
+        <item>In each team of 2, one is the \'Describer\' and the other the \'Guesser\'.</item>
+        <item>The Guesser holds the phone up in front of them, with the screen facing the Describer.</item>
+        <item>The Describer sees the prompt and describes it without saying it. For example, for \"Apple\", say \"a red fruit\".</item>
+        <item>The Guesser tries to guess the prompt until the timer runs out.</item>
+        <item>If the prompt is guess, or you want to pass the question, tap the screen to reveal the explanation early. When the timer ends, the explanation is revealed automatically.</item>
+        <item>The Describer reviews the explanation, then the Guesser tilts the screen Down for Correct or Up for Wrong.</item>
+        <item>Compete to finish the deck first and get a higher score!</item>
+    </string-array>
 </resources>

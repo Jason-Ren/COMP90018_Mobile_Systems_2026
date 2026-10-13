@@ -41,6 +41,9 @@ import com.comp90018.flashcards.data.p2p.ConnectionState
 import com.comp90018.flashcards.data.p2p.DiscoveredHost
 import com.comp90018.flashcards.ui.connection.ConnectionOverlay
 import com.comp90018.flashcards.ui.connection.DebugConnectionButtons
+import com.comp90018.flashcards.ui.help.helpTip
+import com.comp90018.flashcards.ui.help.HelpTopic
+
 
 /**
  * The guest's side of clash mode: list hosts nearby, ask to join, and once accepted display [GuestLobbyScreen].
@@ -81,6 +84,13 @@ fun JoinGameScreen(
                     IconButton(onClick = leave) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
+                },
+                actions = {
+                    helpTip(
+                        topic = HelpTopic.MultiSetupHelp,
+                        modifier = Modifier.padding(end = 12.dp),
+                        size = 36.dp,
+                    )
                 },
             )
         },

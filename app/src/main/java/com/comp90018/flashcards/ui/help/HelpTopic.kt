@@ -17,7 +17,8 @@ enum class HelpTopic(
     // Play Instructions
     SoloPlayHelp(R.string.solo_mode_title, { SoloPlayInstructions() }),
     DuoPlayHelp(R.string.duo_mode_title, { DuoPlayInstructions() }),
-    MultiPlayHelp(R.string.multi_mode_title, { MultiPlayInstructions() }),
+    MultiSetupHelp(R.string.multi_setup_title, { MultiSetupInstructions() }),
+    MultiGameHelp(R.string.multi_game_title, { MultiGameInstructions() }),
 }
 
 @Composable

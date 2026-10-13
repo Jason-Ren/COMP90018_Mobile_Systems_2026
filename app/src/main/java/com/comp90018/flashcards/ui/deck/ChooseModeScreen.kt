@@ -61,7 +61,7 @@ private enum class PlayMode(
         "A competitive Duo match for 2 teams of two." +
             "\n Requires 2 devices with ClashCards installed.",
         isAvailable = true,
-        HelpTopic.MultiPlayHelp,
+        HelpTopic.MultiSetupHelp,
     ),
     ;
 

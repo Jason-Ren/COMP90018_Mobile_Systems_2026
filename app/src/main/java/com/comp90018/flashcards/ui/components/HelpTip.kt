@@ -129,15 +129,12 @@ private fun HelpDialog(
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(
                         text = title,
                         style = MaterialTheme.typography.headlineSmall,
                         modifier = Modifier.weight(1f),
                     )
-                    Spacer(Modifier.width(8.dp))
-                    TextButton(onClick = onDismiss) { Text("Close") }
                 }
 
                 HorizontalDivider(Modifier.padding(vertical = 12.dp))

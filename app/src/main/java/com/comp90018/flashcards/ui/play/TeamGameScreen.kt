@@ -13,6 +13,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -26,6 +27,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.comp90018.flashcards.ui.connection.ConnectionOverlay
 import com.comp90018.flashcards.ui.connection.DebugConnectionButtons
+import com.comp90018.flashcards.ui.help.HelpTopic
+import com.comp90018.flashcards.ui.help.helpTip
 
 /**
  * The clash mode game screen. It plays like Duo, then compares the two teams' scores.
@@ -57,17 +60,29 @@ fun TeamGameScreen(
 
     Surface(modifier = modifier.fillMaxSize()) {
         val round = state.round
-        // Pauses take precedence over countdowns and cards.
-        when {
-            round.isPaused -> PausedContent(round, viewModel::resume)
-            round.startCountdown > 0 -> StartCountdownContent(round.startCountdown)
-            round.phase == DuoPhase.READY -> ReadyContent(round, viewModel::startWithCountdown, poseAvailable)
-            round.phase == DuoPhase.FRONT -> FrontContent(round, viewModel::reveal)
-            round.phase == DuoPhase.BACK -> BackContent(round, viewModel::onGesture)
-            else -> ResultContent(state, onFinish = leave)
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Pauses take precedence over countdowns and cards.
+            when {
+                round.isPaused -> PausedContent(round, viewModel::resume)
+                round.startCountdown > 0 -> StartCountdownContent(round.startCountdown)
+                round.phase == DuoPhase.READY -> ReadyContent(round, viewModel::startWithCountdown, poseAvailable)
+                round.phase == DuoPhase.FRONT -> FrontContent(round, viewModel::reveal)
+                round.phase == DuoPhase.BACK -> BackContent(round, viewModel::onGesture)
+                else -> ResultContent(state, onFinish = leave)
+            }
+            if (round.phase == DuoPhase.READY && round.startCountdown == 0 && !round.isPaused) {
+                helpTip(
+                    topic = HelpTopic.MultiGameHelp,
+                    modifier =
+                        Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(16.dp),
+                    size = 36.dp,
+                )
+            }
+            // DEBUG ONLY: fake the link going wrong, only shows in emulator mode
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) { DebugConnectionButtons() }
         }
-        // DEBUG ONLY: fake the link going wrong, only shows in emulator mode
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) { DebugConnectionButtons() }
     }
 
     ConnectionOverlay(state.connection, onReconnect = viewModel::reconnect, onEnd = leave)

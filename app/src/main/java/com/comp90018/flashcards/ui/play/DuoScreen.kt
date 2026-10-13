@@ -74,7 +74,8 @@ fun DuoScreen(
                 uiState.phase == DuoPhase.BACK -> BackContent(uiState, viewModel::onGesture)
                 else -> FinishedContent(uiState, viewModel::playAgain, onNavigateBack)
             }
-            if (!uiState.isLoading && !inPlay && uiState.startCountdown == 0) {
+            if (!uiState.isLoading && uiState.phase == DuoPhase.READY && uiState.startCountdown == 0
+                && !uiState.isPaused) {
                 helpTip(
                     topic = HelpTopic.DuoPlayHelp,
                     modifier =
