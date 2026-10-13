@@ -137,6 +137,9 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
 
+    // Nearby Connections (clash mode)
+    implementation("com.google.android.gms:play-services-nearby:19.3.0")
+
     // Firebase Auth + Firestore + Google sign-in. The Google Services plugin is applied
     // only when app/google-services.json exists, so CI can still compile.
     implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
