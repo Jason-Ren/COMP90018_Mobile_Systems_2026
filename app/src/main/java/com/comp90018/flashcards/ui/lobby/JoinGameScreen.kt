@@ -2,6 +2,7 @@ package com.comp90018.flashcards.ui.lobby
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -84,7 +85,7 @@ fun JoinGameScreen(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text("Join clash") },
+                title = { Text("Join Clash") },
                 navigationIcon = {
                     IconButton(onClick = leave) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -180,13 +181,27 @@ private fun HostList(
     modifier: Modifier = Modifier,
 ) {
     if (hosts.isEmpty()) {
-        Row(
+        Column(
             modifier = modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
-            verticalAlignment = Alignment.CenterVertically,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-            Text("Looking for clashes nearby…", style = MaterialTheme.typography.bodyLarge)
+            CircularProgressIndicator(
+                modifier = Modifier
+                    .padding(vertical = 24.dp)
+                    .size(32.dp),
+                strokeWidth = 2.dp
+            )
+
+            Text(
+                text = "Looking for Clashes nearby…\n\n" +
+                    "To create your own Clash Mode game,\n" +
+                    "select a deck from Decks > Play > Clash",
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+            )
         }
     } else {
         LazyColumn(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
