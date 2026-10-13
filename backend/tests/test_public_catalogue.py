@@ -26,6 +26,7 @@ def catalogue_decks(database, deck):
                 "cardCount": 2,
                 "authorEmail": "legacy@example.com",
                 "ownerDisplayName": "Outdated name",
+                "ownerUsername": "outdated_username",
             }
         )
         rows[name] = ref
@@ -50,6 +51,7 @@ def test_catalogue_resolves_current_names_and_excludes_private_shared_decks(
         catalogue_decks[name].id for name in ("newer", "missing_profile", "older")
     ]
     assert [row["ownerDisplayName"] for row in rows] == ["Alice", "Charlie", "Alice"]
+    assert [row["ownerUsername"] for row in rows] == ["alice", "charlie", "alice"]
     assert rows[0]["createdAt"] is not None
     assert all("authorEmail" not in row for row in rows)
     # Owners also see only public decks in this catalogue.
@@ -67,6 +69,11 @@ def test_catalogue_resolves_current_names_and_excludes_private_shared_decks(
         for row in refreshed
         if row["deckId"] in {catalogue_decks["newer"].id, catalogue_decks["older"].id}
     )
+    assert all(
+        row["ownerUsername"] == "alice"
+        for row in refreshed
+        if row["deckId"] in {catalogue_decks["newer"].id, catalogue_decks["older"].id}
+    )
 
 
 def test_catalogue_preserves_decks_without_profiles(client, catalogue_decks):
@@ -74,6 +81,35 @@ def test_catalogue_preserves_decks_without_profiles(client, catalogue_decks):
     assert response.status_code == 200
     rows = {row["deckId"]: row for row in response.json()}
     assert rows[catalogue_decks["missing_profile"].id]["ownerDisplayName"] is None
+    assert rows[catalogue_decks["missing_profile"].id]["ownerUsername"] is None
+
+
+@pytest.mark.parametrize("invalid_field", ["deckId", "ownerId", "cardCount"])
+def test_catalogue_keeps_valid_decks_when_a_public_document_is_unsupported(
+    client, database, catalogue_decks, invalid_field
+):
+    # Legacy/manual documents previously made the entire response fail validation.
+    document_id = f"sample-{uuid4().hex}" if invalid_field == "deckId" else str(uuid4())
+    ref = database.client.collection("decks").document(document_id)
+    row = {
+        "name": "Legacy sample",
+        "ownerId": "firebase-uid-alice",
+        "visibility": "public",
+        "updatedAt": datetime.now(UTC),
+        "cardCount": 1,
+    }
+    if invalid_field != "deckId":
+        del row[invalid_field]
+    ref.set(row)
+    try:
+        response = client.get("/v1/decks/public", headers=headers("bob"))
+        assert response.status_code == 200
+        ids = {deck["deckId"] for deck in response.json()}
+        assert ref.id not in ids
+        assert catalogue_decks["older"].id in ids
+        assert catalogue_decks["newer"].id in ids
+    finally:
+        ref.delete()
 
 
 def test_catalogue_hides_decks_of_deleting_owners(client, database, catalogue_decks):

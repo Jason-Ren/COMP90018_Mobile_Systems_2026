@@ -45,7 +45,7 @@ account_deletions/{FirebaseUid}  # server-only, durable deletion barrier
 
 Document id = same UUID as local `DeckEntity.deckId` so sync can match rows later.
 
-The social API's deck detail and public catalogue responses add optional `ownerDisplayName`, resolved from the owner's current social profile rather than persisted on the deck. Discover displays and searches this name. The catalogue endpoint `/v1/decks/public` preserves newest-update ordering and excludes decks belonging to accounts being deleted.
+The social API's deck detail and public catalogue responses add optional `ownerDisplayName` and `ownerUsername`, resolved from the owner's current social profile rather than persisted on the deck. Discover displays and searches the username; deck details use the display name. The catalogue endpoint `/v1/decks/public` preserves newest-update ordering and excludes decks belonging to accounts being deleted. Documents that cannot satisfy the API deck schema, including non-UUID IDs, are skipped with a warning so they cannot break the entire catalogue.
 
 `copiedFrom` contains `deckId` (immediate source UUID), `ownerId` (source owner's Firebase UID), and `copiedAt` (UTC timestamp). The API creates a new private deck owned by the caller, with fresh deck/card UUIDs and an actual card count. It copies only card content, including image URI references; it does not copy image files, sharing permissions, or study progress. Copies remain independent of later changes to the source. See the [copy contract and limits](../backend/README.md#publish-and-save-a-copy-contract).
 

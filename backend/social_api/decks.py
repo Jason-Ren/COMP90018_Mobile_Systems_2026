@@ -1,4 +1,5 @@
 import json
+import logging
 from datetime import UTC, datetime
 from uuid import uuid4
 
@@ -7,11 +8,12 @@ from pydantic import ValidationError
 
 from social_api.database import Database
 from social_api.errors import ApiError
-from social_api.models import CardContent, DeckCopyInput
+from social_api.models import CardContent, Deck, DeckCopyInput
 from social_api.service import now
 
 MAX_COPY_CARDS = 400
 MAX_COPY_CONTENT_BYTES = 4 * 1024 * 1024
+logger = logging.getLogger(__name__)
 
 
 class DeckService:
@@ -176,10 +178,12 @@ class DeckService:
     def get_deck(self, uid: str, deck_id: str):
         def read(transaction):
             deck = self._readable_deck(self.decks.document(deck_id), uid, transaction)
+            owner = self._owner_profile(deck["ownerId"], transaction)
             return {
                 **deck,
                 "deckId": deck_id,
-                "ownerDisplayName": self._owner_display_name(deck["ownerId"], transaction),
+                "ownerDisplayName": owner.get("display_name"),
+                "ownerUsername": owner.get("username"),
             }
 
         return self.database.run(read, read_only=True, uid=uid)
@@ -193,8 +197,22 @@ class DeckService:
             deleting = set()
             rows = []
             for document in query.stream(transaction=transaction):
-                deck = document.to_dict()
-                owner_id = deck["ownerId"]
+                try:
+                    # Legacy/manual rows may not satisfy the API's UUID/content contract.
+                    # Validate each row so one unsupported document cannot break discovery.
+                    deck = Deck.model_validate(
+                        {
+                            **document.to_dict(),
+                            "deckId": document.id,
+                            "ownerDisplayName": None,
+                            "ownerUsername": None,
+                        }
+                    )
+                except ValidationError as error:
+                    fields = [item["loc"] for item in error.errors(include_input=False)]
+                    logger.warning("Skipping unsupported public deck %s: %s", document.id, fields)
+                    continue
+                owner_id = deck.ownerId
                 if owner_id not in creators and owner_id not in deleting:
                     if (
                         self.database.deletions.document(owner_id)
@@ -203,22 +221,26 @@ class DeckService:
                     ):
                         deleting.add(owner_id)
                     else:
-                        creators[owner_id] = self._owner_display_name(owner_id, transaction)
+                        creators[owner_id] = self._owner_profile(owner_id, transaction)
                 if owner_id not in deleting:
                     rows.append(
-                        {**deck, "deckId": document.id, "ownerDisplayName": creators[owner_id]}
+                        deck.model_copy(
+                            update={
+                                "ownerDisplayName": creators[owner_id].get("display_name"),
+                                "ownerUsername": creators[owner_id].get("username"),
+                            }
+                        )
                     )
             return rows
 
         return self.database.run(read, read_only=True, uid=uid)
 
-    def _owner_display_name(self, owner_id: str, transaction):
-        owner = (
+    def _owner_profile(self, owner_id: str, transaction):
+        return (
             self.database.users.document(self.database.subject_hash(owner_id))
             .get(transaction=transaction)
             .to_dict()
-        )
-        return owner.get("display_name") if owner else None
+        ) or {}
 
     def list_cards(self, uid: str, deck_id: str, limit: int, offset: int):
         deck_ref = self.decks.document(deck_id)

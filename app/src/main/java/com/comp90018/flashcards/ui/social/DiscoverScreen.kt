@@ -94,7 +94,7 @@ private fun DiscoverSearchField(
         value = query,
         onValueChange = onQueryChange,
         singleLine = true,
-        label = { Text("Search by name or creator") },
+        label = { Text("Search by deck name or username") },
         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
         trailingIcon = {
             if (query.isNotEmpty()) {
