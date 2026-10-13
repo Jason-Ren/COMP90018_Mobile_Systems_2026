@@ -1,8 +1,9 @@
 package com.comp90018.flashcards.data.remote
 
 /**
- * Firestore access for cloud decks. Local Room stays the source of truth; the sync coordinator
- * pushes changes when the device is online. Study progress is not stored here.
+ * Firestore access for cloud decks. Firestore is the account source of truth; Room is an offline
+ * cache that the sync coordinator pushes to and pulls from when online. Study progress is not
+ * stored here.
  */
 interface DeckRemoteDataSource {
     suspend fun upsertDeck(deck: RemoteDeck): Result<Unit>
@@ -12,7 +13,10 @@ interface DeckRemoteDataSource {
         fromServer: Boolean = false,
     ): Result<RemoteDeck?>
 
-    suspend fun listDecksForOwner(ownerId: String): Result<List<RemoteDeck>>
+    suspend fun listDecksForOwner(
+        ownerId: String,
+        fromServer: Boolean = false,
+    ): Result<List<RemoteDeck>>
 
     suspend fun listPublicDecks(): Result<List<RemoteDeck>>
 

@@ -9,4 +9,6 @@ data class DeckEntity(
     val name: String,
     val description: String = "",
     val ownerId: String,
+    /** Wall-clock millis when the deck was first created; My Decks sorts newest first. */
+    val createdAtEpochMillis: Long = 0L,
 )

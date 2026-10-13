@@ -162,6 +162,32 @@ class DeckSyncTest {
         assertFalse(isPermanentFirestoreCode("UNAUTHENTICATED"))
     }
 
+    @Test
+    fun `pull skips decks with pending outbox edits`() {
+        assertTrue(shouldPullRemoteDeck(null))
+        assertFalse(shouldPullRemoteDeck(DeckSyncOperation.UPSERT.name))
+        assertFalse(shouldPullRemoteDeck(DeckSyncOperation.DELETE.name))
+    }
+
+    @Test
+    fun `remote cards map to local cards keeping https images only`() {
+        val card =
+            RemoteCard(
+                cardId = "c1",
+                deckId = "d1",
+                front = "Q",
+                back = "A",
+                position = 2,
+                frontImageUri = "https://example.com/a.png",
+                backImageUri = "content://local",
+            ).toLocalCard()
+
+        assertEquals("c1", card.cardId)
+        assertEquals("https://example.com/a.png", card.frontImageUri)
+        assertEquals(null, card.backImageUri)
+        assertEquals(2, card.position)
+    }
+
     private fun deck(
         name: String = "Biology",
         ownerId: String = "uid-1",
@@ -206,7 +232,10 @@ class DeckSyncTest {
             return Result.success(deck?.takeIf { it.deckId == deckId })
         }
 
-        override suspend fun listDecksForOwner(ownerId: String): Result<List<RemoteDeck>> = unused()
+        override suspend fun listDecksForOwner(
+            ownerId: String,
+            fromServer: Boolean,
+        ): Result<List<RemoteDeck>> = unused()
 
         override suspend fun listPublicDecks(): Result<List<RemoteDeck>> = unused()
 

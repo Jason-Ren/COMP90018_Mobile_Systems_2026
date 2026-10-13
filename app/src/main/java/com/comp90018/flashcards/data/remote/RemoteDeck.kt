@@ -14,4 +14,6 @@ data class RemoteDeck(
     val cardCount: Int,
     /** Optional creator email for catalogue search. Not stored in Room. */
     val authorEmail: String? = null,
+    /** When the deck was first created; used for stable newest-first My Decks order. */
+    val createdAt: Instant? = null,
 )

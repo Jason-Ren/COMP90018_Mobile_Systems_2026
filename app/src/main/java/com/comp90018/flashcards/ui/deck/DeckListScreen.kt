@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -37,6 +38,7 @@ fun DeckListScreen(
     val decks by viewModel.decks.collectAsState()
     val displayName by viewModel.displayName.collectAsState()
     val emulatorMode by viewModel.emulatorMode.collectAsState()
+    val isSyncing by viewModel.isSyncing.collectAsState()
     var showDialog by remember { mutableStateOf(false) }
     var newDeckName by remember { mutableStateOf("") }
     var newDeckDescription by remember { mutableStateOf("") }
@@ -44,6 +46,8 @@ fun DeckListScreen(
     Scaffold(
         topBar = {
             DeckListTopBar(
+                isSyncing = isSyncing,
+                onSync = viewModel::syncFromCloud,
                 onSignOut = viewModel::signOut,
                 emulatorMode = emulatorMode,
                 onEmulatorModeChange = viewModel::setEmulatorMode,
@@ -57,6 +61,7 @@ fun DeckListScreen(
         DeckListBody(
             displayName = displayName,
             decks = decks,
+            isSyncing = isSyncing,
             onNavigateToDeck = onNavigateToDeck,
             modifier = Modifier.padding(padding),
         )
@@ -113,6 +118,7 @@ private fun DeckListButtons(
 private fun DeckListBody(
     displayName: String,
     decks: List<DeckEntity>,
+    isSyncing: Boolean,
     onNavigateToDeck: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -124,6 +130,9 @@ private fun DeckListBody(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         DeckListHeader(displayName = displayName)
+        if (isSyncing) {
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+        }
 
         if (decks.isEmpty()) {
             Box(
@@ -175,6 +184,8 @@ private fun DeckListBody(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DeckListTopBar(
+    isSyncing: Boolean,
+    onSync: () -> Unit,
     onSignOut: () -> Unit,
     emulatorMode: Boolean,
     onEmulatorModeChange: (Boolean) -> Unit,
@@ -183,6 +194,15 @@ private fun DeckListTopBar(
     TopAppBar(
         title = {},
         actions = {
+            TextButton(onClick = onSync, enabled = !isSyncing) {
+                Icon(
+                    imageVector = Icons.Default.Refresh,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(if (isSyncing) "Syncing…" else "Sync")
+            }
             // DEBUG ONLY: lets clash mode be tried on an emulator, hide it with DEBUG_TOOLS_ENABLED
             if (DEBUG_TOOLS_ENABLED) {
                 Checkbox(checked = emulatorMode, onCheckedChange = onEmulatorModeChange)

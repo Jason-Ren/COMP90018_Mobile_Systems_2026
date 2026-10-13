@@ -2,6 +2,8 @@
 
 The app uses its existing Firebase sign-in for both Firestore and the Python social API. No extra API key, service-account file, or HMAC secret belongs in the Android app.
 
+**Source of truth:** profiles, friendships, shares, and publish state live in **Firestore** (via the social API). They are not stored in Room. Deck content also lives in Firestore; Room is only a local cache for My Decks / study (see [cloud-deck-schema.md](cloud-deck-schema.md)).
+
 ## Use the feature
 
 1. From **My Decks**, open **Community**. **Discover** lists public decks and filters the loaded catalogue by deck name or creator email as you type. Each row offers **Preview deck** and **Save a copy**, and marks your own decks as **Yours**. You can also save from the preview. The copy is private and editable; **Open my saved copy** opens the normal deck screen for editing and study.
@@ -32,7 +34,7 @@ The backend's copy limit remains 400 cards / 4 MiB. A shared-deck inbox, notific
 
 The public deck row and publish menu adapt Jason Ren's UI from [PR #64](https://github.com/pandariayu/COMP90018_Mobile_Systems_2026/pull/64), commit `c2350e0`. They are integrated into the existing Community navigation rather than adding a second Browse screen. `CommunityDecks.publish` is the only Android publish/unpublish implementation, and both catalogue and preview save actions use `DeckCopies.save` with persisted retry receipts.
 
-The direct-Firestore `DeckExchange` copy/visibility path from PR #64 is not imported. Cloud attribution stays in the server-managed `copiedFrom` field; Room remains version 5. Optional Firestore `authorEmail` is written when you Publish (for Discover search only) and is not stored in Room. Source attribution in the preview still uses the source-deck link.
+The direct-Firestore `DeckExchange` copy/visibility path from PR #64 is not imported. Cloud attribution stays in the server-managed `copiedFrom` field; Room is version 6 (`createdAtEpochMillis` for stable newest-first My Decks). Optional Firestore `authorEmail` is written when you Publish (for Discover search only) and is not stored in Room. Source attribution in the preview still uses the source-deck link.
 
 Run from the repository root:
 
