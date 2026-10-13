@@ -58,6 +58,17 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.comp90018.flashcards.ui.social.PublishConfirmation
+import com.comp90018.flashcards.ui.social.SocialTaskState
+
+// which dialog or sheet is open, held together so the screen can hand it to the pieces that draw them
+private class DeckPageDialogState {
+    var showEdit by mutableStateOf(false)
+    var showDelete by mutableStateOf(false)
+    var showPublish by mutableStateOf(false)
+    var showShare by mutableStateOf(false)
+    var showOptions by mutableStateOf(false)
+    var readOnlyCard by mutableStateOf<CardUiModel?>(null)
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,13 +86,7 @@ fun DeckPageScreen(
     val uiState by viewModel.uiState.collectAsState()
     val taskState by viewModel.taskState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-
-    var showEditDialog by remember { mutableStateOf(false) }
-    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
-    var showPublishConfirmDialog by remember { mutableStateOf(false) }
-    var showShareSheet by remember { mutableStateOf(false) }
-    var showOptionsSheet by remember { mutableStateOf(false) }
-    var selectedReadOnlyCard by remember { mutableStateOf<CardUiModel?>(null) }
+    val dialogs = remember { DeckPageDialogState() }
 
     LaunchedEffect(taskState.message) {
         taskState.message?.let { snackbarHostState.showSnackbar(it) }
@@ -92,119 +97,183 @@ fun DeckPageScreen(
 
     Scaffold(
         modifier = modifier,
-        topBar = {
-            TopAppBar(
-                title = {},
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-            )
-        },
+        topBar = { DeckPageTopBar(onNavigateBack) },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-        ) {
-            if (uiState.isLoading) {
-                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                return@Box
-            }
+        DeckPageContent(
+            uiState = uiState,
+            taskBusy = taskState.busy,
+            deckId = viewModel.deckId,
+            dialogs = dialogs,
+            onPlay = onPlay,
+            onAddCard = onAddCard,
+            onEditCard = onEditCard,
+            onOpenSource = onOpenSource,
+            onOpenLocal = onOpenLocal,
+            onSaveCopy = viewModel::saveCopy,
+            onMoreCards = viewModel::moreCards,
+            onLoadFriends = viewModel::loadFriends,
+            modifier = Modifier.padding(padding),
+        )
+    }
 
-            DeckPageBody(
-                uiState = uiState,
-                taskBusy = taskState.busy,
-                onOpenSource = onOpenSource,
-                onOpenLocal = onOpenLocal,
-                onSaveCopy = viewModel::saveCopy,
-                onMoreCards = viewModel::moreCards,
-                onAddCard = { onAddCard(viewModel.deckId) },
-                onEditCard = { cardId -> onEditCard(viewModel.deckId, cardId) },
-                onSelectReadOnlyCard = { card -> selectedReadOnlyCard = card },
-                onShareClick = {
-                    showShareSheet = true
-                    viewModel.loadFriends()
-                },
-                onOptionsClick = { showOptionsSheet = true },
+    DeckPageSheets(uiState, taskState, viewModel.deckId, dialogs, onFriends, viewModel::share, viewModel::loadFriends)
+    DeckPageDialogs(
+        uiState = uiState,
+        dialogs = dialogs,
+        onUpdate = viewModel::updateDeck,
+        onPublish = viewModel::publish,
+        onDelete = { viewModel.deleteDeck(onDeleted = onNavigateBack) },
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DeckPageTopBar(onNavigateBack: () -> Unit) {
+    TopAppBar(
+        title = {},
+        navigationIcon = {
+            IconButton(onClick = onNavigateBack) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+            }
+        },
+    )
+}
+
+// the deck itself, with the play bar over the bottom when the deck is the player's own
+@Composable
+private fun DeckPageContent(
+    uiState: DeckSummaryUiState,
+    taskBusy: Boolean,
+    deckId: String,
+    dialogs: DeckPageDialogState,
+    onPlay: (String) -> Unit,
+    onAddCard: (String) -> Unit,
+    onEditCard: (String, String) -> Unit,
+    onOpenSource: (String) -> Unit,
+    onOpenLocal: (String) -> Unit,
+    onSaveCopy: () -> Unit,
+    onMoreCards: () -> Unit,
+    onLoadFriends: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(modifier = modifier.fillMaxSize()) {
+        if (uiState.isLoading) {
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            return@Box
+        }
+
+        DeckPageBody(
+            uiState = uiState,
+            taskBusy = taskBusy,
+            onOpenSource = onOpenSource,
+            onOpenLocal = onOpenLocal,
+            onSaveCopy = onSaveCopy,
+            onMoreCards = onMoreCards,
+            onAddCard = { onAddCard(deckId) },
+            onEditCard = { cardId -> onEditCard(deckId, cardId) },
+            onSelectReadOnlyCard = { card -> dialogs.readOnlyCard = card },
+            onShareClick = {
+                dialogs.showShare = true
+                onLoadFriends()
+            },
+            onOptionsClick = { dialogs.showOptions = true },
+        )
+
+        if (uiState.isOwned) {
+            PlayBottomBar(
+                canPlay = uiState.cardCount > 0,
+                onPlay = { onPlay(deckId) },
+                modifier = Modifier.align(Alignment.BottomCenter),
             )
-
-            if (uiState.isOwned) {
-                PlayBottomBar(
-                    canPlay = uiState.cardCount > 0,
-                    onPlay = { onPlay(viewModel.deckId) },
-                    modifier = Modifier.align(Alignment.BottomCenter),
-                )
-            }
         }
     }
+}
 
-    if (showShareSheet) {
+// the two bottom sheets, share and options
+@Composable
+private fun DeckPageSheets(
+    uiState: DeckSummaryUiState,
+    taskState: SocialTaskState,
+    deckId: String,
+    dialogs: DeckPageDialogState,
+    onFriends: () -> Unit,
+    onShare: (String, Boolean) -> Unit,
+    onRefresh: () -> Unit,
+) {
+    if (dialogs.showShare) {
         UnifiedDeckShareSheet(
-            deckId = viewModel.deckId,
+            deckId = deckId,
             friends = uiState.friends,
             task = taskState,
-            onDismiss = { showShareSheet = false },
+            onDismiss = { dialogs.showShare = false },
             onFriends = {
-                showShareSheet = false
+                dialogs.showShare = false
                 onFriends()
             },
-            onShare = viewModel::share,
-            onRefresh = viewModel::loadFriends,
+            onShare = onShare,
+            onRefresh = onRefresh,
         )
     }
 
-    if (showOptionsSheet) {
+    if (dialogs.showOptions) {
         DeckOptionsBottomSheet(
             isPublic = uiState.visibility == "public",
-            onDismiss = { showOptionsSheet = false },
-            onEditDeckInfo = { showEditDialog = true },
-            onEditVisibility = { showPublishConfirmDialog = true },
-            onDeleteDeck = { showDeleteConfirmDialog = true },
+            onDismiss = { dialogs.showOptions = false },
+            onEditDeckInfo = { dialogs.showEdit = true },
+            onEditVisibility = { dialogs.showPublish = true },
+            onDeleteDeck = { dialogs.showDelete = true },
         )
     }
+}
 
-    if (showEditDialog) {
+// edit, publish, delete and the read-only card dialogs
+@Composable
+private fun DeckPageDialogs(
+    uiState: DeckSummaryUiState,
+    dialogs: DeckPageDialogState,
+    onUpdate: (String, String) -> Unit,
+    onPublish: (Boolean) -> Unit,
+    onDelete: () -> Unit,
+) {
+    if (dialogs.showEdit) {
         EditDeckDialog(
             currentName = uiState.deckName,
             currentDescription = uiState.deckDescription,
             onConfirm = { newName, newDescription ->
-                viewModel.updateDeck(newName, newDescription)
-                showEditDialog = false
+                onUpdate(newName, newDescription)
+                dialogs.showEdit = false
             },
-            onDismiss = { showEditDialog = false },
+            onDismiss = { dialogs.showEdit = false },
         )
     }
 
-    if (showPublishConfirmDialog) {
+    if (dialogs.showPublish) {
         PublishConfirmation(
             public = uiState.visibility != "public",
             onConfirm = {
-                showPublishConfirmDialog = false
-                viewModel.publish(uiState.visibility != "public")
+                dialogs.showPublish = false
+                onPublish(uiState.visibility != "public")
             },
-            onDismiss = { showPublishConfirmDialog = false },
+            onDismiss = { dialogs.showPublish = false },
         )
     }
 
-    if (showDeleteConfirmDialog) {
+    if (dialogs.showDelete) {
         DeleteDeckDialog(
             deckName = uiState.deckName,
             onConfirm = {
-                showDeleteConfirmDialog = false
-                viewModel.deleteDeck(onDeleted = onNavigateBack)
+                dialogs.showDelete = false
+                onDelete()
             },
-            onDismiss = { showDeleteConfirmDialog = false },
+            onDismiss = { dialogs.showDelete = false },
         )
     }
 
-    selectedReadOnlyCard?.let { card ->
+    dialogs.readOnlyCard?.let { card ->
         ReadOnlyCardDialog(
             card = card,
-            onDismiss = { selectedReadOnlyCard = null },
+            onDismiss = { dialogs.readOnlyCard = null },
         )
     }
 }
@@ -436,52 +505,9 @@ private fun DeckHeaderSection(
                 .fillMaxWidth()
                 .padding(vertical = 4.dp),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = uiState.deckName.ifBlank { "Deck" },
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.weight(1f),
-            )
+        DeckTitleRow(uiState, onShareClick, onOptionsClick)
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onShareClick) {
-                    Icon(Icons.Default.Share, contentDescription = "Share")
-                }
-                if (uiState.isOwned) {
-                    IconButton(onClick = onOptionsClick) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "Options")
-                    }
-                }
-            }
-        }
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = if (uiState.visibility == "public") "Public" else "Private",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            Text(
-                text = "· ${uiState.cardCount} cards",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            uiState.authorEmail?.takeIf { it.isNotBlank() }?.let { email ->
-                Text(
-                    text = "· $email",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
+        DeckInfoRow(uiState)
 
         uiState.copiedFrom?.let { source ->
             TextButton(
@@ -496,6 +522,65 @@ private fun DeckHeaderSection(
             Text(
                 text = uiState.deckDescription,
                 style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+// deck name on the left, share and options on the right
+@Composable
+private fun DeckTitleRow(
+    uiState: DeckSummaryUiState,
+    onShareClick: () -> Unit,
+    onOptionsClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = uiState.deckName.ifBlank { "Deck" },
+            style = MaterialTheme.typography.headlineLarge,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.weight(1f),
+        )
+
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onShareClick) {
+                Icon(Icons.Default.Share, contentDescription = "Share")
+            }
+            if (uiState.isOwned) {
+                IconButton(onClick = onOptionsClick) {
+                    Icon(Icons.Default.MoreVert, contentDescription = "Options")
+                }
+            }
+        }
+    }
+}
+
+// public or private, card count and author on one line
+@Composable
+private fun DeckInfoRow(uiState: DeckSummaryUiState) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = if (uiState.visibility == "public") "Public" else "Private",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        Text(
+            text = "· ${uiState.cardCount} cards",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        uiState.authorEmail?.takeIf { it.isNotBlank() }?.let { email ->
+            Text(
+                text = "· $email",
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
