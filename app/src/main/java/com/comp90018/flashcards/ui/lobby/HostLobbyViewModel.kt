@@ -47,7 +47,7 @@ data class LobbyUiState(
 }
 
 /**
- * ViewModel for the host's team mode waiting lobby.
+ * ViewModel for the host's clash mode waiting lobby.
  *
  * The connection itself lives in [ConnectionController]. This manages advertising host presence,
  * team names, and handling guest join requests.

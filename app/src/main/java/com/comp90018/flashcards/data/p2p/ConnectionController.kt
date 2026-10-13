@@ -47,7 +47,7 @@ data class DiscoveredHost(
     val teamName: String,
 )
 
-/** owns the nearby connection for team mode: connect, disconnect and reconnect */
+/** owns the nearby connection for clash mode: connect, disconnect and reconnect */
 interface ConnectionController {
     val state: StateFlow<ConnectionState>
 

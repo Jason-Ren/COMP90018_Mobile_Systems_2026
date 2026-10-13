@@ -85,7 +85,7 @@ fun DeckListScreen(
     }
 }
 
-/** Join Game sits above Create Deck. */
+/** Join Clash sits above Create Deck. */
 @Composable
 private fun DeckListButtons(
     onJoinGame: () -> Unit,
@@ -95,7 +95,7 @@ private fun DeckListButtons(
         ExtendedFloatingActionButton(
             onClick = onJoinGame,
             icon = { Icon(Icons.Default.PlayArrow, contentDescription = null) },
-            text = { Text("Join Game", style = MaterialTheme.typography.titleMedium) },
+            text = { Text("Join Clash", style = MaterialTheme.typography.titleMedium) },
             containerColor = MaterialTheme.colorScheme.primaryContainer,
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
         )
@@ -183,7 +183,7 @@ private fun DeckListTopBar(
     TopAppBar(
         title = {},
         actions = {
-            // DEBUG ONLY: lets team mode be tried on an emulator, hide it with DEBUG_TOOLS_ENABLED
+            // DEBUG ONLY: lets clash mode be tried on an emulator, hide it with DEBUG_TOOLS_ENABLED
             if (DEBUG_TOOLS_ENABLED) {
                 Checkbox(checked = emulatorMode, onCheckedChange = onEmulatorModeChange)
                 Text("[DEBUG] Emulator mode", style = MaterialTheme.typography.labelSmall)

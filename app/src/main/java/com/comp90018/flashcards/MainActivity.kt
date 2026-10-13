@@ -229,7 +229,7 @@ private fun NavGraphBuilder.duoRoutes(navController: NavHostController) {
 }
 
 /**
- * The host's team mode flow: lobby, pick the countdown, then play. The guest's flow is in [joinRoutes].
+ * The host's clash mode flow: lobby, pick the countdown, then play. The guest's flow is in [joinRoutes].
  * Finishing a game returns to the main screen.
  */
 private fun NavGraphBuilder.teamGameRoutes(navController: NavHostController) {
@@ -260,7 +260,7 @@ private fun NavGraphBuilder.teamGameRoutes(navController: NavHostController) {
     composable(route = "team_game") { TeamGameScreen(onNavigateBack = { navController.popBackStack("home", false) }) }
 }
 
-/** The guest's team mode flow: find a host, wait for Start, then play. */
+/** The guest's clash mode flow: find a host, wait for Start, then play. */
 private fun NavGraphBuilder.joinRoutes(navController: NavHostController) {
     composable(route = "join") {
         NearbyPermissionGate(onNavigateBack = { navController.popBackStack() }) {
