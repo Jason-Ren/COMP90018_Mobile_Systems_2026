@@ -34,7 +34,7 @@ The backend's copy limit remains 400 cards / 4 MiB. A shared-deck inbox, notific
 
 The public deck row and publish menu adapt Jason Ren's UI from [PR #64](https://github.com/pandariayu/COMP90018_Mobile_Systems_2026/pull/64), commit `c2350e0`. They are integrated into the existing Community navigation rather than adding a second Browse screen. `CommunityDecks.publish` is the only Android publish/unpublish implementation, and both catalogue and preview save actions use `DeckCopies.save` with persisted retry receipts.
 
-The direct-Firestore `DeckExchange` copy/visibility path from PR #64 is not imported. Cloud attribution stays in the server-managed `copiedFrom` field; Room remains version 5. Optional Firestore `authorEmail` is written when you Publish (for Discover search only) and is not stored in Room. Source attribution in the preview still uses the source-deck link.
+The direct-Firestore `DeckExchange` copy/visibility path from PR #64 is not imported. Cloud attribution stays in the server-managed `copiedFrom` field; Room is version 6 (`createdAtEpochMillis` for stable newest-first My Decks). Optional Firestore `authorEmail` is written when you Publish (for Discover search only) and is not stored in Room. Source attribution in the preview still uses the source-deck link.
 
 Run from the repository root:
 

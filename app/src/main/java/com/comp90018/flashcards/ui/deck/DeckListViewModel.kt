@@ -105,6 +105,7 @@ class DeckListViewModel
                         name = name,
                         description = description,
                         ownerId = uid,
+                        createdAtEpochMillis = System.currentTimeMillis(),
                     ),
                 )
             }

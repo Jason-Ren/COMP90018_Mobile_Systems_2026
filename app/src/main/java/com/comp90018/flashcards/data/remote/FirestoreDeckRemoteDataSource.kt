@@ -209,6 +209,7 @@ internal object RemoteDeckMapper {
             updatedAt = (data["updatedAt"] as? Timestamp)?.toDate()?.toInstant() ?: Instant.EPOCH,
             cardCount = (data["cardCount"] as? Number)?.toInt() ?: 0,
             authorEmail = (data["authorEmail"] as? String)?.takeIf { it.isNotBlank() },
+            createdAt = (data["createdAt"] as? Timestamp)?.toDate()?.toInstant(),
         )
 }
 
@@ -237,6 +238,7 @@ internal fun RemoteDeck.toFirestoreMap(): Map<String, Any?> =
         put("updatedAt", Timestamp(updatedAt.epochSecond, updatedAt.nano))
         put("cardCount", cardCount)
         authorEmail?.takeIf { it.isNotBlank() }?.let { put("authorEmail", it) }
+        createdAt?.let { put("createdAt", Timestamp(it.epochSecond, it.nano)) }
     }
 
 internal fun RemoteDeck.toContentUpdateMap(): Map<String, Any?> =
@@ -245,6 +247,7 @@ internal fun RemoteDeck.toContentUpdateMap(): Map<String, Any?> =
         put("updatedAt", Timestamp(updatedAt.epochSecond, updatedAt.nano))
         put("cardCount", cardCount)
         authorEmail?.takeIf { it.isNotBlank() }?.let { put("authorEmail", it) }
+        createdAt?.let { put("createdAt", Timestamp(it.epochSecond, it.nano)) }
     }
 
 internal fun RemoteCard.toFirestoreMap(): Map<String, Any?> =

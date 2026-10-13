@@ -64,6 +64,10 @@ class DeckCloudPull
                         name = remoteDeck.name,
                         description = existing?.description.orEmpty(),
                         ownerId = ownerId,
+                        createdAtEpochMillis =
+                            existing?.createdAtEpochMillis?.takeIf { it > 0L }
+                                ?: remoteDeck.createdAt?.toEpochMilli()
+                                ?: remoteDeck.updatedAt.toEpochMilli(),
                     ),
                 )
                 val localCards = store.cardDao.listCardsByDeckId(remoteDeck.deckId)
