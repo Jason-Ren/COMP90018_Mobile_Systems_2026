@@ -39,7 +39,6 @@ import com.comp90018.flashcards.ui.lobby.JoinGameScreen
 import com.comp90018.flashcards.ui.play.ChooseTimerScreen
 import com.comp90018.flashcards.ui.play.DuoScreen
 import com.comp90018.flashcards.ui.play.TeamGameScreen
-import com.comp90018.flashcards.ui.social.CloudDeckScreen
 import com.comp90018.flashcards.ui.social.CommunityScreen
 import com.comp90018.flashcards.ui.study.StudyScreen
 import com.comp90018.flashcards.ui.theme.AppTheme
@@ -149,7 +148,9 @@ private fun NavGraphBuilder.deckPlayRoutes(navController: NavHostController) {
             onEditCard = { deckId, cardId ->
                 navController.navigate("add_edit_card/$deckId?cardId=$cardId")
             },
-            onCommunity = { deckId -> navController.navigate("cloud_deck/$deckId") },
+            onOpenSource = { deckId -> navController.navigate("deck/$deckId") },
+            onOpenLocal = { deckId -> navController.navigate("deck/$deckId") },
+            onFriends = { navController.navigate("community?friends=true") },
         )
     }
     composable(
@@ -184,17 +185,20 @@ private fun NavGraphBuilder.communityRoutes(navController: NavHostController) {
     ) { entry ->
         CommunityScreen(
             onBack = { navController.popBackStack() },
-            onOpenDeck = { navController.navigate("cloud_deck/$it") },
+            onOpenDeck = { navController.navigate("deck/$it") },
             onOpenLocal = { navController.navigate("deck/$it") },
             startWithFriends = entry.arguments?.getBoolean("friends") == true,
         )
     }
     composable("cloud_deck/{deckId}", arguments = listOf(navArgument("deckId") { type = NavType.StringType })) {
-        CloudDeckScreen(
-            onBack = { navController.popBackStack() },
-            onOpenLocal = { navController.navigate("deck/$it") },
+        DeckPageScreen(
+            onNavigateBack = { navController.popBackStack() },
+            onPlay = { deckId -> navController.navigate("choose_mode/$deckId") },
+            onAddCard = { deckId -> navController.navigate("add_edit_card/$deckId") },
+            onEditCard = { deckId, cardId -> navController.navigate("add_edit_card/$deckId?cardId=$cardId") },
+            onOpenSource = { deckId -> navController.navigate("deck/$deckId") },
+            onOpenLocal = { deckId -> navController.navigate("deck/$deckId") },
             onFriends = { navController.navigate("community?friends=true") },
-            onOpenSource = { navController.navigate("cloud_deck/$it") },
         )
     }
 }
