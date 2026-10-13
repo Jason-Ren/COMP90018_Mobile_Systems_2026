@@ -37,6 +37,7 @@ social_backends/{namespace}/...  # profiles, friendships, private ID mappings, c
 | `visibility` | string | `"private"` or `"public"` (publish for search / Save-a-copy) |
 | `updatedAt` | timestamp | UTC; used for ordering and conflict hints |
 | `cardCount` | number | Denormalised count for catalogue lists |
+| `authorEmail` | string? | Optional creator email for Discover search; stamped on Publish |
 | `copiedFrom` | map? | API-issued source attribution on saved copies; absent on original decks |
 
 Document id = same UUID as local `DeckEntity.deckId` so sync can match rows later.
@@ -109,4 +110,4 @@ Local Room stays the source of truth. Deck and card edits are stored in a local 
 
 - Dependency: `com.google.firebase:firebase-firestore` (Firebase BOM already in the app).
 - Models: `com.comp90018.flashcards.data.remote`. Background push: `com.comp90018.flashcards.data.sync`.
-- Existing `getDeck(deckId)` and `listCards(deckId)` can read explicitly shared private decks after a grant is issued through the API. Friends/sharing UI, shared-deck discovery, and HTTP integration remain to be connected.
+- Existing `getDeck(deckId)` and `listCards(deckId)` can read explicitly shared private decks after a grant is issued through the API. The Android Community screens now connect profiles, friends, share/revoke, publishing, and Save-a-copy. Shared private decks open by code; copies import into Room with new IDs and fresh study state. See [Android community usage](android-community.md).

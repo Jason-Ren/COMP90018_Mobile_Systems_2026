@@ -30,6 +30,23 @@ class RemoteMappersTest {
         assertEquals(DeckVisibility.PUBLIC, deck.visibility)
         assertEquals(updatedAt, deck.updatedAt)
         assertEquals(3, deck.cardCount)
+        assertNull(deck.authorEmail)
+    }
+
+    @Test
+    fun `maps optional author email for catalogue search`() {
+        val deck =
+            RemoteDeckMapper.from(
+                deckId = "deck-1",
+                data = mapOf("name" to "Biology", "authorEmail" to "ada@example.com"),
+            )
+        assertEquals("ada@example.com", deck.authorEmail)
+        assertEquals(
+            "ada@example.com",
+            deck
+                .copy(updatedAt = Instant.EPOCH, ownerId = "uid", cardCount = 0)
+                .toFirestoreMap()["authorEmail"],
+        )
     }
 
     @Test

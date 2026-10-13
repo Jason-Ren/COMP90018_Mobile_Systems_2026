@@ -1,10 +1,11 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.compose")
     id("com.google.dagger.hilt.android")
     id("org.jetbrains.kotlin.plugin.serialization")
     id("kotlin-kapt")
-    id("io.gitlab.arturbosch.detekt")
+    id("dev.detekt")
     id("org.jlleitschuh.gradle.ktlint")
     id("com.google.gms.google-services") apply false
 }
@@ -40,7 +41,7 @@ val googleWebClientId: String =
 
 android {
     namespace = "com.comp90018.flashcards"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.comp90018.flashcards"
@@ -54,6 +55,13 @@ android {
             useSupportLibrary = true
         }
         resValue("string", "web_client_id", googleWebClientId)
+        resValue(
+            "string",
+            "social_api_base_url",
+            providers.gradleProperty("SOCIAL_API_URL").getOrElse(
+                "https://comp90018-mobile-systems-2026-12898337120.australia-southeast2.run.app",
+            ),
+        )
     }
 
     buildTypes {
@@ -66,14 +74,8 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "17"
-    }
     buildFeatures {
         compose = true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.11"
     }
     packaging {
         resources {
@@ -88,16 +90,33 @@ android {
     }
 }
 
+kotlin {
+    jvmToolchain(21)
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    }
+}
+
+// Room's verifier needs a writable directory for its native SQLite library.
+tasks.withType<org.jetbrains.kotlin.gradle.internal.KaptWithoutKotlincTask>().configureEach {
+    val sqliteTempDir = layout.buildDirectory.dir("tmp/sqlite/$name")
+    kaptProcessJvmArgs.add(sqliteTempDir.map { "-Dorg.sqlite.tmpdir=${it.asFile.absolutePath}" })
+    doFirst {
+        sqliteTempDir.get().asFile.mkdirs()
+    }
+}
+
 dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
     implementation("androidx.lifecycle:lifecycle-process:2.7.0")
     implementation("androidx.activity:activity-compose:1.9.0")
-    implementation(platform("androidx.compose:compose-bom:2024.04.01"))
+    implementation(platform("androidx.compose:compose-bom:2025.10.01"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.material:material-icons-core")
     implementation("com.google.android.material:material:1.12.0")
 
     // ViewModel & Lifecycle
@@ -105,7 +124,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")
 
     // Room
-    val roomVersion = "2.6.1"
+    val roomVersion = "2.8.3"
     implementation("androidx.room:room-runtime:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion")
     kapt("androidx.room:room-compiler:$roomVersion")
@@ -116,10 +135,7 @@ dependencies {
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.0")
-
-    // Nearby Connections (2v2 mode) and JSON for the messages sent between devices
-    implementation("com.google.android.gms:play-services-nearby:19.3.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
 
     // Firebase Auth + Firestore + Google sign-in. The Google Services plugin is applied
     // only when app/google-services.json exists, so CI can still compile.
@@ -131,8 +147,8 @@ dependencies {
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
 
     // Hilt
-    implementation("com.google.dagger:hilt-android:2.51.1")
-    kapt("com.google.dagger:hilt-android-compiler:2.51.1")
+    implementation("com.google.dagger:hilt-android:2.57.2")
+    kapt("com.google.dagger:hilt-android-compiler:2.57.2")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
     implementation("androidx.hilt:hilt-work:1.2.0")
     kapt("androidx.hilt:hilt-compiler:1.2.0")
@@ -145,9 +161,9 @@ dependencies {
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
     // mocks the nearby result classes, which cannot be built by hand in a unit test
     testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
-    androidTestImplementation("androidx.test.ext:junit:1.1.5")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
-    androidTestImplementation(platform("androidx.compose:compose-bom:2024.04.01"))
+    androidTestImplementation("androidx.test.ext:junit:1.3.0")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
+    androidTestImplementation(platform("androidx.compose:compose-bom:2025.10.01"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
@@ -155,27 +171,25 @@ dependencies {
     // Material3
     implementation("androidx.compose.material3:material3")
     // Detekt Compose-aware rules
-    detektPlugins("io.nlopez.compose.rules:detekt:0.4.4")
+    detektPlugins("io.nlopez.compose.rules:detekt:0.5.8")
 }
 
 detekt {
-    toolVersion = "1.23.6"
+    toolVersion = "2.0.0-alpha.3"
     config.setFrom(files("$rootDir/config/detekt/detekt.yml"))
-    baseline = file("$rootDir/config/detekt/baseline.xml")
+    baseline.set(file("$rootDir/config/detekt/baseline.xml"))
     buildUponDefaultConfig = true
     autoCorrect = true
     source.setFrom(files("src/main/java", "src/test/java", "src/androidTest/java"))
 }
 
-tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
+tasks.withType<dev.detekt.gradle.Detekt>().configureEach {
     reports {
         html.required.set(true)
-        xml.required.set(false)
-        txt.required.set(false)
+        checkstyle.required.set(false)
         sarif.required.set(false)
-        md.required.set(false)
     }
-    jvmTarget = "17"
+    jvmTarget.set("17")
 }
 
 ktlint {

@@ -33,6 +33,7 @@ fun DeckPageScreen(
     onPlay: (String) -> Unit,
     onAddCard: (String) -> Unit,
     onEditCard: (String, String) -> Unit,
+    onCommunity: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DeckSummaryViewModel = hiltViewModel(),
 ) {
@@ -48,6 +49,7 @@ fun DeckPageScreen(
                 onNavigateBack = onNavigateBack,
                 onEditDeckInfo = { showEditDialog = true },
                 onDeleteDeck = { showDeleteConfirmDialog = true },
+                onCommunity = { onCommunity(viewModel.deckId) },
             )
         },
     ) { padding ->
@@ -59,6 +61,7 @@ fun DeckPageScreen(
         ) {
             DeckPageBody(
                 uiState = uiState,
+                onOpenSource = onCommunity,
                 onAddCard = { onAddCard(viewModel.deckId) },
                 onEditCard = { cardId -> onEditCard(viewModel.deckId, cardId) },
             )
@@ -101,6 +104,7 @@ private fun DeckPageTopBar(
     onNavigateBack: () -> Unit,
     onEditDeckInfo: () -> Unit,
     onDeleteDeck: () -> Unit,
+    onCommunity: () -> Unit,
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
@@ -120,6 +124,14 @@ private fun DeckPageTopBar(
                     expanded = showMenu,
                     onDismissRequest = { showMenu = false },
                 ) {
+                    DeckPublicationMenu(onDismissMenu = { showMenu = false })
+                    DropdownMenuItem(
+                        text = { Text("Share with friends") },
+                        onClick = {
+                            showMenu = false
+                            onCommunity()
+                        },
+                    )
                     DropdownMenuItem(
                         text = { Text("Edit Deck Info") },
                         leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
@@ -151,6 +163,7 @@ private fun DeckPageTopBar(
 @Composable
 private fun DeckPageBody(
     uiState: DeckSummaryUiState,
+    onOpenSource: (String) -> Unit,
     onAddCard: () -> Unit,
     onEditCard: (String) -> Unit,
 ) {
@@ -162,6 +175,7 @@ private fun DeckPageBody(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         DeckHeaderSection(uiState = uiState)
+        DeckPublicationStatus(onOpenSource = onOpenSource)
 
         Row(
             modifier = Modifier.fillMaxWidth(),

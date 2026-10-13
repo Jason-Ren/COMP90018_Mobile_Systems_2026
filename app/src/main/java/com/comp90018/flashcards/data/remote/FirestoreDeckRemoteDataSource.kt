@@ -205,6 +205,7 @@ internal object RemoteDeckMapper {
             visibility = DeckVisibility.fromFirestore(data["visibility"] as? String),
             updatedAt = (data["updatedAt"] as? Timestamp)?.toDate()?.toInstant() ?: Instant.EPOCH,
             cardCount = (data["cardCount"] as? Number)?.toInt() ?: 0,
+            authorEmail = (data["authorEmail"] as? String)?.takeIf { it.isNotBlank() },
         )
 }
 
@@ -226,20 +227,22 @@ internal object RemoteCardMapper {
 }
 
 internal fun RemoteDeck.toFirestoreMap(): Map<String, Any?> =
-    mapOf(
-        "name" to name,
-        "ownerId" to ownerId,
-        "visibility" to visibility.firestoreValue,
-        "updatedAt" to Timestamp(updatedAt.epochSecond, updatedAt.nano),
-        "cardCount" to cardCount,
-    )
+    buildMap {
+        put("name", name)
+        put("ownerId", ownerId)
+        put("visibility", visibility.firestoreValue)
+        put("updatedAt", Timestamp(updatedAt.epochSecond, updatedAt.nano))
+        put("cardCount", cardCount)
+        authorEmail?.takeIf { it.isNotBlank() }?.let { put("authorEmail", it) }
+    }
 
 internal fun RemoteDeck.toContentUpdateMap(): Map<String, Any?> =
-    mapOf(
-        "name" to name,
-        "updatedAt" to Timestamp(updatedAt.epochSecond, updatedAt.nano),
-        "cardCount" to cardCount,
-    )
+    buildMap {
+        put("name", name)
+        put("updatedAt", Timestamp(updatedAt.epochSecond, updatedAt.nano))
+        put("cardCount", cardCount)
+        authorEmail?.takeIf { it.isNotBlank() }?.let { put("authorEmail", it) }
+    }
 
 internal fun RemoteCard.toFirestoreMap(): Map<String, Any?> =
     buildMap {

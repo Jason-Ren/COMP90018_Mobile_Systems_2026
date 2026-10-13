@@ -113,7 +113,7 @@ Start-Process "$apiUrl/docs"
 
 Health should return `{"status":"ok"}`. A request to `/v1/me` without a Firebase ID token should return `401`. In `/docs`, use **Authorize** with a real Firebase ID token from the Android app, then test profile setup and the two-user flow in [README.md](README.md#two-user-walkthrough). Health alone does not verify real Firebase token validation, index readiness, or the entire sharing flow.
 
-Use the resulting HTTPS URL as the base URL when wiring Android's social HTTP client. The Android social client and sharing UI still need implementing; deployment does not connect those screens automatically.
+The Android social HTTP client defaults to the existing Melbourne service URL. For another deployment, override the `SOCIAL_API_URL` Gradle property and rebuild the app. See [Android community setup](../docs/android-community.md).
 
 If startup fails, inspect **Cloud Run → social-api → Logs**. Common causes are a missing secret version, missing Firestore/Auth permissions, the wrong database/project, or a changed identity key.
 

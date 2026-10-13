@@ -31,6 +31,7 @@ import com.comp90018.flashcards.debug.DEBUG_TOOLS_ENABLED
 fun DeckListScreen(
     onNavigateToDeck: (String) -> Unit,
     onJoinGame: () -> Unit,
+    onCommunity: () -> Unit,
     viewModel: DeckListViewModel = hiltViewModel(),
 ) {
     val decks by viewModel.decks.collectAsState()
@@ -46,7 +47,7 @@ fun DeckListScreen(
                 onSignOut = viewModel::signOut,
                 emulatorMode = emulatorMode,
                 onEmulatorModeChange = viewModel::setEmulatorMode,
-            )
+                onCommunity = onCommunity)
         },
         floatingActionButton = {
             DeckListButtons(onJoinGame = onJoinGame, onCreateDeck = { showDialog = true })
@@ -176,6 +177,7 @@ private fun DeckListTopBar(
     onSignOut: () -> Unit,
     emulatorMode: Boolean,
     onEmulatorModeChange: (Boolean) -> Unit,
+    onCommunity: () -> Unit,
 ) {
     TopAppBar(
         title = {},
@@ -185,6 +187,7 @@ private fun DeckListTopBar(
                 Checkbox(checked = emulatorMode, onCheckedChange = onEmulatorModeChange)
                 Text("[DEBUG] Emulator mode", style = MaterialTheme.typography.labelSmall)
             }
+            TextButton(onClick = onCommunity) { Text("Community") }
             TextButton(onClick = onSignOut) {
                 Text("Log out")
             }
