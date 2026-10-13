@@ -2,9 +2,11 @@ package com.comp90018.flashcards.ui.lobby
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -14,6 +16,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -26,23 +29,15 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
-import com.comp90018.flashcards.ui.connection.DebugConnectionButtons
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.height
-import androidx.compose.material3.CardDefaults
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import com.comp90018.flashcards.R
+import com.comp90018.flashcards.ui.connection.DebugConnectionButtons
 
 // every team container is this tall, whatever is inside, so the lobby does not jump around
 private val TEAM_SLOT_HEIGHT = 150.dp
@@ -85,10 +80,12 @@ private fun TeamContainer(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LobbyTopBar(
-    title: String = "Team Mode",
     onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+    title: String = "Team Mode",
 ) {
     TopAppBar(
+        modifier = modifier,
         title = { Text(title) },
         navigationIcon = {
             IconButton(onClick = onBack) {
@@ -148,10 +145,10 @@ fun LobbyLayout(
  */
 @Composable
 fun TeamSlotCard(
-    modifier: Modifier = Modifier,
     label: String,
     teamName: String,
     tint: TeamTint,
+    modifier: Modifier = Modifier,
     canReroll: Boolean = false,
     onReroll: (() -> Unit)? = null,
 ) {
@@ -176,7 +173,7 @@ fun TeamSlotCard(
                     Icon(
                         Icons.Default.Refresh,
                         contentDescription = "Pick another team name",
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier.size(32.dp),
                     )
                 }
             }
@@ -185,9 +182,9 @@ fun TeamSlotCard(
 }
 
 @Composable
-fun VersusDivider() {
+fun VersusDivider(modifier: Modifier = Modifier) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -198,10 +195,10 @@ fun VersusDivider() {
 }
 
 @Composable
-fun WaitingSlot() {
+fun WaitingSlot(modifier: Modifier = Modifier) {
     Row(
         modifier =
-            Modifier
+            modifier
                 .fillMaxWidth()
                 .height(TEAM_SLOT_HEIGHT)
                 .padding(20.dp),
@@ -218,8 +215,9 @@ fun PendingSlot(
     teamName: String,
     onAccept: () -> Unit,
     onDecline: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    TeamContainer(tint = TeamTint.None) {
+    TeamContainer(tint = TeamTint.None, modifier = modifier) {
         Column(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -242,8 +240,9 @@ fun PendingSlot(
 fun JoinedSlot(
     teamName: String,
     onRemove: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    TeamContainer(tint = TeamTint.Red) {
+    TeamContainer(tint = TeamTint.Red, modifier = modifier) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -257,7 +256,8 @@ fun JoinedSlot(
                 Icon(
                     painterResource(R.drawable.ic_person_cancel),
                     contentDescription = "Remove team",
-                    modifier = Modifier.size(32.dp))
+                    modifier = Modifier.size(32.dp),
+                )
             }
         }
     }

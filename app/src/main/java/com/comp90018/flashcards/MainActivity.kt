@@ -12,8 +12,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.key
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -34,8 +34,8 @@ import com.comp90018.flashcards.ui.deck.DeckListScreen
 import com.comp90018.flashcards.ui.deck.DeckPageScreen
 import com.comp90018.flashcards.ui.lobby.GameSetupViewModel
 import com.comp90018.flashcards.ui.lobby.GuestLobbyScreen
-import com.comp90018.flashcards.ui.lobby.JoinGameScreen
 import com.comp90018.flashcards.ui.lobby.HostLobbyScreen
+import com.comp90018.flashcards.ui.lobby.JoinGameScreen
 import com.comp90018.flashcards.ui.play.ChooseTimerScreen
 import com.comp90018.flashcards.ui.play.DuoScreen
 import com.comp90018.flashcards.ui.play.TeamGameScreen
@@ -257,8 +257,7 @@ private fun NavGraphBuilder.teamGameRoutes(navController: NavHostController) {
             },
         )
     }
-    composable(route = "team_game")
-    { TeamGameScreen(onNavigateBack = { navController.popBackStack("home", false) }) }
+    composable(route = "team_game") { TeamGameScreen(onNavigateBack = { navController.popBackStack("home", false) }) }
 }
 
 /** The guest's team mode flow: find a host, wait for Start, then play. */
@@ -268,7 +267,7 @@ private fun NavGraphBuilder.joinRoutes(navController: NavHostController) {
             JoinGameScreen(
                 onNavigateBack = { navController.popBackStack() },
                 // the join screen is dropped so back from the game cannot return to it
-                onJoined = { navController.navigate("guest_lobby") { launchSingleTop = true } },
+                onJoin = { navController.navigate("guest_lobby") { launchSingleTop = true } },
             )
         }
     }
@@ -280,9 +279,9 @@ private fun NavGraphBuilder.joinRoutes(navController: NavHostController) {
             // the join and lobby screens are both dropped so back from the game cannot return to them
             onGameStart = {
                 navController.navigate("team_game") { popUpTo("join") { inclusive = true } }
-                          },
+            },
             viewModel = hiltViewModel(joinEntry),
-            )
+        )
     }
 }
 

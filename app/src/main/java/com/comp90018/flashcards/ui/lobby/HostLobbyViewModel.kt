@@ -86,13 +86,20 @@ class HostLobbyViewModel
             }
 
         val state: StateFlow<LobbyUiState> =
-            combine(teamName, link, debugGuest, guestNameOverride, debugSettings.emulatorMode) { name, current, fake, guestOverride, emulator ->
+            combine(
+                teamName,
+                link,
+                debugGuest,
+                guestNameOverride,
+                debugSettings.emulatorMode,
+            ) { name, current, fake, guestOverride, emulator ->
                 val resolvedGuest = fake ?: guestSlotOf(current)
-                val finalGuest = if (resolvedGuest is GuestSlot.Joined && guestOverride != null) {
-                    GuestSlot.Joined(guestOverride)
-                } else {
-                    resolvedGuest
-                }
+                val finalGuest =
+                    if (resolvedGuest is GuestSlot.Joined && guestOverride != null) {
+                        GuestSlot.Joined(guestOverride)
+                    } else {
+                        resolvedGuest
+                    }
                 LobbyUiState(
                     teamName = name,
                     guest = finalGuest,

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,6 +18,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -31,6 +33,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -38,9 +41,7 @@ import com.comp90018.flashcards.data.p2p.ConnectionState
 import com.comp90018.flashcards.data.p2p.DiscoveredHost
 import com.comp90018.flashcards.ui.connection.ConnectionOverlay
 import com.comp90018.flashcards.ui.connection.DebugConnectionButtons
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.foundation.layout.height
+
 /**
  * The guest's side of team mode: list hosts nearby, ask to join, and once accepted display [GuestLobbyScreen].
  */
@@ -51,7 +52,7 @@ private val JOIN_CARD_HEIGHT = 100.dp
 @Composable
 fun JoinGameScreen(
     onNavigateBack: () -> Unit,
-    onJoined: () -> Unit,
+    onJoin: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: JoinGameViewModel = hiltViewModel(),
 ) {
@@ -60,7 +61,7 @@ fun JoinGameScreen(
     LaunchedEffect(Unit) { viewModel.begin() }
 
     // once the host accepts, move on to the lobby screen
-    val openLobby by rememberUpdatedState(onJoined)
+    val openLobby by rememberUpdatedState(onJoin)
     val joined = state.connection is ConnectionState.Connected
     LaunchedEffect(joined) { if (joined) openLobby() }
 
@@ -207,7 +208,8 @@ private fun WaitingCard(
             Text(
                 "Cancel",
                 color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.titleMedium
-            ) }
+                style = MaterialTheme.typography.titleMedium,
+            )
+        }
     }
 }

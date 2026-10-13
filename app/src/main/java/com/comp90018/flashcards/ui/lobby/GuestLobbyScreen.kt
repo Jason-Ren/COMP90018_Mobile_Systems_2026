@@ -76,7 +76,7 @@ fun GuestLobbyScreen(
                     label = "Host Team",
                     teamName = state.hostTeamName.ifBlank { "Host" },
                     canReroll = false,
-                    tint = TeamTint.Blue
+                    tint = TeamTint.Blue,
                 )
             },
             bottomSlot = {
@@ -85,30 +85,10 @@ fun GuestLobbyScreen(
                     teamName = state.teamName,
                     canReroll = state.canReroll,
                     onReroll = viewModel::rerollName,
-                    tint = TeamTint.Red
+                    tint = TeamTint.Red,
                 )
             },
-            bottomActions = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Row(
-                            modifier = Modifier.padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
-                        ) {
-                            CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                            Text("Waiting for the host to start…", style = MaterialTheme.typography.titleMedium)
-                        }
-                    }
-
-                    TextButton(onClick = { requestLeave() }, modifier = Modifier.fillMaxWidth()) {
-                        Text(
-                            "Leave Game",
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.titleMedium)
-                    }
-                }
-            },
+            bottomActions = { GuestActions(onLeave = { requestLeave() }) },
             modifier = Modifier.padding(padding),
         )
     }
@@ -116,21 +96,50 @@ fun GuestLobbyScreen(
     ConnectionOverlay(state = state.connection, onReconnect = viewModel::reconnect, onEnd = leaveSession)
 
     if (showLeaveConfirm) {
-        AlertDialog(
-            onDismissRequest = { showLeaveConfirm = false },
-            title = { Text("Leave game?") },
-            text = { Text("You will be disconnected from the host.") },
-            confirmButton = {
-                Button(onClick = {
-                    showLeaveConfirm = false
-                    leaveSession()
-                }) {
-                    Text("Leave")
-                }
+        LeaveGameDialog(
+            onConfirm = {
+                showLeaveConfirm = false
+                leaveSession()
             },
-            dismissButton = {
-                TextButton(onClick = { showLeaveConfirm = false }) { Text("Stay") }
-            },
+            onDismiss = { showLeaveConfirm = false },
         )
     }
+}
+
+@Composable
+private fun GuestActions(onLeave: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+            ) {
+                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                Text("Waiting for the host to start…", style = MaterialTheme.typography.titleMedium)
+            }
+        }
+
+        TextButton(onClick = onLeave, modifier = Modifier.fillMaxWidth()) {
+            Text(
+                "Leave Game",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.titleMedium,
+            )
+        }
+    }
+}
+
+@Composable
+private fun LeaveGameDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Leave game?") },
+        text = { Text("You will be disconnected from the host.") },
+        confirmButton = { Button(onClick = onConfirm) { Text("Leave") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Stay") } },
+    )
 }

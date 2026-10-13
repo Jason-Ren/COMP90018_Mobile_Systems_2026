@@ -70,51 +70,21 @@ fun HostLobbyScreen(
                     teamName = state.teamName,
                     canReroll = state.canReroll,
                     onReroll = lobbyViewModel::rerollName,
-                    tint = TeamTint.Blue
+                    tint = TeamTint.Blue,
                 )
             },
             bottomSlot = {
-                when (val guest = state.guest) {
-                    GuestSlot.Empty -> {
-                        Column {
-                            WaitingSlot()
-                            if (state.showDebugButton) {
-                                OutlinedButton(
-                                    onClick = lobbyViewModel::debugSimulateRequest,
-                                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                                ) { Text("DEBUG: simulate join request") }
-                            }
-                        }
-                    }
-                    is GuestSlot.Pending ->
-                        PendingSlot(
-                            teamName = guest.teamName,
-                            onAccept = lobbyViewModel::accept,
-                            onDecline = lobbyViewModel::decline,
-                        )
-                    is GuestSlot.Joined ->
-                        JoinedSlot(
-                            teamName = guest.teamName,
-                            onRemove = { showRemoveConfirm = true },
-                        )
-                }
+                GuestSlotContent(
+                    guest = state.guest,
+                    showDebugButton = state.showDebugButton,
+                    onSimulateRequest = lobbyViewModel::debugSimulateRequest,
+                    onAccept = lobbyViewModel::accept,
+                    onDecline = lobbyViewModel::decline,
+                    onRemove = { showRemoveConfirm = true },
+                )
             },
             bottomActions = {
-                Column {
-                    Button(
-                        onClick = onStart,
-                        enabled = state.canStart,
-                        modifier = Modifier.fillMaxWidth().height(56.dp),
-                    ) {
-                        Text("Start", style = MaterialTheme.typography.titleLarge)
-                    }
-                    TextButton(onClick = { requestLeave() }, modifier = Modifier.fillMaxWidth()) {
-                        Text(
-                            "Cancel",
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.titleMedium)
-                    }
-                }
+                HostActions(canStart = state.canStart, onStart = onStart, onCancel = { requestLeave() })
             },
             modifier = Modifier.padding(padding),
         )
@@ -125,22 +95,68 @@ fun HostLobbyScreen(
     if (showRemoveConfirm) {
         RemoveGuestDialog(
             name = (state.guest as? GuestSlot.Joined)?.teamName ?: "this team",
-            onConfirm = {
-                lobbyViewModel.removeGuest()
-                showRemoveConfirm = false
-            },
+            onConfirm = lobbyViewModel::removeGuest,
             onDismiss = { showRemoveConfirm = false },
         )
     }
 
     if (showCancelConfirm) {
         EndSessionDialog(
-            onConfirm = {
-                showCancelConfirm = false
-                endSession()
-            },
+            onConfirm = endSession,
             onDismiss = { showCancelConfirm = false },
         )
+    }
+}
+
+@Composable
+private fun GuestSlotContent(
+    guest: GuestSlot,
+    showDebugButton: Boolean,
+    onSimulateRequest: () -> Unit,
+    onAccept: () -> Unit,
+    onDecline: () -> Unit,
+    onRemove: () -> Unit,
+) {
+    when (guest) {
+        GuestSlot.Empty -> {
+            Column {
+                WaitingSlot()
+                if (showDebugButton) {
+                    OutlinedButton(
+                        onClick = onSimulateRequest,
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    ) { Text("DEBUG: simulate join request") }
+                }
+            }
+        }
+        is GuestSlot.Pending ->
+            PendingSlot(teamName = guest.teamName, onAccept = onAccept, onDecline = onDecline)
+        is GuestSlot.Joined ->
+            JoinedSlot(teamName = guest.teamName, onRemove = onRemove)
+    }
+}
+
+@Composable
+private fun HostActions(
+    canStart: Boolean,
+    onStart: () -> Unit,
+    onCancel: () -> Unit,
+) {
+    Column {
+        Button(
+            onClick = onStart,
+            enabled = canStart,
+            modifier = Modifier.fillMaxWidth().height(56.dp),
+        ) {
+            Text("Start", style = MaterialTheme.typography.titleLarge)
+        }
+        TextButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) {
+            Text(
+                "Cancel",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.titleMedium,
+            )
+        }
     }
 }
 
@@ -154,7 +170,12 @@ private fun RemoveGuestDialog(
         onDismissRequest = onDismiss,
         title = { Text("Remove $name?") },
         text = { Text("They will be disconnected and would need to ask to join again.") },
-        confirmButton = { Button(onClick = onConfirm) { Text("Remove") } },
+        confirmButton = {
+            Button(onClick = {
+                onDismiss()
+                onConfirm()
+            }) { Text("Remove") }
+        },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Keep") } },
     )
 }
@@ -168,7 +189,12 @@ private fun EndSessionDialog(
         onDismissRequest = onDismiss,
         title = { Text("End this session?") },
         text = { Text("The other team will be disconnected.") },
-        confirmButton = { Button(onClick = onConfirm) { Text("End session") } },
+        confirmButton = {
+            Button(onClick = {
+                onDismiss()
+                onConfirm()
+            }) { Text("End session") }
+        },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Stay") } },
     )
 }
