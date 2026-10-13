@@ -141,21 +141,13 @@ fun DeckListScreen(
                 }
             }
         },
-        floatingActionButton = {
-            // to be removed
-            ExtendedFloatingActionButton(
-                onClick = { showDialog = true },
-                icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                text = { Text("Create Deck", style = MaterialTheme.typography.titleMedium) },
-                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-            )
-        },
+
     ) { padding ->
         DeckListBody(
             displayName = displayName,
             decks = decks,
             onNavigateToDeck = onNavigateToDeck,
+            onShowDialog = { showDialog = true },
             modifier = Modifier.padding(padding),
         )
     }
@@ -188,6 +180,7 @@ private fun DeckListBody(
     displayName: String,
     decks: List<DeckEntity>,
     onNavigateToDeck: (String) -> Unit,
+    onShowDialog: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -197,7 +190,7 @@ private fun DeckListBody(
                 .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        DeckListHeader(displayName = displayName)
+        DeckListHeader(onShowDialog = onShowDialog)
 
         if (decks.isEmpty()) {
             Box(
@@ -264,26 +257,26 @@ private fun DeckListTopBar(
 }
 
 @Composable
-private fun DeckListHeader(displayName: String) {
-    Column(
-        horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+private fun DeckListHeader(onShowDialog: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = "My Decks",
             style = MaterialTheme.typography.headlineLarge,
             fontWeight = FontWeight.Bold,
         )
-
-        if (displayName.isNotBlank()) {
-            Text(
-                text = displayName,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+        FilledTonalButton(
+            onClick = onShowDialog,
+            modifier = Modifier.height(48.dp),
+            contentPadding = PaddingValues(start = 16.dp, end = 20.dp),
+        ) {
+            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(24.dp))
+            Spacer(Modifier.width(8.dp))
+            Text("Create Deck", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         }
-
     }
 }
 
