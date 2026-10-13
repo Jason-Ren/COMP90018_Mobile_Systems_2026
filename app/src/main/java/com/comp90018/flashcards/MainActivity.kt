@@ -95,7 +95,6 @@ private fun FlashcardApp(sessionViewModel: SessionViewModel = hiltViewModel()) {
             SessionStage.READY ->
                 FlashcardNavHost(
                     navController = rememberNavController(),
-                    displayName = session.profile?.displayName.orEmpty(),
                     onSignOut = sessionViewModel::signOut,
                 )
         }
@@ -105,7 +104,6 @@ private fun FlashcardApp(sessionViewModel: SessionViewModel = hiltViewModel()) {
 @Composable
 private fun FlashcardNavHost(
     navController: NavHostController,
-    displayName: String,
     onSignOut: () -> Unit,
 ) {
     NavHost(navController = navController, startDestination = "home") {
@@ -116,7 +114,6 @@ private fun FlashcardNavHost(
             DeckListScreen(
                 onCommunity = { navController.navigate("community") },
                 onAccount = { navController.navigate("account") },
-                displayName = displayName,
                 onNavigateToDeck = { deckId ->
                     navController.navigate("deck/$deckId")
                 },
@@ -186,10 +183,6 @@ private fun NavGraphBuilder.deckPlayRoutes(navController: NavHostController) {
             onEditCard = { deckId, cardId ->
                 navController.navigate("add_edit_card/$deckId?cardId=$cardId")
             },
-            onCommunity = { deckId -> navController.navigate("cloud_deck/$deckId") },
-
-            onJoinGame = { navController.navigate("join") },
-
             onOpenSource = { deckId -> navController.navigate("deck/$deckId") },
             onOpenLocal = { deckId -> navController.navigate("deck/$deckId") },
             onFriends = { navController.navigate("community?friends=true") },
@@ -229,13 +222,6 @@ private fun NavGraphBuilder.communityRoutes(navController: NavHostController) {
             onBack = { navController.popBackStack() },
             onOpenDeck = { navController.navigate("deck/$it") },
             startWithFriends = entry.arguments?.getBoolean("friends") == true,
-            onNavigateBack = { navController.popBackStack() },
-            onCommunity = { navController.navigate("community?friends=true") },
-            onHome = { navController.navigate("home")} ,
-            onJoinGame = { navController.navigate("join") },
-
-
-
         )
     }
     composable("cloud_deck/{deckId}", arguments = listOf(navArgument("deckId") { type = NavType.StringType })) {

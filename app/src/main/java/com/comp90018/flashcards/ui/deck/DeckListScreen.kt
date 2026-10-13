@@ -44,11 +44,9 @@ fun DeckListScreen(
     onHome: () -> Unit,
     onJoinGame: () -> Unit,
     onAccount: () -> Unit,
-    displayName: String,
     viewModel: DeckListViewModel = hiltViewModel(),
 ) {
     val decks by viewModel.decks.collectAsState()
-    val displayName by viewModel.displayName.collectAsState()
     val emulatorMode by viewModel.emulatorMode.collectAsState()
     val isSyncing by viewModel.isSyncing.collectAsState()
     var showDialog by remember { mutableStateOf(false) }
@@ -72,7 +70,6 @@ fun DeckListScreen(
 
     ) { padding ->
         DeckListBody(
-            displayName = displayName,
             decks = decks,
             isSyncing = isSyncing,
             onNavigateToDeck = onNavigateToDeck,
@@ -106,7 +103,6 @@ fun DeckListScreen(
 
 @Composable
 private fun DeckListBody(
-    displayName: String,
     decks: List<DeckEntity>,
     isSyncing: Boolean,
     onNavigateToDeck: (String) -> Unit,
@@ -120,7 +116,6 @@ private fun DeckListBody(
                 .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        DeckListHeader(displayName = displayName)
         if (isSyncing) {
             LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
         }

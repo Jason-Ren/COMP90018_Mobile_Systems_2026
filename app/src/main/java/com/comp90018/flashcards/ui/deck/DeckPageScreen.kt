@@ -83,7 +83,6 @@ fun DeckPageScreen(
     onOpenLocal: (String) -> Unit = {},
     onFriends: () -> Unit = {},
     viewModel: DeckSummaryViewModel = hiltViewModel(),
-    onJoinGame: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val taskState by viewModel.taskState.collectAsState()
