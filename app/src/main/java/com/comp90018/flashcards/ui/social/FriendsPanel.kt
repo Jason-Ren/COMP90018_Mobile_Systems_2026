@@ -1,5 +1,6 @@
 package com.comp90018.flashcards.ui.social
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
@@ -29,7 +30,8 @@ import com.comp90018.flashcards.ui.components.SegmentedListGap
 import com.comp90018.flashcards.ui.components.SegmentedListItem
 import com.comp90018.flashcards.ui.components.SegmentedListSectionGap
 
-private val AcceptGreen = Color(0xFF66BB6A)
+private val AcceptGreen
+    @Composable get() = if (isSystemInDarkTheme()) Color(0xFF66BB6A) else Color(0xFF2E7D32)
 
 @Composable
 internal fun FriendsPanel(
@@ -251,18 +253,20 @@ private fun FriendRequestItem(
             )
         },
         trailingContent = {
-            Row {
-                if (incoming) {
+            if (incoming) {
+                Row {
                     RespondButton(Icons.Default.Check, "Accept", AcceptGreen, enabled) {
                         onRespond(request.id, "accept")
                     }
+                    RespondButton(Icons.Default.Close, "Decline", MaterialTheme.colorScheme.error, enabled) {
+                        onRespond(request.id, "decline")
+                    }
                 }
-                RespondButton(
-                    Icons.Default.Close,
-                    if (incoming) "Decline" else "Cancel request",
-                    MaterialTheme.colorScheme.error,
-                    enabled,
-                ) { onRespond(request.id, if (incoming) "decline" else "cancel") }
+            } else {
+                TextButton(
+                    onClick = { onRespond(request.id, "cancel") },
+                    enabled = enabled,
+                ) { Text("Cancel") }
             }
         },
     )
