@@ -18,12 +18,14 @@ Loading and error messages appear on each screen. Actions are disabled while a r
 
 ## Screen integration
 
-Friends and Discover are separate screens in `ui.social`, each with its own title and back button:
+Friends and Discover are separate screens in `ui.social`, each with its own title and bottom navigation. Clash, Discover, and Friends are top-level destinations and do not show a toolbar back button.
 
-- `DiscoverScreen(onBack, onOpenDeck, modifier)` browses and searches public decks and opens shared deck codes. `onOpenDeck` receives the deck ID to preview.
-- `FriendsScreen(onBack, modifier)` manages friend requests and friendships.
+The bottom bar uses Material 3's default surface colour, icon sizing, spacing, and selected-item pill. Each screen supplies its `NavDestination`, so the highlight follows the visible page, including after system back. Tapping the active tab does not open another copy of that screen.
 
-Both screens obtain their existing Hilt view models within the destination. Navigation owners can call these composables directly from their separate destinations. There are no screen-switching tabs. `CommunityScreen` remains a compatibility wrapper for the current navigation: `startWithFriends = false` renders Discover; `true` renders Friends. The current `community` and `community?friends=true` routes still work; dashboard buttons and route changes are left to the navigation work.
+- `DiscoverScreen` browses and searches public decks and opens shared deck codes. `onOpenDeck` receives the deck ID to preview.
+- `FriendsScreen` manages friend requests and friendships.
+
+Both screens accept the required `onCommunity`, `onHome`, `onJoinGame`, and `onFriends` navigation callbacks, followed by an optional `modifier`. They obtain their existing Hilt view models within the destination. The navigation graph calls them directly from `discovery` and `friends`. `CommunityScreen` remains a composable wrapper: `startWithFriends = false` renders Discover; `true` renders Friends. Clash still handles system back and Cancel by stopping discovery before leaving.
 
 ## Connection and data handling
 

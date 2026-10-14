@@ -5,15 +5,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.comp90018.flashcards.ui.components.NavBar
+import com.comp90018.flashcards.ui.components.NavDestination
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FriendsScreen(
-    modifier: Modifier = Modifier,
     onCommunity: () -> Unit,
     onHome: () -> Unit,
     onJoinGame: () -> Unit,
-    onFriends: () -> Unit
+    onFriends: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Scaffold(
         modifier = modifier,
@@ -21,7 +22,7 @@ fun FriendsScreen(
             TopAppBar(title = { Text("Friends") })
         },
         bottomBar = {
-            NavBar(onCommunity, onHome, onJoinGame, onFriends)
+            NavBar(NavDestination.FRIENDS, onCommunity, onHome, onJoinGame, onFriends)
         },
     ) { padding ->
         Box(Modifier.padding(padding).fillMaxSize()) {

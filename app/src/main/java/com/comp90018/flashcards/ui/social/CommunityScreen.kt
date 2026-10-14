@@ -7,16 +7,29 @@ import androidx.compose.ui.Modifier
 @Composable
 fun CommunityScreen(
     onOpenDeck: (String) -> Unit,
-    modifier: Modifier = Modifier,
-    startWithFriends: Boolean = false,
     onCommunity: () -> Unit,
     onHome: () -> Unit,
     onJoinGame: () -> Unit,
-    onFriends: () -> Unit
+    onFriends: () -> Unit,
+    modifier: Modifier = Modifier,
+    startWithFriends: Boolean = false,
 ) {
     if (startWithFriends) {
-        FriendsScreen(modifier = modifier, onCommunity = onCommunity, onHome = onHome, onJoinGame = onJoinGame, onFriends = onFriends)
+        FriendsScreen(
+            onCommunity = onCommunity,
+            onHome = onHome,
+            onJoinGame = onJoinGame,
+            onFriends = onFriends,
+            modifier = modifier,
+        )
     } else {
-        DiscoverScreen(onOpenDeck = onOpenDeck, modifier = modifier, onCommunity = onCommunity, onHome = onHome, onJoinGame = onJoinGame, onFriends = onFriends)
+        DiscoverScreen(
+            onOpenDeck = onOpenDeck,
+            onCommunity = onCommunity,
+            onHome = onHome,
+            onJoinGame = onJoinGame,
+            onFriends = onFriends,
+            modifier = modifier,
+        )
     }
 }
