@@ -118,7 +118,7 @@ fun DeckPageScreen(
         )
     }
 
-    DeckPageSheets(uiState, taskState, viewModel.deckId, dialogs, onFriends, viewModel::share, viewModel::loadFriends)
+    DeckPageSheets(uiState, taskState, viewModel.deckId, dialogs, onFriends, viewModel::share)
     DeckPageDialogs(
         uiState = uiState,
         dialogs = dialogs,
@@ -200,7 +200,6 @@ private fun DeckPageSheets(
     dialogs: DeckPageDialogState,
     onFriends: () -> Unit,
     onShare: (String, Boolean) -> Unit,
-    onRefresh: () -> Unit,
 ) {
     if (dialogs.showShare) {
         UnifiedDeckShareSheet(
@@ -213,7 +212,7 @@ private fun DeckPageSheets(
                 onFriends()
             },
             onShare = onShare,
-            onRefresh = onRefresh,
+            sharedWith = uiState.sharedWith,
         )
     }
 
@@ -549,10 +548,10 @@ private fun DeckTitleRow(
         )
 
         Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onShareClick) {
-                Icon(Icons.Default.Share, contentDescription = "Share")
-            }
             if (uiState.isOwned) {
+                IconButton(onClick = onShareClick) {
+                    Icon(Icons.Default.Share, contentDescription = "Share")
+                }
                 IconButton(onClick = onOptionsClick) {
                     Icon(Icons.Default.MoreVert, contentDescription = "Options")
                 }

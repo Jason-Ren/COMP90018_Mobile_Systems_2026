@@ -6,6 +6,7 @@ import com.comp90018.flashcards.data.auth.AuthRepository
 import com.comp90018.flashcards.data.auth.AuthState
 import com.comp90018.flashcards.data.local.DatabaseInitializer
 import com.comp90018.flashcards.data.local.entity.DeckEntity
+import com.comp90018.flashcards.data.local.model.DeckWithCardCount
 import com.comp90018.flashcards.data.sync.DeckSyncCoordinator
 import com.comp90018.flashcards.debug.DebugSettings
 import com.comp90018.flashcards.domain.repository.CardRepository
@@ -46,14 +47,14 @@ class DeckListViewModel
         val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
 
         @OptIn(ExperimentalCoroutinesApi::class)
-        val decks: StateFlow<List<DeckEntity>> =
+        val decks: StateFlow<List<DeckWithCardCount>> =
             authRepository.authState
                 .flatMapLatest { state ->
                     val uid = (state as? AuthState.SignedIn)?.user?.uid
                     if (uid == null) {
                         flowOf(emptyList())
                     } else {
-                        repository.getAllDecks(uid)
+                        repository.getDecksWithCardCounts(uid)
                     }
                 }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 

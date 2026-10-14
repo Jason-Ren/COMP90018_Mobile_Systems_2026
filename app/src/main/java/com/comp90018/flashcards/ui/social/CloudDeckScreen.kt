@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
@@ -70,7 +71,7 @@ fun CloudDeckScreen(
         DeckShareSheet(state, task, onDismiss = { sharing = false }, onFriends = {
             sharing = false
             onFriends()
-        }, onShare = viewModel::share, onRefresh = viewModel::loadFriends)
+        }, onShare = viewModel::share)
     }
     publishing?.let { public ->
         PublishConfirmation(
@@ -234,5 +235,10 @@ internal fun DeckCode(deckId: String) {
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         clipboard.setPrimaryClip(ClipData.newPlainText("Deck code", deckId))
         copied = true
-    }) { Text(if (copied) "Deck code copied" else "Copy deck code") }
+    }) {
+        Text(
+            text = if (copied) "Deck code copied" else "Copy deck code",
+            style = MaterialTheme.typography.titleMedium,
+        )
+    }
 }

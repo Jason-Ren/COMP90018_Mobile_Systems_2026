@@ -2,6 +2,7 @@ package com.comp90018.flashcards.domain.repository
 
 import com.comp90018.flashcards.data.local.entity.CardEntity
 import com.comp90018.flashcards.data.local.entity.DeckEntity
+import com.comp90018.flashcards.data.local.model.DeckWithCardCount
 import com.comp90018.flashcards.domain.fsrs.FsrsCard
 import com.comp90018.flashcards.domain.model.CardWithState
 import com.comp90018.flashcards.domain.model.Rating
@@ -10,6 +11,8 @@ import kotlinx.coroutines.flow.Flow
 interface CardRepository {
     // Deck Operations
     fun getAllDecks(ownerId: String): Flow<List<DeckEntity>>
+
+    fun getDecksWithCardCounts(ownerId: String): Flow<List<DeckWithCardCount>>
 
     suspend fun insertDeck(deck: DeckEntity)
 

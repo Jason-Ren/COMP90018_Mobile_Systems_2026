@@ -21,6 +21,7 @@ data class CloudDeckState(
     val friends: List<SocialFriend>? = null,
     val savedCopyId: String? = null,
     val pendingCopy: Boolean = false,
+    val sharedWith: Set<String> = emptySet(),
 )
 
 @HiltViewModel
@@ -82,10 +83,15 @@ class CloudDeckViewModel
             if (revoke) {
                 "Share revoked. Public decks are still visible to everyone signed in."
             } else {
-                "Shared. Send your friend the deck code so they can open it in Community."
+                "Shared. Send your friend the deck code so they can open it from the 'Discover' tab."
             },
         ) {
             if (revoke) decks.revoke(userId, deckId, recipientId) else decks.share(userId, deckId, recipientId)
+            state.update {
+                it.copy(
+                    sharedWith = if (revoke) it.sharedWith - recipientId else it.sharedWith + recipientId,
+                )
+            }
         }
 
         fun saveCopy() =

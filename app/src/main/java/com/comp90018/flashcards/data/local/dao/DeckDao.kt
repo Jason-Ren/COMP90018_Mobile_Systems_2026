@@ -7,6 +7,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.comp90018.flashcards.data.local.entity.DeckEntity
+import com.comp90018.flashcards.data.local.model.DeckWithCardCount
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -19,6 +20,17 @@ interface DeckDao {
         """,
     )
     fun getAllDecks(ownerId: String): Flow<List<DeckEntity>>
+
+    @Query(
+        """
+        SELECT decks.*, COUNT(cards.cardId) AS cardCount
+        FROM decks LEFT JOIN cards ON cards.deckId = decks.deckId
+        WHERE decks.ownerId = :ownerId
+        GROUP BY decks.deckId
+        ORDER BY decks.createdAtEpochMillis DESC, decks.deckId DESC
+        """,
+    )
+    fun getDecksWithCardCounts(ownerId: String): Flow<List<DeckWithCardCount>>
 
     @Query("SELECT COUNT(*) FROM decks WHERE ownerId = :ownerId")
     suspend fun countDecksForOwner(ownerId: String): Int

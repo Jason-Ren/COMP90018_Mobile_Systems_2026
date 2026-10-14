@@ -114,7 +114,7 @@ private fun SocialHttpResponse.toException(): SocialApiException {
         when (status) {
             401 -> "Please sign out and sign in again."
             413 -> "This deck is too large to copy. The limit is 400 cards and 4 MiB."
-            else -> error?.get("message")?.jsonPrimitive?.content ?: "Could not reach the community service. Try again."
+            else -> error?.get("message")?.jsonPrimitive?.content ?: "Connection failed. Please try again."
         }
     return SocialApiException(status, code, message)
 }

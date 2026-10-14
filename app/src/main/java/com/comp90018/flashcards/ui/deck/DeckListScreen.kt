@@ -1,16 +1,12 @@
 package com.comp90018.flashcards.ui.deck
 
-import android.R.attr.label
-import android.R.attr.onClick
-import android.R.attr.padding
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
@@ -19,15 +15,26 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.comp90018.flashcards.R
 import com.comp90018.flashcards.data.local.entity.DeckEntity
+import com.comp90018.flashcards.data.local.model.DeckWithCardCount
 import com.comp90018.flashcards.debug.DEBUG_TOOLS_ENABLED
 import com.comp90018.flashcards.ui.components.NavBar
 import com.comp90018.flashcards.ui.components.NavDestination
+import com.comp90018.flashcards.ui.components.SegmentedListGap
+import com.comp90018.flashcards.ui.components.SegmentedListItem
+import com.comp90018.flashcards.ui.components.SegmentedListSectionGap
 
 /**
  * Shows list of users decks
@@ -41,14 +48,15 @@ fun DeckListScreen(
     onHome: () -> Unit,
     onJoinGame: () -> Unit,
     onAccount: () -> Unit,
+    pendingFriendRequestCount: Int = 0,
     viewModel: DeckListViewModel = hiltViewModel(),
 ) {
     val decks by viewModel.decks.collectAsState()
     val emulatorMode by viewModel.emulatorMode.collectAsState()
     val isSyncing by viewModel.isSyncing.collectAsState()
     var showDialog by remember { mutableStateOf(false) }
-    var newDeckName by remember { mutableStateOf("") }
-    var newDeckDescription by remember { mutableStateOf("") }
+    val density = LocalDensity.current
+    var fabHeight by remember { mutableStateOf(56.dp) }
 
     Scaffold(
         topBar = {
@@ -58,51 +66,88 @@ fun DeckListScreen(
                 onAccount = onAccount,
                 emulatorMode = emulatorMode,
                 onEmulatorModeChange = viewModel::setEmulatorMode,
-                onCommunity = onCommunity,
             )
         },
         bottomBar = {
-            NavBar(NavDestination.DECKS, onCommunity, onHome, onJoinGame, onFriends)
+            NavBar(
+                NavDestination.DECKS,
+                onCommunity,
+                onHome,
+                onJoinGame,
+                onFriends,
+                pendingFriendRequestCount = pendingFriendRequestCount,
+            )
         },
     ) { padding ->
-        DeckListBody(
-            decks = decks,
-            isSyncing = isSyncing,
-            onNavigateToDeck = onNavigateToDeck,
-            onShowDialog = { showDialog = true },
-            modifier = Modifier.padding(padding),
-        )
+        Box(Modifier.fillMaxSize().padding(top = padding.calculateTopPadding())) {
+            DeckListBody(
+                decks = decks,
+                isSyncing = isSyncing,
+                onNavigateToDeck = onNavigateToDeck,
+                bottomInset = padding.calculateBottomPadding() + fabHeight + 16.dp,
+            )
+            // Keep the FAB above the list for both touch and accessibility traversal.
+            CreateDeckFab(
+                onCreate = { showDialog = true },
+                modifier =
+                    Modifier
+                        .align(Alignment.BottomEnd)
+                        .zIndex(1f)
+                        .padding(end = 16.dp, bottom = padding.calculateBottomPadding() + 16.dp)
+                        .onSizeChanged { fabHeight = with(density) { it.height.toDp() } },
+            )
+        }
     }
 
     if (showDialog) {
-        CreateDeckDialog(
-            name = newDeckName,
-            description = newDeckDescription,
-            onNameChange = { newDeckName = it },
-            onDescriptionChange = { newDeckDescription = it },
-            onConfirm = {
-                if (newDeckName.isNotBlank()) {
-                    viewModel.createDeck(newDeckName, newDeckDescription)
-                    newDeckName = ""
-                    newDeckDescription = ""
-                    showDialog = false
-                }
-            },
-            onDismiss = {
-                newDeckName = ""
-                newDeckDescription = ""
-                showDialog = false
-            },
+        NewDeckDialog(
+            onCreate = viewModel::createDeck,
+            onDismiss = { showDialog = false },
         )
     }
 }
 
 @Composable
+private fun NewDeckDialog(
+    onCreate: (String, String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var name by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    CreateDeckDialog(
+        name = name,
+        description = description,
+        onNameChange = { name = it },
+        onDescriptionChange = { description = it },
+        onConfirm = {
+            if (name.isNotBlank()) {
+                onCreate(name, description)
+                onDismiss()
+            }
+        },
+        onDismiss = onDismiss,
+    )
+}
+
+@Composable
+private fun CreateDeckFab(
+    onCreate: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    ExtendedFloatingActionButton(
+        onClick = onCreate,
+        modifier = modifier,
+        icon = { Icon(Icons.Default.Add, contentDescription = null) },
+        text = { Text(stringResource(R.string.create_deck)) },
+    )
+}
+
+@Composable
 private fun DeckListBody(
-    decks: List<DeckEntity>,
+    decks: List<DeckWithCardCount>,
     isSyncing: Boolean,
     onNavigateToDeck: (String) -> Unit,
-    onShowDialog: () -> Unit,
+    bottomInset: Dp,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -115,35 +160,26 @@ private fun DeckListBody(
         if (isSyncing) {
             LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
         }
-        DeckListHeader(onShowDialog = onShowDialog)
-
         if (decks.isEmpty()) {
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = "No decks yet.\nTap 'Create Deck' to make your first one.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+            EmptyDecks(Modifier.weight(1f).padding(bottom = bottomInset + 16.dp))
         } else {
             Box(modifier = Modifier.weight(1f)) {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(top = 16.dp, bottom = 96.dp),
+                    verticalArrangement = Arrangement.spacedBy(SegmentedListGap),
+                    contentPadding = PaddingValues(top = 16.dp, bottom = bottomInset + 16.dp),
                 ) {
-                    items(decks, key = { it.deckId }) { deck ->
+                    itemsIndexed(decks, key = { _, item -> item.deck.deckId }) { index, item ->
                         DeckItem(
-                            deck = deck,
-                            onOpenClick = { onNavigateToDeck(deck.deckId) },
+                            deck = item.deck,
+                            cardCount = item.cardCount,
+                            index = index,
+                            count = decks.size,
+                            onOpenClick = { onNavigateToDeck(item.deck.deckId) },
                         )
+                    }
+                    item(key = "deck_count") {
+                        Box(Modifier.padding(top = SegmentedListSectionGap)) { DeckCountFooter(decks.size) }
                     }
                 }
 
@@ -164,6 +200,32 @@ private fun DeckListBody(
     }
 }
 
+@Composable
+private fun EmptyDecks(modifier: Modifier = Modifier) {
+    Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text(
+                text = stringResource(R.string.empty_decks),
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            DeckCountFooter(0)
+        }
+    }
+}
+
+@Composable
+private fun DeckCountFooter(deckCount: Int) {
+    Text(
+        text = pluralStringResource(R.plurals.deck_list_count, deckCount, deckCount),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+    )
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DeckListTopBar(
@@ -172,62 +234,43 @@ private fun DeckListTopBar(
     onAccount: () -> Unit,
     emulatorMode: Boolean,
     onEmulatorModeChange: (Boolean) -> Unit,
-    onCommunity: () -> Unit,
 ) {
+    var debugMenuOpen by remember { mutableStateOf(false) }
     TopAppBar(
-        title = {},
+        modifier = Modifier.padding(top = 8.dp),
+        title = {
+            Text("My Decks", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
+        },
         actions = {
-            TextButton(onClick = onSync, enabled = !isSyncing) {
+            IconButton(onClick = onSync, enabled = !isSyncing) {
                 Icon(
                     imageVector = Icons.Default.Refresh,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
+                    contentDescription = if (isSyncing) "Syncing decks" else "Sync decks",
                 )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(if (isSyncing) "Syncing…" else "Sync")
             }
-            // DEBUG ONLY: lets clash mode be tried on an emulator, hide it with DEBUG_TOOLS_ENABLED
+            // Keep debug controls out of the main toolbar when enabled for emulator testing.
             if (DEBUG_TOOLS_ENABLED) {
-                Checkbox(checked = emulatorMode, onCheckedChange = onEmulatorModeChange)
-                Text("[DEBUG] Emulator mode", style = MaterialTheme.typography.labelSmall)
+                Box {
+                    IconButton(onClick = { debugMenuOpen = true }) {
+                        Icon(Icons.Default.MoreVert, contentDescription = "Debug options")
+                    }
+                    DropdownMenu(expanded = debugMenuOpen, onDismissRequest = { debugMenuOpen = false }) {
+                        DropdownMenuItem(
+                            text = { Text("Emulator mode") },
+                            leadingIcon = { Checkbox(checked = emulatorMode, onCheckedChange = null) },
+                            onClick = {
+                                onEmulatorModeChange(!emulatorMode)
+                                debugMenuOpen = false
+                            },
+                        )
+                    }
+                }
             }
-            TextButton(onClick = onCommunity) { Text("Community") }
-            IconButton(
-                onClick = onAccount,
-                modifier = Modifier.padding(top = 12.dp, end = 12.dp),
-            ) {
-                Icon(
-                    Icons.Default.Settings,
-                    contentDescription = "Account",
-                    modifier = Modifier.size(32.dp),
-                )
+            IconButton(onClick = onAccount) {
+                Icon(Icons.Default.Settings, contentDescription = "Account")
             }
         },
     )
-}
-
-@Composable
-private fun DeckListHeader(onShowDialog: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = "My Decks",
-            style = MaterialTheme.typography.headlineLarge,
-            fontWeight = FontWeight.Bold,
-        )
-        FilledTonalButton(
-            onClick = onShowDialog,
-            modifier = Modifier.height(48.dp),
-            contentPadding = PaddingValues(start = 16.dp, end = 20.dp),
-        ) {
-            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(24.dp))
-            Spacer(Modifier.width(8.dp))
-            Text("Create Deck", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        }
-    }
 }
 
 @Composable
@@ -267,21 +310,22 @@ private fun CreateDeckDialog(
 @Composable
 fun DeckItem(
     deck: DeckEntity,
+    cardCount: Int,
+    index: Int,
+    count: Int,
     onOpenClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth().clickable { onOpenClick() },
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-    ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 24.dp)) {
-            Text(
-                text = deck.name,
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-    }
+    SegmentedListItem(
+        index = index,
+        count = count,
+        onClick = onOpenClick,
+        modifier = modifier,
+        headlineContent = {
+            Text(deck.name, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        },
+        supportingContent = {
+            Text(pluralStringResource(R.plurals.deck_card_count, cardCount, cardCount))
+        },
+    )
 }

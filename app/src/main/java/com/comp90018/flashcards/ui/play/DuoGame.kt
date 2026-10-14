@@ -11,7 +11,7 @@ import com.comp90018.flashcards.data.local.entity.CardEntity
 enum class DuoPhase { READY, FRONT, BACK, FINISHED }
 
 /**
- * The rules of one 2-player round, kept free of timers and UI so they are easy to test.
+ * The rules of one 2-player round, kept free of timers and UI so they are easy to te       st.
  *
  * Each card is shown front first. Once the back is revealed, the players mark the guess right or
  * wrong, and the next card comes up. Cards marked wrong are kept to review at the end.

@@ -3,6 +3,7 @@ package com.comp90018.flashcards.ui.lobby
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.comp90018.flashcards.data.p2p.ConnectionState
@@ -42,6 +44,8 @@ import com.comp90018.flashcards.ui.components.NavBar
 import com.comp90018.flashcards.ui.components.NavDestination
 import com.comp90018.flashcards.ui.connection.ConnectionOverlay
 import com.comp90018.flashcards.ui.connection.DebugConnectionButtons
+import com.comp90018.flashcards.ui.help.HelpTopic
+import com.comp90018.flashcards.ui.help.helpTip
 
 /**
  * The guest's side of clash mode: list hosts nearby, ask to join, and once accepted display [GuestLobbyScreen].
@@ -59,6 +63,7 @@ fun JoinGameScreen(
     onJoinGame: () -> Unit,
     onFriends: () -> Unit,
     modifier: Modifier = Modifier,
+    pendingFriendRequestCount: Int = 0,
     viewModel: JoinGameViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -81,11 +86,32 @@ fun JoinGameScreen(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text("Join clash") },
+                modifier = Modifier.padding(top = 8.dp),
+                title = {
+                    Text(
+                        text = "Join Clash",
+                        style = MaterialTheme.typography.headlineLarge,
+                        fontWeight = FontWeight.Bold,
+                    )
+                },
+                actions = {
+                    helpTip(
+                        topic = HelpTopic.MultiSetupHelp,
+                        modifier = Modifier.padding(end = 12.dp),
+                        size = 36.dp,
+                    )
+                },
             )
         },
         bottomBar = {
-            NavBar(NavDestination.CLASH, onCommunity, onHome, onJoinGame, onFriends)
+            NavBar(
+                NavDestination.CLASH,
+                onCommunity,
+                onHome,
+                onJoinGame,
+                onFriends,
+                pendingFriendRequestCount = pendingFriendRequestCount,
+            )
         },
     ) { padding ->
         JoinBody(
@@ -93,7 +119,8 @@ fun JoinGameScreen(
             onReroll = viewModel::rerollName,
             onJoin = viewModel::join,
             onCancel = leave,
-            modifier = Modifier.padding(padding),
+            bottomInset = padding.calculateBottomPadding(),
+            modifier = Modifier.padding(top = padding.calculateTopPadding()),
         )
     }
 
@@ -106,10 +133,11 @@ private fun JoinBody(
     onReroll: () -> Unit,
     onJoin: (DiscoveredHost) -> Unit,
     onCancel: () -> Unit,
+    bottomInset: Dp,
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier.fillMaxSize().padding(16.dp),
+        modifier = modifier.fillMaxSize().padding(start = 16.dp, top = 16.dp, end = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Card(modifier = Modifier.fillMaxWidth().height(JOIN_CARD_HEIGHT)) {
@@ -150,7 +178,12 @@ private fun JoinBody(
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.outline,
                     )
-                    HostList(hosts = state.hosts, onJoin = onJoin, modifier = Modifier.weight(1f))
+                    HostList(
+                        hosts = state.hosts,
+                        onJoin = onJoin,
+                        bottomInset = bottomInset,
+                        modifier = Modifier.weight(1f),
+                    )
                 }
         }
         // DEBUG ONLY: fake the link going wrong, only shows in emulator mode
@@ -162,19 +195,41 @@ private fun JoinBody(
 private fun HostList(
     hosts: List<DiscoveredHost>,
     onJoin: (DiscoveredHost) -> Unit,
+    bottomInset: Dp,
     modifier: Modifier = Modifier,
 ) {
     if (hosts.isEmpty()) {
-        Row(
+        Column(
             modifier = modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
-            verticalAlignment = Alignment.CenterVertically,
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-            Text("Looking for clashes nearby…", style = MaterialTheme.typography.bodyLarge)
+            CircularProgressIndicator(
+                modifier =
+                    Modifier
+                        .padding(vertical = 24.dp)
+                        .size(32.dp),
+                strokeWidth = 2.dp,
+            )
+
+            Text(
+                text =
+                    "Looking for Clashes nearby…\n\n" +
+                        "To create your own Clash Mode game,\n" +
+                        "select a deck from Decks > Play > Clash",
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+            )
         }
     } else {
-        LazyColumn(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        LazyColumn(
+            modifier = modifier,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(bottom = bottomInset + 16.dp),
+        ) {
             items(hosts, key = { it.endpointId }) { host ->
                 Card(modifier = Modifier.fillMaxWidth().height(JOIN_CARD_HEIGHT)) {
                     Row(

@@ -39,6 +39,7 @@ data class DeckSummaryUiState(
     val pendingCopy: Boolean = false,
     val moreCards: Boolean = false,
     val friends: List<SocialFriend>? = null,
+    val sharedWith: Set<String> = emptySet(),
     val isLoading: Boolean = true,
 )
 
@@ -225,5 +226,10 @@ class DeckSummaryViewModel
             if (revoke) "Share revoked." else "Shared with friend.",
         ) {
             if (revoke) decks.revoke(userId, deckId, recipientId) else decks.share(userId, deckId, recipientId)
+            state.update {
+                it.copy(
+                    sharedWith = if (revoke) it.sharedWith - recipientId else it.sharedWith + recipientId,
+                )
+            }
         }
     }

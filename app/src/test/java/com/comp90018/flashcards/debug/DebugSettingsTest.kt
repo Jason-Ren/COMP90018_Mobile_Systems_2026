@@ -9,6 +9,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
 import org.junit.Test
 
 class DebugSettingsTest {
@@ -16,6 +17,7 @@ class DebugSettingsTest {
 
     @Test
     fun `emulator mode starts off and can be switched on and off`() {
+        assumeTrue(DEBUG_TOOLS_ENABLED)
         val settings = DebugSettings()
         assertFalse(settings.emulatorMode.value)
 

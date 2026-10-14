@@ -20,9 +20,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -129,15 +129,12 @@ private fun HelpDialog(
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(
                         text = title,
                         style = MaterialTheme.typography.headlineSmall,
                         modifier = Modifier.weight(1f),
                     )
-                    Spacer(Modifier.width(8.dp))
-                    TextButton(onClick = onDismiss) { Text("Close") }
                 }
 
                 HorizontalDivider(Modifier.padding(vertical = 12.dp))
@@ -150,9 +147,11 @@ private fun HelpDialog(
                             .fillMaxWidth()
                             .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
-                    content = content,
-                )
-
+                ) {
+                    ProvideTextStyle(MaterialTheme.typography.bodyMedium) {
+                        content()
+                    }
+                }
                 Spacer(Modifier.size(12.dp))
                 Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
                     Text("Got it")
