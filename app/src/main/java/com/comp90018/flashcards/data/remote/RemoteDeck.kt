@@ -18,4 +18,6 @@ data class RemoteDeck(
     val createdAt: Instant? = null,
     /** Current creator profile name supplied by the social API, not stored in Room. */
     val ownerDisplayName: String? = null,
+    /** Current unique creator username supplied by the social API for public discovery. */
+    val ownerUsername: String? = null,
 )

@@ -19,7 +19,7 @@ internal fun PublicDeckRow(
 ) {
     val owner =
         listOfNotNull(
-            deck.ownerDisplayName?.takeIf { it.isNotBlank() },
+            deck.ownerUsername?.takeIf { it.isNotBlank() }?.let { "@$it" },
             "Yours".takeIf { ownedByMe },
         ).joinToString(" · ").ifBlank { "Public" }
 
