@@ -17,12 +17,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.comp90018.flashcards.R
 import com.comp90018.flashcards.data.local.entity.DeckEntity
@@ -50,8 +54,8 @@ fun DeckListScreen(
     val emulatorMode by viewModel.emulatorMode.collectAsState()
     val isSyncing by viewModel.isSyncing.collectAsState()
     var showDialog by remember { mutableStateOf(false) }
-    var newDeckName by remember { mutableStateOf("") }
-    var newDeckDescription by remember { mutableStateOf("") }
+    val density = LocalDensity.current
+    var fabHeight by remember { mutableStateOf(56.dp) }
 
     Scaffold(
         topBar = {
@@ -74,37 +78,67 @@ fun DeckListScreen(
             )
         },
     ) { padding ->
-        DeckListBody(
-            decks = decks,
-            isSyncing = isSyncing,
-            onNavigateToDeck = onNavigateToDeck,
-            onShowDialog = { showDialog = true },
-            bottomInset = padding.calculateBottomPadding(),
-            modifier = Modifier.padding(top = padding.calculateTopPadding()),
-        )
+        Box(Modifier.fillMaxSize().padding(top = padding.calculateTopPadding())) {
+            DeckListBody(
+                decks = decks,
+                isSyncing = isSyncing,
+                onNavigateToDeck = onNavigateToDeck,
+                bottomInset = padding.calculateBottomPadding() + fabHeight + 16.dp,
+            )
+            // Keep the FAB above the list for both touch and accessibility traversal.
+            CreateDeckFab(
+                onCreate = { android.util.Log.d("DeckFabCheck", "pressed"); showDialog = true },
+                modifier =
+                    Modifier
+                        .align(Alignment.BottomEnd)
+                        .zIndex(1f)
+                        .padding(end = 16.dp, bottom = padding.calculateBottomPadding() + 16.dp)
+                        .onSizeChanged { fabHeight = with(density) { it.height.toDp() } },
+            )
+        }
     }
 
     if (showDialog) {
-        CreateDeckDialog(
-            name = newDeckName,
-            description = newDeckDescription,
-            onNameChange = { newDeckName = it },
-            onDescriptionChange = { newDeckDescription = it },
-            onConfirm = {
-                if (newDeckName.isNotBlank()) {
-                    viewModel.createDeck(newDeckName, newDeckDescription)
-                    newDeckName = ""
-                    newDeckDescription = ""
-                    showDialog = false
-                }
-            },
-            onDismiss = {
-                newDeckName = ""
-                newDeckDescription = ""
-                showDialog = false
-            },
+        NewDeckDialog(
+            onCreate = viewModel::createDeck,
+            onDismiss = { android.util.Log.d("DeckFabCheck", "dismissed"); showDialog = false },
         )
     }
+}
+
+@Composable
+private fun NewDeckDialog(
+    onCreate: (String, String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var name by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    CreateDeckDialog(
+        name = name,
+        description = description,
+        onNameChange = { name = it },
+        onDescriptionChange = { description = it },
+        onConfirm = {
+            if (name.isNotBlank()) {
+                onCreate(name, description)
+                onDismiss()
+            }
+        },
+        onDismiss = onDismiss,
+    )
+}
+
+@Composable
+private fun CreateDeckFab(
+    onCreate: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    ExtendedFloatingActionButton(
+        onClick = onCreate,
+        modifier = modifier,
+        icon = { Icon(Icons.Default.Add, contentDescription = null) },
+        text = { Text(stringResource(R.string.create_deck)) },
+    )
 }
 
 @Composable
@@ -112,7 +146,6 @@ private fun DeckListBody(
     decks: List<DeckWithCardCount>,
     isSyncing: Boolean,
     onNavigateToDeck: (String) -> Unit,
-    onShowDialog: () -> Unit,
     bottomInset: Dp,
     modifier: Modifier = Modifier,
 ) {
@@ -126,23 +159,8 @@ private fun DeckListBody(
         if (isSyncing) {
             LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
         }
-        DeckListHeader(deckCount = decks.size, onShowDialog = onShowDialog)
-
         if (decks.isEmpty()) {
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = "No decks yet.\nTap 'Create Deck' to make your first one.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+            EmptyDecks(Modifier.weight(1f).padding(bottom = bottomInset + 16.dp))
         } else {
             Box(modifier = Modifier.weight(1f)) {
                 LazyColumn(
@@ -157,6 +175,7 @@ private fun DeckListBody(
                             onOpenClick = { onNavigateToDeck(item.deck.deckId) },
                         )
                     }
+                    item(key = "deck_count") { DeckCountFooter(decks.size) }
                 }
 
                 Box(
@@ -174,6 +193,32 @@ private fun DeckListBody(
             }
         }
     }
+}
+
+@Composable
+private fun EmptyDecks(modifier: Modifier = Modifier) {
+    Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text(
+                text = stringResource(R.string.empty_decks),
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            DeckCountFooter(0)
+        }
+    }
+}
+
+@Composable
+private fun DeckCountFooter(deckCount: Int) {
+    Text(
+        text = pluralStringResource(R.plurals.deck_list_count, deckCount, deckCount),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -220,34 +265,6 @@ private fun DeckListTopBar(
             }
         },
     )
-}
-
-@Composable
-private fun DeckListHeader(
-    deckCount: Int,
-    onShowDialog: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier.fillMaxWidth().padding(top = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = pluralStringResource(R.plurals.deck_list_count, deckCount, deckCount),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(1f),
-        )
-        FilledTonalButton(
-            onClick = onShowDialog,
-            modifier = Modifier.heightIn(min = 48.dp),
-        ) {
-            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
-            Spacer(Modifier.width(8.dp))
-            Text("Create Deck")
-        }
-    }
 }
 
 @Composable
