@@ -1,5 +1,6 @@
 package com.comp90018.flashcards.ui.card
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -7,6 +8,10 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 
@@ -18,9 +23,20 @@ fun AddEditCardScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showDeleteDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
+    val frontFocusRequester = remember { FocusRequester() }
 
     LaunchedEffect(uiState.isSaved) {
         if (uiState.isSaved) onNavigateBack()
+    }
+
+    LaunchedEffect(uiState.userMessage) {
+        uiState.userMessage?.let { message ->
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            viewModel.userMessageShown()
+            frontFocusRequester.requestFocus()
+        }
     }
 
     Scaffold(
@@ -32,32 +48,21 @@ fun AddEditCardScreen(
             )
         },
     ) { padding ->
-        Column(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            OutlinedTextField(
-                value = uiState.front,
-                onValueChange = { viewModel.onFrontChange(it) },
-                minLines = 3,
-                label = { Text("Front") },
-                modifier = Modifier.fillMaxWidth(),
-            )
-            OutlinedTextField(
-                value = uiState.back,
-                onValueChange = { viewModel.onBackChange(it) },
-                minLines = 3,
-                label = { Text("Back") },
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Button(
-                onClick = { viewModel.saveCard() },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = uiState.front.isNotBlank() && uiState.back.isNotBlank(),
-            ) {
-                Text("Save Card")
-            }
-        }
+        AddEditCardContent(
+            uiState = uiState,
+            frontFocusRequester = frontFocusRequester,
+            onFrontChange = viewModel::onFrontChange,
+            onBackChange = viewModel::onBackChange,
+            onSaveCard = {
+                focusManager.clearFocus()
+                viewModel.saveCard()
+            },
+            onSaveAndAddAnother = {
+                viewModel.saveAndAddAnother()
+                frontFocusRequester.requestFocus()
+            },
+            modifier = Modifier.fillMaxSize().padding(padding),
+        )
     }
 
     if (showDeleteDialog) {
@@ -68,6 +73,73 @@ fun AddEditCardScreen(
             },
             onDismiss = { showDeleteDialog = false },
         )
+    }
+}
+
+@Composable
+private fun AddEditCardContent(
+    uiState: AddEditCardUiState,
+    frontFocusRequester: FocusRequester,
+    onFrontChange: (String) -> Unit,
+    onBackChange: (String) -> Unit,
+    onSaveCard: () -> Unit,
+    onSaveAndAddAnother: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        OutlinedTextField(
+            value = uiState.front,
+            onValueChange = onFrontChange,
+            minLines = 3,
+            label = { Text("Front") },
+            modifier = Modifier.fillMaxWidth().focusRequester(frontFocusRequester),
+        )
+        OutlinedTextField(
+            value = uiState.back,
+            onValueChange = onBackChange,
+            minLines = 3,
+            label = { Text("Back") },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        CardActionButtons(
+            isEditing = uiState.isEditing,
+            isEnabled = uiState.front.isNotBlank() && uiState.back.isNotBlank(),
+            onSaveCard = onSaveCard,
+            onSaveAndAddAnother = onSaveAndAddAnother,
+        )
+    }
+}
+
+@Composable
+private fun CardActionButtons(
+    isEditing: Boolean,
+    isEnabled: Boolean,
+    onSaveCard: () -> Unit,
+    onSaveAndAddAnother: () -> Unit,
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Button(
+            onClick = onSaveCard,
+            modifier = Modifier.fillMaxWidth().height(52.dp),
+            enabled = isEnabled,
+        ) {
+            Text("Save Card", style = MaterialTheme.typography.titleMedium)
+        }
+        if (!isEditing) {
+            OutlinedButton(
+                onClick = onSaveAndAddAnother,
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                enabled = isEnabled,
+            ) {
+                Text("Save + Add Another Card", style = MaterialTheme.typography.titleMedium)
+            }
+        }
     }
 }
 
