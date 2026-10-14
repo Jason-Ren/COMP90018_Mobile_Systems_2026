@@ -56,7 +56,14 @@ class FriendsRepository
             val query = URLEncoder.encode(username.trim(), "UTF-8")
             val recipient =
                 socialJson.decodeFromString<SocialProfile>(
-                    api.request(uid, "GET", "/v1/users/lookup?username=$query"),
+                    try {
+                        api.request(uid, "GET", "/v1/users/lookup?username=$query")
+                    } catch (error: SocialApiException) {
+                        if (error.code == "user_not_found") {
+                            throw IllegalStateException("User not found", error)
+                        }
+                        throw error
+                    },
                 )
             api.request(uid, "POST", "/v1/friend-requests", buildJsonObject { put("recipient_id", recipient.id) })
         }
