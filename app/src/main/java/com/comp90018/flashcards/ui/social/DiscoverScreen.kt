@@ -78,7 +78,7 @@ private fun DiscoverPanel(
     val task by viewModel.taskState.collectAsStateWithLifecycle()
     var search by rememberSaveable { mutableStateOf("") }
     LazyColumn(
-        contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = bottomInset + 16.dp),
+        contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = bottomInset + 16.dp),
         verticalArrangement = Arrangement.spacedBy(SegmentedListGap),
     ) {
         item {
@@ -184,14 +184,15 @@ internal fun SharedDeckCode(onOpenDeck: (String) -> Unit) {
         val id = sharedDeckId(code)
         if (id == null) invalid = true else onOpenDeck(id)
     }
-    OutlinedCard(
+    Card(
+        modifier = Modifier.fillMaxWidth(),
         colors =
-            CardDefaults.outlinedCardColors(
+            CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
             ),
     ) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Have a shared deck code from a friend?", style = MaterialTheme.typography.titleMedium)
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("Have a friend's deck code?", style = MaterialTheme.typography.titleMedium)
             OutlinedTextField(
                 value = code,
                 onValueChange = {
@@ -201,16 +202,17 @@ internal fun SharedDeckCode(onOpenDeck: (String) -> Unit) {
                 singleLine = true,
                 placeholder = { Text("Paste deck code", maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 trailingIcon = {
-                    IconButton(onClick = submit, enabled = code.isNotBlank()) {
+                    IconButton(
+                        onClick = submit,
+                        enabled = code.isNotBlank(),
+                        colors =
+                            IconButtonDefaults.iconButtonColors(
+                                contentColor = MaterialTheme.colorScheme.primary,
+                            ),
+                    ) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowForward,
                             contentDescription = "Open shared deck",
-                            tint =
-                                if (code.isNotBlank()) {
-                                    MaterialTheme.colorScheme.primary
-                                } else {
-                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                                },
                         )
                     }
                 },

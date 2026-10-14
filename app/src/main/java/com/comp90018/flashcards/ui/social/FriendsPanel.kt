@@ -207,7 +207,7 @@ private fun FriendUsernameField(
     OutlinedTextField(
         value = username,
         onValueChange = onUsernameChange,
-        placeholder = { Text("Enter their username", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+        placeholder = { Text("Enter username", maxLines = 1, overflow = TextOverflow.Ellipsis) },
         singleLine = true,
         enabled = enabled,
         isError = error != null,
