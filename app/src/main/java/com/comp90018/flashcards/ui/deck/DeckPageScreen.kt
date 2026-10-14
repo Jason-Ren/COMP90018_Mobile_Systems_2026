@@ -214,6 +214,7 @@ private fun DeckPageSheets(
             },
             onShare = onShare,
             onRefresh = onRefresh,
+            sharedWith = uiState.sharedWith,
         )
     }
 

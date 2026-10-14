@@ -21,78 +21,84 @@ data class CloudDeckState(
     val friends: List<SocialFriend>? = null,
     val savedCopyId: String? = null,
     val pendingCopy: Boolean = false,
+    val sharedWith: Set<String> = emptySet(),
 )
 
 @HiltViewModel
 class CloudDeckViewModel
-    @Inject
-    constructor(
-        private val decks: CommunityDecks,
-        private val copies: DeckCopies,
-        private val friends: FriendsRepository,
-        private val savedState: SavedStateHandle,
-        session: SocialSession,
-    ) : SocialViewModel(session) {
-        val deckId: String = checkNotNull(savedState["deckId"])
-        private val state = MutableStateFlow(CloudDeckState(savedCopyId = savedState["savedCopyId"]))
-        val uiState = state.asStateFlow()
+@Inject
+constructor(
+    private val decks: CommunityDecks,
+    private val copies: DeckCopies,
+    private val friends: FriendsRepository,
+    private val savedState: SavedStateHandle,
+    session: SocialSession,
+) : SocialViewModel(session) {
+    val deckId: String = checkNotNull(savedState["deckId"])
+    private val state = MutableStateFlow(CloudDeckState(savedCopyId = savedState["savedCopyId"]))
+    val uiState = state.asStateFlow()
 
-        init {
-            refresh()
-        }
-
-        fun refresh() =
-            runAction {
-                state.update { it.copy(deck = null, cards = emptyList(), friends = null) }
-                val pending = copies.hasPending(userId, deckId)
-                state.update { it.copy(pendingCopy = pending) }
-                val deck = decks.prepare(userId, deckId)
-                val cards = decks.cards(userId, deckId, 0)
-                state.update { it.copy(deck = deck, cards = cards, moreCards = cards.size == 50) }
-            }
-
-        fun moreCards() =
-            runAction {
-                val page = decks.cards(userId, deckId, state.value.cards.size)
-                state.update {
-                    it.copy(
-                        cards = (it.cards + page).distinctBy(SocialCard::cardId),
-                        moreCards =
-                            page.size == 50,
-                    )
-                }
-            }
-
-        fun publish(public: Boolean) =
-            runAction(if (public) "Deck published." else "Deck is private. Friend shares remain.") {
-                val deck = decks.publish(userId, deckId, public)
-                state.update { it.copy(deck = deck) }
-            }
-
-        fun loadFriends() =
-            runAction {
-                val rows = friends.friends(userId)
-                state.update { it.copy(friends = rows) }
-            }
-
-        fun share(
-            recipientId: String,
-            revoke: Boolean,
-        ) = runAction(
-            if (revoke) {
-                "Share revoked. Public decks are still visible to everyone signed in."
-            } else {
-                "Shared. Send your friend the deck code so they can open it in Community."
-            },
-        ) {
-            if (revoke) decks.revoke(userId, deckId, recipientId) else decks.share(userId, deckId, recipientId)
-        }
-
-        fun saveCopy() =
-            runAction("Copy saved to My Decks with fresh study progress.") {
-                state.update { it.copy(pendingCopy = true) }
-                val id = copies.save(userId, deckId)
-                savedState["savedCopyId"] = id
-                state.update { it.copy(savedCopyId = id, pendingCopy = false) }
-            }
+    init {
+        refresh()
     }
+
+    fun refresh() =
+        runAction {
+            state.update { it.copy(deck = null, cards = emptyList(), friends = null) }
+            val pending = copies.hasPending(userId, deckId)
+            state.update { it.copy(pendingCopy = pending) }
+            val deck = decks.prepare(userId, deckId)
+            val cards = decks.cards(userId, deckId, 0)
+            state.update { it.copy(deck = deck, cards = cards, moreCards = cards.size == 50) }
+        }
+
+    fun moreCards() =
+        runAction {
+            val page = decks.cards(userId, deckId, state.value.cards.size)
+            state.update {
+                it.copy(
+                    cards = (it.cards + page).distinctBy(SocialCard::cardId),
+                    moreCards =
+                        page.size == 50,
+                )
+            }
+        }
+
+    fun publish(public: Boolean) =
+        runAction(if (public) "Deck published." else "Deck is private. Friend shares remain.") {
+            val deck = decks.publish(userId, deckId, public)
+            state.update { it.copy(deck = deck) }
+        }
+
+    fun loadFriends() =
+        runAction {
+            val rows = friends.friends(userId)
+            state.update { it.copy(friends = rows) }
+        }
+
+    fun share(
+        recipientId: String,
+        revoke: Boolean,
+    ) = runAction(
+        if (revoke) {
+            "Share revoked. Public decks are still visible to everyone signed in."
+        } else {
+            "Shared. Send your friend the deck code so they can open it from the 'Discover' tab."
+        },
+    ) {
+        if (revoke) decks.revoke(userId, deckId, recipientId) else decks.share(userId, deckId, recipientId)
+        state.update {
+            it.copy(
+                sharedWith = if (revoke) it.sharedWith - recipientId else it.sharedWith + recipientId,
+            )
+        }
+    }
+
+    fun saveCopy() =
+        runAction("Copy saved to My Decks with fresh study progress.") {
+            state.update { it.copy(pendingCopy = true) }
+            val id = copies.save(userId, deckId)
+            savedState["savedCopyId"] = id
+            state.update { it.copy(savedCopyId = id, pendingCopy = false) }
+        }
+}
