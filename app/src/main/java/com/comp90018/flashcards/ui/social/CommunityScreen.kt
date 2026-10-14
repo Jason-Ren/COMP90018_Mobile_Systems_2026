@@ -6,20 +6,30 @@ import androidx.compose.ui.Modifier
 /** Compatibility entry point until navigation uses [DiscoverScreen] and [FriendsScreen] directly. */
 @Composable
 fun CommunityScreen(
-    onBack: () -> Unit,
     onOpenDeck: (String) -> Unit,
-    modifier: Modifier = Modifier,
-    startWithFriends: Boolean = false,
     onCommunity: () -> Unit,
     onHome: () -> Unit,
     onJoinGame: () -> Unit,
-    onFriends: () -> Unit
-
+    onFriends: () -> Unit,
+    modifier: Modifier = Modifier,
+    startWithFriends: Boolean = false,
 ) {
     if (startWithFriends) {
-        FriendsScreen(onBack = onBack, modifier = modifier,onCommunity, onHome, onJoinGame, onFriends)
+        FriendsScreen(
+            onCommunity = onCommunity,
+            onHome = onHome,
+            onJoinGame = onJoinGame,
+            onFriends = onFriends,
+            modifier = modifier,
+        )
     } else {
-        DiscoverScreen(onBack = onBack, onOpenDeck = onOpenDeck, modifier = modifier,onCommunity, onHome, onJoinGame, onFriends)
+        DiscoverScreen(
+            onOpenDeck = onOpenDeck,
+            onCommunity = onCommunity,
+            onHome = onHome,
+            onJoinGame = onJoinGame,
+            onFriends = onFriends,
+            modifier = modifier,
+        )
     }
-    
 }

@@ -42,7 +42,6 @@ import com.comp90018.flashcards.ui.lobby.JoinGameScreen
 import com.comp90018.flashcards.ui.play.ChooseTimerScreen
 import com.comp90018.flashcards.ui.play.DuoScreen
 import com.comp90018.flashcards.ui.play.TeamGameScreen
-import com.comp90018.flashcards.ui.social.CommunityScreen
 import com.comp90018.flashcards.ui.social.DiscoverScreen
 import com.comp90018.flashcards.ui.social.FriendsScreen
 import com.comp90018.flashcards.ui.study.StudyScreen
@@ -122,8 +121,7 @@ private fun FlashcardNavHost(
                 onJoinGame = { navController.navigate("join") },
                 onHome = { navController.navigate("home") },
                 onFriends = { navController.navigate("friends") },
-
-                )
+            )
         }
         deckPlayRoutes(navController)
         friendRoutes(navController)
@@ -155,8 +153,9 @@ private fun FlashcardNavHost(
                 onNavigateBack = { navController.popBackStack() },
             )
         }
-        composable("NaviBar"){
+        composable("NaviBar") {
             NavBar(
+                selectedDestination = null,
                 onCommunity = { navController.navigate("discovery") },
                 onHome = { navController.navigate("home") },
                 onJoinGame = { navController.navigate("join") },
@@ -188,7 +187,7 @@ private fun NavGraphBuilder.deckPlayRoutes(navController: NavHostController) {
             onOpenSource = { deckId -> navController.navigate("deck/$deckId") },
             onOpenLocal = { deckId -> navController.navigate("deck/$deckId") },
             onFriends = { navController.navigate("community/true") },
-            )
+        )
     }
     composable(
         route = "choose_mode/{deckId}",
@@ -212,15 +211,13 @@ private fun NavGraphBuilder.deckPlayRoutes(navController: NavHostController) {
 private fun NavGraphBuilder.friendRoutes(navController: NavHostController) {
     composable("friends") {
         FriendsScreen(
-            onBack = { navController.popBackStack() },
-            //onOpenDeck = { navController.navigate("deck/$it") },
-            //startWithFriends = entry.arguments?.getBoolean("friends") == true,
+            // onOpenDeck = { navController.navigate("deck/$it") },
+            // startWithFriends = entry.arguments?.getBoolean("friends") == true,
             onCommunity = { navController.navigate("discovery") },
             onHome = { navController.navigate("home") },
             onJoinGame = { navController.navigate("join") },
             onFriends = { navController.navigate("friends") },
         )
-
     }
     composable("cloud_deck/{deckId}", arguments = listOf(navArgument("deckId") { type = NavType.StringType })) {
         DeckPageScreen(
@@ -238,15 +235,13 @@ private fun NavGraphBuilder.friendRoutes(navController: NavHostController) {
 private fun NavGraphBuilder.discoveryRoutes(navController: NavHostController) {
     composable("discovery") {
         DiscoverScreen(
-            onBack = { navController.popBackStack() },
             onOpenDeck = { navController.navigate("deck/$it") },
-            //startWithFriends = entry.arguments?.getBoolean("friends") == true,
+            // startWithFriends = entry.arguments?.getBoolean("friends") == true,
             onCommunity = { navController.navigate("discovery") },
             onHome = { navController.navigate("home") },
             onJoinGame = { navController.navigate("join") },
-            onFriends = { navController.navigate("friends") }
+            onFriends = { navController.navigate("friends") },
         )
-
     }
     composable("cloud_deck/{deckId}", arguments = listOf(navArgument("deckId") { type = NavType.StringType })) {
         DeckPageScreen(
@@ -260,7 +255,6 @@ private fun NavGraphBuilder.discoveryRoutes(navController: NavHostController) {
         )
     }
 }
-
 
 /**
  * The 2-player flow: pick the countdown, then play. Finishing a round returns to choose mode.
@@ -335,7 +329,7 @@ private fun NavGraphBuilder.joinRoutes(navController: NavHostController) {
                 onHome = { navController.navigate("home") },
                 onJoinGame = { navController.navigate("join") },
                 onFriends = { navController.navigate("friends") },
-                )
+            )
         }
     }
     composable(route = "guest_lobby") { entry ->

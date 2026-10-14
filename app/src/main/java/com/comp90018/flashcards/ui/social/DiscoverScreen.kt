@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -15,29 +14,27 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.comp90018.flashcards.ui.components.NavBar
+import com.comp90018.flashcards.ui.components.NavDestination
 import com.comp90018.flashcards.ui.deck.PublicDeckRow
 import com.comp90018.flashcards.ui.deck.matchingPublicSearch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DiscoverScreen(
-    onBack: () -> Unit,
     onOpenDeck: (String) -> Unit,
-    modifier: Modifier = Modifier,
     onCommunity: () -> Unit,
     onHome: () -> Unit,
     onJoinGame: () -> Unit,
-    onFriends: () -> Unit
+    onFriends: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Scaffold(
         modifier = modifier,
         topBar = {
-            TopAppBar(title = { Text("Discover") }, navigationIcon = {
-                IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") }
-            })
+            TopAppBar(title = { Text("Discover") })
         },
         bottomBar = {
-            NavBar(onCommunity, onHome, onJoinGame, onFriends)
+            NavBar(NavDestination.DISCOVER, onCommunity, onHome, onJoinGame, onFriends)
         },
     ) { padding ->
         Box(Modifier.padding(padding).fillMaxSize()) {
