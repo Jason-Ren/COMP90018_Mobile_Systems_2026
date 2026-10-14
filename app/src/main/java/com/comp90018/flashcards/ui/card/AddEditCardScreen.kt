@@ -48,52 +48,21 @@ fun AddEditCardScreen(
             )
         },
     ) { padding ->
-        Column(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            OutlinedTextField(
-                value = uiState.front,
-                onValueChange = { viewModel.onFrontChange(it) },
-                minLines = 3,
-                label = { Text("Front") },
-                modifier = Modifier.fillMaxWidth().focusRequester(frontFocusRequester),
-            )
-            OutlinedTextField(
-                value = uiState.back,
-                onValueChange = { viewModel.onBackChange(it) },
-                minLines = 3,
-                label = { Text("Back") },
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Button(
-                    onClick = {
-                        focusManager.clearFocus()
-                        viewModel.saveCard()
-                    },
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
-                    enabled = uiState.front.isNotBlank() && uiState.back.isNotBlank(),
-                ) {
-                    Text("Save Card", style = MaterialTheme.typography.titleMedium)
-                }
-                if (!uiState.isEditing) {
-                    OutlinedButton(
-                        onClick = {
-                            viewModel.saveAndAddAnother()
-                            frontFocusRequester.requestFocus()
-                        },
-                        modifier = Modifier.fillMaxWidth().height(52.dp),
-                        enabled = uiState.front.isNotBlank() && uiState.back.isNotBlank(),
-                    ) {
-                        Text("Save + Add Another Card", style = MaterialTheme.typography.titleMedium)
-                    }
-                }
-            }
-        }
+        AddEditCardContent(
+            uiState = uiState,
+            frontFocusRequester = frontFocusRequester,
+            onFrontChange = viewModel::onFrontChange,
+            onBackChange = viewModel::onBackChange,
+            onSaveCard = {
+                focusManager.clearFocus()
+                viewModel.saveCard()
+            },
+            onSaveAndAddAnother = {
+                viewModel.saveAndAddAnother()
+                frontFocusRequester.requestFocus()
+            },
+            modifier = Modifier.fillMaxSize().padding(padding),
+        )
     }
 
     if (showDeleteDialog) {
@@ -104,6 +73,73 @@ fun AddEditCardScreen(
             },
             onDismiss = { showDeleteDialog = false },
         )
+    }
+}
+
+@Composable
+private fun AddEditCardContent(
+    uiState: AddEditCardUiState,
+    frontFocusRequester: FocusRequester,
+    onFrontChange: (String) -> Unit,
+    onBackChange: (String) -> Unit,
+    onSaveCard: () -> Unit,
+    onSaveAndAddAnother: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        OutlinedTextField(
+            value = uiState.front,
+            onValueChange = onFrontChange,
+            minLines = 3,
+            label = { Text("Front") },
+            modifier = Modifier.fillMaxWidth().focusRequester(frontFocusRequester),
+        )
+        OutlinedTextField(
+            value = uiState.back,
+            onValueChange = onBackChange,
+            minLines = 3,
+            label = { Text("Back") },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        CardActionButtons(
+            isEditing = uiState.isEditing,
+            isEnabled = uiState.front.isNotBlank() && uiState.back.isNotBlank(),
+            onSaveCard = onSaveCard,
+            onSaveAndAddAnother = onSaveAndAddAnother,
+        )
+    }
+}
+
+@Composable
+private fun CardActionButtons(
+    isEditing: Boolean,
+    isEnabled: Boolean,
+    onSaveCard: () -> Unit,
+    onSaveAndAddAnother: () -> Unit,
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Button(
+            onClick = onSaveCard,
+            modifier = Modifier.fillMaxWidth().height(52.dp),
+            enabled = isEnabled,
+        ) {
+            Text("Save Card", style = MaterialTheme.typography.titleMedium)
+        }
+        if (!isEditing) {
+            OutlinedButton(
+                onClick = onSaveAndAddAnother,
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                enabled = isEnabled,
+            ) {
+                Text("Save + Add Another Card", style = MaterialTheme.typography.titleMedium)
+            }
+        }
     }
 }
 

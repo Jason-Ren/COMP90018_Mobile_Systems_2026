@@ -140,16 +140,10 @@ private fun LogOutButton(
     enabled: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    OutlinedButton(
+    Button(
         onClick = onClick,
         enabled = enabled,
         modifier = modifier.fillMaxWidth().heightIn(min = 56.dp),
-        colors =
-            ButtonDefaults.outlinedButtonColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                contentColor = MaterialTheme.colorScheme.onSurface,
-            ),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
         Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null)
         Spacer(Modifier.width(8.dp))
