@@ -4,13 +4,17 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -35,11 +39,11 @@ fun DiscoverScreen(
         topBar = {
             TopAppBar(
                 modifier = Modifier.padding(top = 8.dp),
-                    title = { Text(
+                title = { Text(
                     text = "Discover",
                     style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.Bold,
-            ) })
+                ) })
         },
         bottomBar = {
             NavBar(NavDestination.DISCOVER, onCommunity, onHome, onJoinGame, onFriends)
@@ -61,18 +65,30 @@ private fun DiscoverPanel(
     val task by viewModel.taskState.collectAsStateWithLifecycle()
     var search by rememberSaveable { mutableStateOf("") }
     LazyColumn(
-        contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = bottomInset + 16.dp),
+        contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = bottomInset + 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        item {
-            Text("Find your next study deck", style = MaterialTheme.typography.headlineSmall)
-            Text("Browse public decks or open a deck a friend shared with you.")
-        }
         item { SharedDeckCode(onOpenDeck = onOpenDeck) }
         item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Public decks", style = MaterialTheme.typography.titleLarge)
-                TextButton(onClick = viewModel::refresh, enabled = !task.busy) { Text("Refresh") }
+            Row(
+                Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    "Public decks",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                IconButton(
+                    onClick = viewModel::refresh,
+                    enabled = !task.busy,
+                    colors = IconButtonDefaults.iconButtonColors(
+                        contentColor = MaterialTheme.colorScheme.primary,
+                    ),
+                ) {
+                    Icon(Icons.Default.Refresh, contentDescription = "Refresh")
+                }
             }
             SocialStatus(task)
             DiscoverSearchField(query = search, onQueryChange = { search = it })
@@ -108,7 +124,13 @@ private fun DiscoverSearchField(
         value = query,
         onValueChange = onQueryChange,
         singleLine = true,
-        label = { Text("Search by deck name or username") },
+        placeholder = {
+            Text(
+                "Search by deck name or username",
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        },
         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
         trailingIcon = {
             if (query.isNotEmpty()) {
@@ -125,9 +147,17 @@ private fun DiscoverSearchField(
 internal fun SharedDeckCode(onOpenDeck: (String) -> Unit) {
     var code by rememberSaveable { mutableStateOf("") }
     var invalid by rememberSaveable { mutableStateOf(false) }
-    OutlinedCard {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Have a shared deck code?", style = MaterialTheme.typography.titleMedium)
+    val submit = {
+        val id = sharedDeckId(code)
+        if (id == null) invalid = true else onOpenDeck(id)
+    }
+    OutlinedCard(
+        colors = CardDefaults.outlinedCardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        ),
+    ) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Have a shared deck code from a friend?", style = MaterialTheme.typography.titleMedium)
             OutlinedTextField(
                 value = code,
                 onValueChange = {
@@ -135,15 +165,29 @@ internal fun SharedDeckCode(onOpenDeck: (String) -> Unit) {
                     invalid = false
                 },
                 singleLine = true,
-                label = { Text("Paste deck code") },
+                placeholder = { Text("Paste deck code", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                trailingIcon = {
+                    IconButton(onClick = submit, enabled = code.isNotBlank()) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = "Open shared deck",
+                            tint = if (code.isNotBlank()) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                            },
+                        )
+                    }
+                },
                 isError = invalid,
+                // Passing null (not an empty lambda) stops Compose reserving blank space below the field.
+                supportingText = if (invalid) {
+                    { Text("Paste the complete deck code.") }
+                } else {
+                    null
+                },
                 modifier = Modifier.fillMaxWidth(),
-                supportingText = { if (invalid) Text("Paste the complete deck code copied by your friend.") },
             )
-            Button(onClick = {
-                val id = sharedDeckId(code)
-                if (id == null) invalid = true else onOpenDeck(id)
-            }, enabled = code.isNotBlank()) { Text("Open shared deck") }
         }
     }
 }
