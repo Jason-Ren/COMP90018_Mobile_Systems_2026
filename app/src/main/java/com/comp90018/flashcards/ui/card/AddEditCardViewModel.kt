@@ -19,6 +19,7 @@ data class AddEditCardUiState(
     val back: String = "",
     val isEditing: Boolean = false,
     val isSaved: Boolean = false,
+    val userMessage: String? = null,
 )
 
 @HiltViewModel
@@ -71,8 +72,35 @@ class AddEditCardViewModel
                         ),
                     )
                 }
-                _uiState.update { it.copy(isSaved = true) }
+                _uiState.update { it.copy(isSaved = true, userMessage = "Card saved!") }
             }
+        }
+
+        fun saveAndAddAnother() {
+            val state = uiState.value
+            if (state.front.isBlank() || state.back.isBlank()) return
+
+            viewModelScope.launch {
+                repository.insertCard(
+                    CardEntity(
+                        cardId = UUID.randomUUID().toString(),
+                        deckId = deckId,
+                        front = state.front,
+                        back = state.back,
+                    ),
+                )
+                _uiState.update {
+                    it.copy(
+                        front = "",
+                        back = "",
+                        userMessage = "Card saved!",
+                    )
+                }
+            }
+        }
+
+        fun userMessageShown() {
+            _uiState.update { it.copy(userMessage = null) }
         }
 
         fun deleteCard() {
