@@ -22,11 +22,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 
 private val lightScheme =
     lightColorScheme(
@@ -175,58 +175,50 @@ fun rememberDarkThemeFromLightSensor(
 ): Boolean {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    // Fallback until the first reading (or if there's no sensor)
-    var isDark by remember { mutableStateOf(false) }
     val systemDark = isSystemInDarkTheme()
+    // Follow the system until the light sensor reports a value (or if the phone has none)
+    var isDark by remember { mutableStateOf(systemDark) }
+    var hasReading by remember { mutableStateOf(false) }
 
-    DisposableEffect(lifecycleOwner) {
+    DisposableEffect(lifecycleOwner, context) {
         val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
         val lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
 
         if (lightSensor == null) {
-            isDark = systemDark // device has no light sensor
+            isDark = systemDark
             return@DisposableEffect onDispose {}
         }
 
         val listener =
             object : SensorEventListener {
                 override fun onSensorChanged(event: SensorEvent) {
-                    val lux = event.values[0]
-                    if (lux < darkBelowLux) {
-                        isDark = true
-                    } else if (lux > lightAboveLux) {
-                        isDark = false
-                    }
+                    if (event.values.isEmpty()) return
+                    val next = darkThemeForLux(event.values[0], isDark, !hasReading, darkBelowLux, lightAboveLux)
+                    hasReading = true
+                    isDark = next
                 }
 
                 override fun onAccuracyChanged(
                     sensor: Sensor?,
                     accuracy: Int,
-                ) {
-                    // no change required
-                }
+                ) = Unit
             }
 
-        // Only listen while the app is visible (saves battery)
+        fun listen() {
+            sensorManager.registerListener(listener, lightSensor, SensorManager.SENSOR_DELAY_UI)
+        }
+
         val observer =
             LifecycleEventObserver { _, event ->
                 when (event) {
-                    Lifecycle.Event.ON_RESUME -> {
-                        sensorManager.registerListener(
-                            listener,
-                            lightSensor,
-                            SensorManager.SENSOR_DELAY_NORMAL,
-                        )
-                    }
-
-                    Lifecycle.Event.ON_PAUSE -> {
-                        sensorManager.unregisterListener(listener)
-                    }
-
-                    else -> {}
+                    Lifecycle.Event.ON_RESUME -> listen()
+                    Lifecycle.Event.ON_PAUSE -> sensorManager.unregisterListener(listener)
+                    else -> Unit
                 }
             }
         lifecycleOwner.lifecycle.addObserver(observer)
+        // Composition can finish after onResume, so ON_RESUME may already have been missed
+        if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) listen()
 
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
@@ -234,4 +226,20 @@ fun rememberDarkThemeFromLightSensor(
         }
     }
     return isDark
+}
+
+/** First sample picks a side; later samples only change when lux leaves the hysteresis band. */
+internal fun darkThemeForLux(
+    lux: Float,
+    currentlyDark: Boolean,
+    firstReading: Boolean,
+    darkBelowLux: Float,
+    lightAboveLux: Float,
+): Boolean {
+    if (firstReading) return lux <= (darkBelowLux + lightAboveLux) / 2f
+    return when {
+        lux < darkBelowLux -> true
+        lux > lightAboveLux -> false
+        else -> currentlyDark
+    }
 }
