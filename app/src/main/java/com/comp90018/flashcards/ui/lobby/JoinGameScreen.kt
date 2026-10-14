@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -39,6 +38,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.comp90018.flashcards.data.p2p.ConnectionState
 import com.comp90018.flashcards.data.p2p.DiscoveredHost
+import com.comp90018.flashcards.ui.components.NavBar
+import com.comp90018.flashcards.ui.components.NavDestination
 import com.comp90018.flashcards.ui.connection.ConnectionOverlay
 import com.comp90018.flashcards.ui.connection.DebugConnectionButtons
 
@@ -53,6 +54,10 @@ private val JOIN_CARD_HEIGHT = 100.dp
 fun JoinGameScreen(
     onNavigateBack: () -> Unit,
     onJoin: () -> Unit,
+    onCommunity: () -> Unit,
+    onHome: () -> Unit,
+    onJoinGame: () -> Unit,
+    onFriends: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: JoinGameViewModel = hiltViewModel(),
 ) {
@@ -65,7 +70,7 @@ fun JoinGameScreen(
     val joined = state.connection is ConnectionState.Connected
     LaunchedEffect(joined) { if (joined) openLobby() }
 
-    // back, top bar arrow and Cancel all leave the same way
+    // System back and Cancel both stop discovery before leaving.
     val leave = {
         viewModel.leave()
         onNavigateBack()
@@ -77,12 +82,10 @@ fun JoinGameScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Join clash") },
-                navigationIcon = {
-                    IconButton(onClick = leave) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
             )
+        },
+        bottomBar = {
+            NavBar(NavDestination.CLASH, onCommunity, onHome, onJoinGame, onFriends)
         },
     ) { padding ->
         JoinBody(
