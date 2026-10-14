@@ -32,6 +32,7 @@ class CommunityDecks
                     cardCount = deck.cardCount,
                     createdAt = deck.createdAt?.let(Instant::parse),
                     ownerDisplayName = deck.ownerDisplayName,
+                    ownerUsername = deck.ownerUsername,
                 )
             }
         }

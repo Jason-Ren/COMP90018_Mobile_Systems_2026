@@ -34,6 +34,7 @@ data class SocialDeck(
     val ownerDisplayName: String? = null,
     val updatedAt: String? = null,
     val createdAt: String? = null,
+    val ownerUsername: String? = null,
 )
 
 @Serializable
