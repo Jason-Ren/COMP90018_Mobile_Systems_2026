@@ -2,7 +2,6 @@ package com.comp90018.flashcards.ui.lobby
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -86,11 +85,6 @@ fun JoinGameScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Join Clash") },
-                navigationIcon = {
-                    IconButton(onClick = leave) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
                 actions = {
                     helpTip(
                         topic = HelpTopic.MultiSetupHelp,
