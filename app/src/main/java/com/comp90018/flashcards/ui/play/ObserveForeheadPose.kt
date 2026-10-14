@@ -18,9 +18,10 @@ internal fun observeForeheadPose(onPose: (Boolean) -> Unit): Boolean {
     val context = LocalContext.current
     val owner = LocalLifecycleOwner.current
     val currentOnPose by rememberUpdatedState(onPose)
-    var available by remember { mutableStateOf(false) }
-    DisposableEffect(context, owner) {
-        val detector = ForeheadPoseDetector(context) { currentOnPose(it) }
+    val detector = remember(context) { ForeheadPoseDetector(context) { currentOnPose(it) } }
+    // seed from sensor presence so the pose hint shows on the first frame
+    var available by remember(detector) { mutableStateOf(detector.hasSensor) }
+    DisposableEffect(detector, owner) {
         val observer =
             LifecycleEventObserver { _, event ->
                 when (event) {
