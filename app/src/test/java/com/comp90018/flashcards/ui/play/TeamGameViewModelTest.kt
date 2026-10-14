@@ -4,6 +4,7 @@ import com.comp90018.flashcards.data.p2p.ConnectionState
 import com.comp90018.flashcards.data.p2p.GameMessage
 import com.comp90018.flashcards.data.p2p.GameSession
 import com.comp90018.flashcards.data.p2p.GameSetup
+import com.comp90018.flashcards.debug.DEBUG_TOOLS_ENABLED
 import com.comp90018.flashcards.debug.DebugSettings
 import com.comp90018.flashcards.testutil.FakeAnswerSounds
 import com.comp90018.flashcards.testutil.FakeConnectionController
@@ -18,6 +19,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -157,6 +159,7 @@ class TeamGameViewModelTest {
 
     @Test
     fun `in emulator mode the real link is ignored`() {
+        assumeTrue(DEBUG_TOOLS_ENABLED)
         debug.setEmulatorMode(true)
         val vm = viewModel()
 
@@ -168,6 +171,7 @@ class TeamGameViewModelTest {
 
     @Test
     fun `in emulator mode a simulated drop shows and holds the game`() {
+        assumeTrue(DEBUG_TOOLS_ENABLED)
         debug.setEmulatorMode(true)
         val vm = viewModel()
         vm.start()
@@ -181,6 +185,7 @@ class TeamGameViewModelTest {
     @Test
     fun `in emulator mode the other teams score is made up after finishing`() =
         runTest {
+            assumeTrue(DEBUG_TOOLS_ENABLED)
             debug.setEmulatorMode(true)
             val vm = viewModel(cards = 3)
 

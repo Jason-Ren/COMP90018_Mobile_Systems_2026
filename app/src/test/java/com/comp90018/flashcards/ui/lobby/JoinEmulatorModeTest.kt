@@ -3,6 +3,7 @@ package com.comp90018.flashcards.ui.lobby
 import com.comp90018.flashcards.data.p2p.ConnectionState
 import com.comp90018.flashcards.data.p2p.DiscoveredHost
 import com.comp90018.flashcards.data.p2p.GameSession
+import com.comp90018.flashcards.debug.DEBUG_TOOLS_ENABLED
 import com.comp90018.flashcards.debug.DebugSettings
 import com.comp90018.flashcards.testutil.FakeConnectionController
 import com.comp90018.flashcards.testutil.MainDispatcherRule
@@ -15,6 +16,8 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
@@ -27,6 +30,9 @@ class JoinEmulatorModeTest {
     private val debug = DebugSettings().also { it.setEmulatorMode(true) }
     private val session = GameSession()
     private val fakeHost = DiscoveredHost("debug-host", "Team Awesome Plum")
+
+    @Before
+    fun requireDebugTools() = assumeTrue(DEBUG_TOOLS_ENABLED)
 
     private fun TestScope.viewModel(): JoinGameViewModel {
         val vm = JoinGameViewModel(connection, debug, session)
