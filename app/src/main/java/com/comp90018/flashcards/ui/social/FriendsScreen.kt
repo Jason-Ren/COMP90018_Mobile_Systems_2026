@@ -25,8 +25,8 @@ fun FriendsScreen(
             NavBar(NavDestination.FRIENDS, onCommunity, onHome, onJoinGame, onFriends)
         },
     ) { padding ->
-        Box(Modifier.padding(padding).fillMaxSize()) {
-            FriendsPanel()
+        Box(Modifier.padding(top = padding.calculateTopPadding()).fillMaxSize()) {
+            FriendsPanel(bottomInset = padding.calculateBottomPadding())
         }
     }
 }

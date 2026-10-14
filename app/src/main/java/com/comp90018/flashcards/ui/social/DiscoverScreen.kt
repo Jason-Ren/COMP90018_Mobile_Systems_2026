@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -37,8 +38,8 @@ fun DiscoverScreen(
             NavBar(NavDestination.DISCOVER, onCommunity, onHome, onJoinGame, onFriends)
         },
     ) { padding ->
-        Box(Modifier.padding(padding).fillMaxSize()) {
-            DiscoverPanel(onOpenDeck = onOpenDeck)
+        Box(Modifier.padding(top = padding.calculateTopPadding()).fillMaxSize()) {
+            DiscoverPanel(onOpenDeck = onOpenDeck, bottomInset = padding.calculateBottomPadding())
         }
     }
 }
@@ -46,13 +47,14 @@ fun DiscoverScreen(
 @Composable
 private fun DiscoverPanel(
     onOpenDeck: (String) -> Unit,
+    bottomInset: Dp,
     viewModel: CommunityViewModel = hiltViewModel(),
 ) {
     val decks by viewModel.decks.collectAsStateWithLifecycle()
     val task by viewModel.taskState.collectAsStateWithLifecycle()
     var search by rememberSaveable { mutableStateOf("") }
     LazyColumn(
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = bottomInset + 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {

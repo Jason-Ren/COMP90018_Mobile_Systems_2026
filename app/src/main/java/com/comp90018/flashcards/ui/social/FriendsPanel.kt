@@ -11,25 +11,24 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.comp90018.flashcards.data.social.SocialProfile
 import com.comp90018.flashcards.data.social.SocialRequest
 
 @Composable
-internal fun FriendsPanel(viewModel: FriendsViewModel = hiltViewModel()) {
+internal fun FriendsPanel(
+    bottomInset: Dp = 0.dp,
+    viewModel: FriendsViewModel = hiltViewModel(),
+) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val task by viewModel.taskState.collectAsStateWithLifecycle()
     var removing by remember { mutableStateOf<SocialProfile?>(null) }
-    LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Study with friends", style = MaterialTheme.typography.titleLarge)
-                TextButton(onClick = viewModel::refresh, enabled = !task.busy) { Text("Refresh") }
-            }
-            SocialStatus(task)
-            FriendOutcomeNotice(state.notice)
-        }
+    LazyColumn(
+        contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = bottomInset + 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
         if (state.profile != null) {
             item { AddFriendForm(!task.busy, viewModel::addFriend) }
             item { Text("Friend requests", style = MaterialTheme.typography.titleMedium) }

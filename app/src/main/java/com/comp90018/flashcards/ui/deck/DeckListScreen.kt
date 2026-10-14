@@ -1,8 +1,5 @@
 package com.comp90018.flashcards.ui.deck
 
-import android.R.attr.label
-import android.R.attr.onClick
-import android.R.attr.padding
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -22,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.comp90018.flashcards.data.local.entity.DeckEntity
@@ -70,7 +68,8 @@ fun DeckListScreen(
             isSyncing = isSyncing,
             onNavigateToDeck = onNavigateToDeck,
             onShowDialog = { showDialog = true },
-            modifier = Modifier.padding(padding),
+            bottomInset = padding.calculateBottomPadding(),
+            modifier = Modifier.padding(top = padding.calculateTopPadding()),
         )
     }
 
@@ -103,6 +102,7 @@ private fun DeckListBody(
     isSyncing: Boolean,
     onNavigateToDeck: (String) -> Unit,
     onShowDialog: () -> Unit,
+    bottomInset: Dp,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -137,7 +137,7 @@ private fun DeckListBody(
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(top = 16.dp, bottom = 96.dp),
+                    contentPadding = PaddingValues(top = 16.dp, bottom = bottomInset + 16.dp),
                 ) {
                     items(decks, key = { it.deckId }) { deck ->
                         DeckItem(

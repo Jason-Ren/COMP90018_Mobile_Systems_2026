@@ -3,6 +3,7 @@ package com.comp90018.flashcards.ui.lobby
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.comp90018.flashcards.data.p2p.ConnectionState
@@ -103,7 +105,8 @@ fun JoinGameScreen(
             onReroll = viewModel::rerollName,
             onJoin = viewModel::join,
             onCancel = leave,
-            modifier = Modifier.padding(padding),
+            bottomInset = padding.calculateBottomPadding(),
+            modifier = Modifier.padding(top = padding.calculateTopPadding()),
         )
     }
 
@@ -116,10 +119,11 @@ private fun JoinBody(
     onReroll: () -> Unit,
     onJoin: (DiscoveredHost) -> Unit,
     onCancel: () -> Unit,
+    bottomInset: Dp,
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier.fillMaxSize().padding(16.dp),
+        modifier = modifier.fillMaxSize().padding(start = 16.dp, top = 16.dp, end = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Card(modifier = Modifier.fillMaxWidth().height(JOIN_CARD_HEIGHT)) {
@@ -160,7 +164,12 @@ private fun JoinBody(
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.outline,
                     )
-                    HostList(hosts = state.hosts, onJoin = onJoin, modifier = Modifier.weight(1f))
+                    HostList(
+                        hosts = state.hosts,
+                        onJoin = onJoin,
+                        bottomInset = bottomInset,
+                        modifier = Modifier.weight(1f),
+                    )
                 }
         }
         // DEBUG ONLY: fake the link going wrong, only shows in emulator mode
@@ -172,6 +181,7 @@ private fun JoinBody(
 private fun HostList(
     hosts: List<DiscoveredHost>,
     onJoin: (DiscoveredHost) -> Unit,
+    bottomInset: Dp,
     modifier: Modifier = Modifier,
 ) {
     if (hosts.isEmpty()) {
@@ -198,7 +208,11 @@ private fun HostList(
             )
         }
     } else {
-        LazyColumn(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        LazyColumn(
+            modifier = modifier,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(bottom = bottomInset + 16.dp),
+        ) {
             items(hosts, key = { it.endpointId }) { host ->
                 Card(modifier = Modifier.fillMaxWidth().height(JOIN_CARD_HEIGHT)) {
                     Row(
