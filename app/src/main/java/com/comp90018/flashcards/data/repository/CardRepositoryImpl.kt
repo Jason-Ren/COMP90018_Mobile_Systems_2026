@@ -7,6 +7,7 @@ import com.comp90018.flashcards.data.local.entity.CardEntity
 import com.comp90018.flashcards.data.local.entity.CardFsrsStateEntity
 import com.comp90018.flashcards.data.local.entity.DeckEntity
 import com.comp90018.flashcards.data.local.entity.ReviewLogEntity
+import com.comp90018.flashcards.data.local.model.DeckWithCardCount
 import com.comp90018.flashcards.data.sync.DeckSyncCoordinator
 import com.comp90018.flashcards.domain.fsrs.CardState
 import com.comp90018.flashcards.domain.fsrs.FsrsCard
@@ -34,6 +35,9 @@ class CardRepositoryImpl
         private val deckSync: DeckSyncCoordinator,
     ) : CardRepository {
         override fun getAllDecks(ownerId: String): Flow<List<DeckEntity>> = deckDao.getAllDecks(ownerId)
+
+        override fun getDecksWithCardCounts(ownerId: String): Flow<List<DeckWithCardCount>> =
+            deckDao.getDecksWithCardCounts(ownerId)
 
         override suspend fun insertDeck(deck: DeckEntity) {
             deckDao.insertDeck(deck)

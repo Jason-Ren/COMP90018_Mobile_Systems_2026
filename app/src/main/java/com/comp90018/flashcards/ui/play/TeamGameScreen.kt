@@ -13,7 +13,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -70,7 +69,7 @@ fun TeamGameScreen(
                 round.phase == DuoPhase.BACK -> BackContent(round, viewModel::onGesture)
                 else -> ResultContent(state, onFinish = leave)
             }
-            if (round.phase == DuoPhase.READY && round.startCountdown == 0 && !round.isPaused) {
+            if (round.isReadyForHelp) {
                 helpTip(
                     topic = HelpTopic.MultiGameHelp,
                     modifier =

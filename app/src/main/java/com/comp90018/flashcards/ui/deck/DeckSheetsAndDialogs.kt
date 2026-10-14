@@ -64,7 +64,6 @@ fun UnifiedDeckShareSheet(
     onDismiss: () -> Unit,
     onFriends: () -> Unit,
     onShare: (String, Boolean) -> Unit,
-    onRefresh: () -> Unit,
     sharedWith: Set<String> = emptySet(),
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
@@ -88,8 +87,9 @@ fun UnifiedDeckShareSheet(
                 }
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = "Give friends access below, then send them the deck code.\n" +
-                        "They can access your deck by entering the code in the 'Discover' tab.",
+                    text =
+                        "Give friends access below, then send them the deck code.\n" +
+                            "They can access your deck by entering the code in the 'Discover' tab.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -134,9 +134,10 @@ private fun DeckCodeCard(deckId: String) {
         modifier = Modifier.fillMaxWidth(),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
@@ -187,9 +188,10 @@ private fun FriendAccessCard(
         shape = RoundedCornerShape(12.dp),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
@@ -228,9 +230,10 @@ private fun EmptyFriendsCard(
         shape = RoundedCornerShape(12.dp),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -277,10 +280,11 @@ fun DeckOptionsBottomSheet(
                 headlineContent = { Text("Edit Deck Info") },
                 leadingContent = { Icon(Icons.Default.Edit, contentDescription = null) },
                 colors = transparentItem,
-                modifier = Modifier.fillMaxWidth().clickable {
-                    onDismiss()
-                    onEditDeckInfo()
-                },
+                modifier =
+                    Modifier.fillMaxWidth().clickable {
+                        onDismiss()
+                        onEditDeckInfo()
+                    },
             )
             ListItem(
                 headlineContent = {
@@ -294,10 +298,11 @@ fun DeckOptionsBottomSheet(
                     }
                 },
                 colors = transparentItem,
-                modifier = Modifier.fillMaxWidth().clickable {
-                    onDismiss()
-                    onEditVisibility()
-                },
+                modifier =
+                    Modifier.fillMaxWidth().clickable {
+                        onDismiss()
+                        onEditVisibility()
+                    },
             )
             ListItem(
                 headlineContent = {
@@ -311,10 +316,11 @@ fun DeckOptionsBottomSheet(
                     )
                 },
                 colors = transparentItem,
-                modifier = Modifier.fillMaxWidth().clickable {
-                    onDismiss()
-                    onDeleteDeck()
-                },
+                modifier =
+                    Modifier.fillMaxWidth().clickable {
+                        onDismiss()
+                        onDeleteDeck()
+                    },
             )
         }
     }

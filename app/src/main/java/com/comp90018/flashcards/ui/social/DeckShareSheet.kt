@@ -10,7 +10,6 @@ internal fun DeckShareSheet(
     onDismiss: () -> Unit,
     onFriends: () -> Unit,
     onShare: (String, Boolean) -> Unit,
-    onRefresh: () -> Unit,
 ) {
     UnifiedDeckShareSheet(
         deckId = state.deck?.deckId.orEmpty(),
@@ -19,7 +18,6 @@ internal fun DeckShareSheet(
         onDismiss = onDismiss,
         onFriends = onFriends,
         onShare = onShare,
-        onRefresh = onRefresh,
         sharedWith = state.sharedWith,
     )
 }

@@ -10,12 +10,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.compose.material3.MaterialTheme
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.comp90018.flashcards.data.social.SocialCard
@@ -71,7 +71,7 @@ fun CloudDeckScreen(
         DeckShareSheet(state, task, onDismiss = { sharing = false }, onFriends = {
             sharing = false
             onFriends()
-        }, onShare = viewModel::share, onRefresh = viewModel::loadFriends)
+        }, onShare = viewModel::share)
     }
     publishing?.let { public ->
         PublishConfirmation(

@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
@@ -16,13 +17,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.comp90018.flashcards.R
 import com.comp90018.flashcards.data.local.entity.DeckEntity
+import com.comp90018.flashcards.data.local.model.DeckWithCardCount
 import com.comp90018.flashcards.debug.DEBUG_TOOLS_ENABLED
 import com.comp90018.flashcards.ui.components.NavBar
 import com.comp90018.flashcards.ui.components.NavDestination
@@ -97,7 +101,7 @@ fun DeckListScreen(
 
 @Composable
 private fun DeckListBody(
-    decks: List<DeckEntity>,
+    decks: List<DeckWithCardCount>,
     isSyncing: Boolean,
     onNavigateToDeck: (String) -> Unit,
     onShowDialog: () -> Unit,
@@ -114,7 +118,7 @@ private fun DeckListBody(
         if (isSyncing) {
             LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
         }
-        DeckListHeader(onShowDialog = onShowDialog)
+        DeckListHeader(deckCount = decks.size, onShowDialog = onShowDialog)
 
         if (decks.isEmpty()) {
             Box(
@@ -138,10 +142,11 @@ private fun DeckListBody(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     contentPadding = PaddingValues(top = 16.dp, bottom = bottomInset + 16.dp),
                 ) {
-                    items(decks, key = { it.deckId }) { deck ->
+                    items(decks, key = { it.deck.deckId }) { item ->
                         DeckItem(
-                            deck = deck,
-                            onOpenClick = { onNavigateToDeck(deck.deckId) },
+                            deck = item.deck,
+                            cardCount = item.cardCount,
+                            onOpenClick = { onNavigateToDeck(item.deck.deckId) },
                         )
                     }
                 }
@@ -172,57 +177,67 @@ private fun DeckListTopBar(
     emulatorMode: Boolean,
     onEmulatorModeChange: (Boolean) -> Unit,
 ) {
+    var debugMenuOpen by remember { mutableStateOf(false) }
     TopAppBar(
-        title = {},
+        title = {
+            Text("My Decks", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
+        },
         actions = {
-            TextButton(onClick = onSync, enabled = !isSyncing) {
+            IconButton(onClick = onSync, enabled = !isSyncing) {
                 Icon(
                     imageVector = Icons.Default.Refresh,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
+                    contentDescription = if (isSyncing) "Syncing decks" else "Sync decks",
                 )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(if (isSyncing) "Syncing…" else "Sync")
             }
-            // DEBUG ONLY: lets clash mode be tried on an emulator, hide it with DEBUG_TOOLS_ENABLED
+            // Keep debug controls out of the main toolbar when enabled for emulator testing.
             if (DEBUG_TOOLS_ENABLED) {
-                Checkbox(checked = emulatorMode, onCheckedChange = onEmulatorModeChange)
-                Text("[DEBUG] Emulator mode", style = MaterialTheme.typography.labelSmall)
+                Box {
+                    IconButton(onClick = { debugMenuOpen = true }) {
+                        Icon(Icons.Default.MoreVert, contentDescription = "Debug options")
+                    }
+                    DropdownMenu(expanded = debugMenuOpen, onDismissRequest = { debugMenuOpen = false }) {
+                        DropdownMenuItem(
+                            text = { Text("Emulator mode") },
+                            leadingIcon = { Checkbox(checked = emulatorMode, onCheckedChange = null) },
+                            onClick = {
+                                onEmulatorModeChange(!emulatorMode)
+                                debugMenuOpen = false
+                            },
+                        )
+                    }
+                }
             }
-            IconButton(
-                onClick = onAccount,
-                modifier = Modifier.padding(top = 12.dp, end = 12.dp),
-            ) {
-                Icon(
-                    Icons.Default.Settings,
-                    contentDescription = "Account",
-                    modifier = Modifier.size(32.dp),
-                )
+            IconButton(onClick = onAccount) {
+                Icon(Icons.Default.Settings, contentDescription = "Account")
             }
         },
     )
 }
 
 @Composable
-private fun DeckListHeader(onShowDialog: () -> Unit) {
+private fun DeckListHeader(
+    deckCount: Int,
+    onShowDialog: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = modifier.fillMaxWidth().padding(top = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = "My Decks",
-            style = MaterialTheme.typography.headlineLarge,
-            fontWeight = FontWeight.Bold,
+            text = pluralStringResource(R.plurals.deck_list_count, deckCount, deckCount),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f),
         )
         FilledTonalButton(
             onClick = onShowDialog,
-            modifier = Modifier.height(48.dp),
-            contentPadding = PaddingValues(start = 16.dp, end = 20.dp),
+            modifier = Modifier.heightIn(min = 48.dp),
         ) {
-            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(24.dp))
+            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
             Spacer(Modifier.width(8.dp))
-            Text("Create Deck", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text("Create Deck")
         }
     }
 }
@@ -264,20 +279,30 @@ private fun CreateDeckDialog(
 @Composable
 fun DeckItem(
     deck: DeckEntity,
+    cardCount: Int,
     onOpenClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth().clickable { onOpenClick() },
+        modifier = modifier.fillMaxWidth().clickable { onOpenClick() },
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
     ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 24.dp)) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
             Text(
                 text = deck.name,
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = pluralStringResource(R.plurals.deck_card_count, cardCount, cardCount),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

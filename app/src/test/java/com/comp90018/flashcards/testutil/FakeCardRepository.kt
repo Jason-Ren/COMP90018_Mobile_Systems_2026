@@ -2,6 +2,7 @@ package com.comp90018.flashcards.testutil
 
 import com.comp90018.flashcards.data.local.entity.CardEntity
 import com.comp90018.flashcards.data.local.entity.DeckEntity
+import com.comp90018.flashcards.data.local.model.DeckWithCardCount
 import com.comp90018.flashcards.domain.fsrs.FsrsCard
 import com.comp90018.flashcards.domain.model.CardWithState
 import com.comp90018.flashcards.domain.model.Rating
@@ -19,6 +20,8 @@ class FakeCardRepository(
     override fun getCardsByDeckId(deckId: String): Flow<List<CardEntity>> = flowOf(cards)
 
     override fun getAllDecks(ownerId: String): Flow<List<DeckEntity>> = error("not used")
+
+    override fun getDecksWithCardCounts(ownerId: String): Flow<List<DeckWithCardCount>> = error("not used")
 
     override suspend fun insertDeck(deck: DeckEntity) = error("not used")
 

@@ -30,7 +30,10 @@ data class DuoUiState(
     val correctCount: Int = 0,
     val totalCount: Int = 0,
     val missed: List<CardEntity> = emptyList(),
-)
+) {
+    val isReadyForHelp: Boolean
+        get() = phase == DuoPhase.READY && startCountdown == 0 && !isPaused
+}
 
 /**
  * ViewModel for a 2-player round on one phone. The round itself is in [GameViewModel], this loads

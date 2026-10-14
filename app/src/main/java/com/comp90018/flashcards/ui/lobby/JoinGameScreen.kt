@@ -44,9 +44,8 @@ import com.comp90018.flashcards.ui.components.NavBar
 import com.comp90018.flashcards.ui.components.NavDestination
 import com.comp90018.flashcards.ui.connection.ConnectionOverlay
 import com.comp90018.flashcards.ui.connection.DebugConnectionButtons
-import com.comp90018.flashcards.ui.help.helpTip
 import com.comp90018.flashcards.ui.help.HelpTopic
-
+import com.comp90018.flashcards.ui.help.helpTip
 
 /**
  * The guest's side of clash mode: list hosts nearby, ask to join, and once accepted display [GuestLobbyScreen].
@@ -87,11 +86,13 @@ fun JoinGameScreen(
         topBar = {
             TopAppBar(
                 modifier = Modifier.padding(top = 8.dp),
-                title = { Text(
-                    text = "Join Clash",
-                    style = MaterialTheme.typography.headlineLarge,
-                    fontWeight = FontWeight.Bold,
-                ) },
+                title = {
+                    Text(
+                        text = "Join Clash",
+                        style = MaterialTheme.typography.headlineLarge,
+                        fontWeight = FontWeight.Bold,
+                    )
+                },
                 actions = {
                     helpTip(
                         topic = HelpTopic.MultiSetupHelp,
@@ -192,24 +193,27 @@ private fun HostList(
     if (hosts.isEmpty()) {
         Column(
             modifier = modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             CircularProgressIndicator(
-                modifier = Modifier
-                    .padding(vertical = 24.dp)
-                    .size(32.dp),
-                strokeWidth = 2.dp
+                modifier =
+                    Modifier
+                        .padding(vertical = 24.dp)
+                        .size(32.dp),
+                strokeWidth = 2.dp,
             )
 
             Text(
-                text = "Looking for Clashes nearby…\n\n" +
-                    "To create your own Clash Mode game,\n" +
-                    "select a deck from Decks > Play > Clash",
+                text =
+                    "Looking for Clashes nearby…\n\n" +
+                        "To create your own Clash Mode game,\n" +
+                        "select a deck from Decks > Play > Clash",
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
             )
         }
     } else {

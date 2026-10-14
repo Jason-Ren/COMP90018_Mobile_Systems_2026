@@ -39,11 +39,14 @@ fun DiscoverScreen(
         topBar = {
             TopAppBar(
                 modifier = Modifier.padding(top = 8.dp),
-                title = { Text(
-                    text = "Discover",
-                    style = MaterialTheme.typography.headlineLarge,
-                    fontWeight = FontWeight.Bold,
-                ) })
+                title = {
+                    Text(
+                        text = "Discover",
+                        style = MaterialTheme.typography.headlineLarge,
+                        fontWeight = FontWeight.Bold,
+                    )
+                },
+            )
         },
         bottomBar = {
             NavBar(NavDestination.DISCOVER, onCommunity, onHome, onJoinGame, onFriends)
@@ -83,9 +86,10 @@ private fun DiscoverPanel(
                 IconButton(
                     onClick = viewModel::refresh,
                     enabled = !task.busy,
-                    colors = IconButtonDefaults.iconButtonColors(
-                        contentColor = MaterialTheme.colorScheme.primary,
-                    ),
+                    colors =
+                        IconButtonDefaults.iconButtonColors(
+                            contentColor = MaterialTheme.colorScheme.primary,
+                        ),
                 ) {
                     Icon(Icons.Default.Refresh, contentDescription = "Refresh")
                 }
@@ -152,9 +156,10 @@ internal fun SharedDeckCode(onOpenDeck: (String) -> Unit) {
         if (id == null) invalid = true else onOpenDeck(id)
     }
     OutlinedCard(
-        colors = CardDefaults.outlinedCardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-        ),
+        colors =
+            CardDefaults.outlinedCardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            ),
     ) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Have a shared deck code from a friend?", style = MaterialTheme.typography.titleMedium)
@@ -171,21 +176,23 @@ internal fun SharedDeckCode(onOpenDeck: (String) -> Unit) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowForward,
                             contentDescription = "Open shared deck",
-                            tint = if (code.isNotBlank()) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                            },
+                            tint =
+                                if (code.isNotBlank()) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                },
                         )
                     }
                 },
                 isError = invalid,
                 // Passing null (not an empty lambda) stops Compose reserving blank space below the field.
-                supportingText = if (invalid) {
-                    { Text("Paste the complete deck code.") }
-                } else {
-                    null
-                },
+                supportingText =
+                    if (invalid) {
+                        { Text("Paste the complete deck code.") }
+                    } else {
+                        null
+                    },
                 modifier = Modifier.fillMaxWidth(),
             )
         }
