@@ -63,6 +63,7 @@ fun JoinGameScreen(
     onJoinGame: () -> Unit,
     onFriends: () -> Unit,
     modifier: Modifier = Modifier,
+    pendingFriendRequestCount: Int = 0,
     viewModel: JoinGameViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -103,7 +104,14 @@ fun JoinGameScreen(
             )
         },
         bottomBar = {
-            NavBar(NavDestination.CLASH, onCommunity, onHome, onJoinGame, onFriends)
+            NavBar(
+                NavDestination.CLASH,
+                onCommunity,
+                onHome,
+                onJoinGame,
+                onFriends,
+                pendingFriendRequestCount = pendingFriendRequestCount,
+            )
         },
     ) { padding ->
         JoinBody(

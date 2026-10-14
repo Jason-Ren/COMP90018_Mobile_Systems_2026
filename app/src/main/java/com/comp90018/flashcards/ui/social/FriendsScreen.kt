@@ -17,6 +17,7 @@ fun FriendsScreen(
     onJoinGame: () -> Unit,
     onFriends: () -> Unit,
     modifier: Modifier = Modifier,
+    pendingFriendRequestCount: Int = 0,
 ) {
     Scaffold(
         modifier = modifier,
@@ -33,7 +34,14 @@ fun FriendsScreen(
             )
         },
         bottomBar = {
-            NavBar(NavDestination.FRIENDS, onCommunity, onHome, onJoinGame, onFriends)
+            NavBar(
+                NavDestination.FRIENDS,
+                onCommunity,
+                onHome,
+                onJoinGame,
+                onFriends,
+                pendingFriendRequestCount = pendingFriendRequestCount,
+            )
         },
     ) { padding ->
         Box(Modifier.padding(top = padding.calculateTopPadding()).fillMaxSize()) {

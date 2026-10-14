@@ -13,6 +13,7 @@ fun CommunityScreen(
     onFriends: () -> Unit,
     modifier: Modifier = Modifier,
     startWithFriends: Boolean = false,
+    pendingFriendRequestCount: Int = 0,
 ) {
     if (startWithFriends) {
         FriendsScreen(
@@ -21,6 +22,7 @@ fun CommunityScreen(
             onJoinGame = onJoinGame,
             onFriends = onFriends,
             modifier = modifier,
+            pendingFriendRequestCount = pendingFriendRequestCount,
         )
     } else {
         DiscoverScreen(
@@ -30,6 +32,7 @@ fun CommunityScreen(
             onJoinGame = onJoinGame,
             onFriends = onFriends,
             modifier = modifier,
+            pendingFriendRequestCount = pendingFriendRequestCount,
         )
     }
 }

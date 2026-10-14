@@ -33,6 +33,7 @@ fun DiscoverScreen(
     onJoinGame: () -> Unit,
     onFriends: () -> Unit,
     modifier: Modifier = Modifier,
+    pendingFriendRequestCount: Int = 0,
 ) {
     Scaffold(
         modifier = modifier,
@@ -49,7 +50,14 @@ fun DiscoverScreen(
             )
         },
         bottomBar = {
-            NavBar(NavDestination.DISCOVER, onCommunity, onHome, onJoinGame, onFriends)
+            NavBar(
+                NavDestination.DISCOVER,
+                onCommunity,
+                onHome,
+                onJoinGame,
+                onFriends,
+                pendingFriendRequestCount = pendingFriendRequestCount,
+            )
         },
     ) { padding ->
         Box(Modifier.padding(top = padding.calculateTopPadding()).fillMaxSize()) {

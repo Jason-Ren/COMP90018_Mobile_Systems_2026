@@ -10,6 +10,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -17,6 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -45,6 +47,7 @@ import com.comp90018.flashcards.ui.play.ChooseTimerScreen
 import com.comp90018.flashcards.ui.play.DuoScreen
 import com.comp90018.flashcards.ui.play.TeamGameScreen
 import com.comp90018.flashcards.ui.social.DiscoverScreen
+import com.comp90018.flashcards.ui.social.FriendRequestBadgeViewModel
 import com.comp90018.flashcards.ui.social.FriendsScreen
 import com.comp90018.flashcards.ui.study.StudyScreen
 import com.comp90018.flashcards.ui.theme.AppTheme
@@ -109,7 +112,9 @@ private fun FlashcardApp(sessionViewModel: SessionViewModel = hiltViewModel()) {
 private fun FlashcardNavHost(
     navController: NavHostController,
     onSignOut: () -> Unit,
+    badgeViewModel: FriendRequestBadgeViewModel = hiltViewModel(),
 ) {
+    val incomingCount = badgeViewModel.incomingCount.collectAsStateWithLifecycle()
     NavHost(navController = navController, startDestination = "home") {
         composable("account") {
             AccountScreen(onBack = { navController.popBackStack() }, onSignOut = onSignOut)
@@ -124,38 +129,16 @@ private fun FlashcardNavHost(
                 onJoinGame = { navController.navigate("join") },
                 onHome = { navController.navigate("home") },
                 onFriends = { navController.navigate("friends") },
+                pendingFriendRequestCount = incomingCount.value,
             )
         }
         deckPlayRoutes(navController)
-        friendRoutes(navController)
-        discoveryRoutes(navController)
+        friendRoutes(navController, incomingCount)
+        discoveryRoutes(navController, incomingCount)
         duoRoutes(navController)
         teamGameRoutes(navController)
-        joinRoutes(navController)
-        composable(
-            route = "add_edit_card/{deckId}?cardId={cardId}",
-            arguments =
-                listOf(
-                    navArgument("deckId") { type = NavType.StringType },
-                    navArgument("cardId") {
-                        type = NavType.StringType
-                        nullable = true
-                        defaultValue = null
-                    },
-                ),
-        ) {
-            AddEditCardScreen(
-                onNavigateBack = { navController.popBackStack() },
-            )
-        }
-        composable(
-            route = "study/{deckId}",
-            arguments = listOf(navArgument("deckId") { type = NavType.StringType }),
-        ) {
-            StudyScreen(
-                onNavigateBack = { navController.popBackStack() },
-            )
-        }
+        joinRoutes(navController, incomingCount)
+        editorAndStudyRoutes(navController)
         composable("NaviBar") {
             NavBar(
                 selectedDestination = null,
@@ -163,8 +146,36 @@ private fun FlashcardNavHost(
                 onHome = { navController.navigate("home") },
                 onJoinGame = { navController.navigate("join") },
                 onFriends = { navController.navigate("friends") },
+                pendingFriendRequestCount = incomingCount.value,
             )
         }
+    }
+}
+
+private fun NavGraphBuilder.editorAndStudyRoutes(navController: NavHostController) {
+    composable(
+        route = "add_edit_card/{deckId}?cardId={cardId}",
+        arguments =
+            listOf(
+                navArgument("deckId") { type = NavType.StringType },
+                navArgument("cardId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                },
+            ),
+    ) {
+        AddEditCardScreen(
+            onNavigateBack = { navController.popBackStack() },
+        )
+    }
+    composable(
+        route = "study/{deckId}",
+        arguments = listOf(navArgument("deckId") { type = NavType.StringType }),
+    ) {
+        StudyScreen(
+            onNavigateBack = { navController.popBackStack() },
+        )
     }
 }
 
@@ -211,7 +222,10 @@ private fun NavGraphBuilder.deckPlayRoutes(navController: NavHostController) {
     }
 }
 
-private fun NavGraphBuilder.friendRoutes(navController: NavHostController) {
+private fun NavGraphBuilder.friendRoutes(
+    navController: NavHostController,
+    incomingCount: State<Int>,
+) {
     composable("friends") {
         FriendsScreen(
             // onOpenDeck = { navController.navigate("deck/$it") },
@@ -220,6 +234,7 @@ private fun NavGraphBuilder.friendRoutes(navController: NavHostController) {
             onHome = { navController.navigate("home") },
             onJoinGame = { navController.navigate("join") },
             onFriends = { navController.navigate("friends") },
+            pendingFriendRequestCount = incomingCount.value,
         )
     }
     composable("cloud_deck/{deckId}", arguments = listOf(navArgument("deckId") { type = NavType.StringType })) {
@@ -235,7 +250,10 @@ private fun NavGraphBuilder.friendRoutes(navController: NavHostController) {
     }
 }
 
-private fun NavGraphBuilder.discoveryRoutes(navController: NavHostController) {
+private fun NavGraphBuilder.discoveryRoutes(
+    navController: NavHostController,
+    incomingCount: State<Int>,
+) {
     composable("discovery") {
         DiscoverScreen(
             onOpenDeck = { navController.navigate("deck/$it") },
@@ -244,6 +262,7 @@ private fun NavGraphBuilder.discoveryRoutes(navController: NavHostController) {
             onHome = { navController.navigate("home") },
             onJoinGame = { navController.navigate("join") },
             onFriends = { navController.navigate("friends") },
+            pendingFriendRequestCount = incomingCount.value,
         )
     }
     composable("cloud_deck/{deckId}", arguments = listOf(navArgument("deckId") { type = NavType.StringType })) {
@@ -322,7 +341,10 @@ private fun NavGraphBuilder.teamGameRoutes(navController: NavHostController) {
 }
 
 /** The guest's clash mode flow: find a host, wait for Start, then play. */
-private fun NavGraphBuilder.joinRoutes(navController: NavHostController) {
+private fun NavGraphBuilder.joinRoutes(
+    navController: NavHostController,
+    incomingCount: State<Int>,
+) {
     composable(route = "join") {
         NearbyPermissionGate(onNavigateBack = { navController.popBackStack() }) {
             JoinGameScreen(
@@ -333,6 +355,7 @@ private fun NavGraphBuilder.joinRoutes(navController: NavHostController) {
                 onHome = { navController.navigate("home") },
                 onJoinGame = { navController.navigate("join") },
                 onFriends = { navController.navigate("friends") },
+                pendingFriendRequestCount = incomingCount.value,
             )
         }
     }

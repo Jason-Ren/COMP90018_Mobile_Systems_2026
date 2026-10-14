@@ -43,6 +43,7 @@ fun DeckListScreen(
     onHome: () -> Unit,
     onJoinGame: () -> Unit,
     onAccount: () -> Unit,
+    pendingFriendRequestCount: Int = 0,
     viewModel: DeckListViewModel = hiltViewModel(),
 ) {
     val decks by viewModel.decks.collectAsState()
@@ -63,7 +64,14 @@ fun DeckListScreen(
             )
         },
         bottomBar = {
-            NavBar(NavDestination.DECKS, onCommunity, onHome, onJoinGame, onFriends)
+            NavBar(
+                NavDestination.DECKS,
+                onCommunity,
+                onHome,
+                onJoinGame,
+                onFriends,
+                pendingFriendRequestCount = pendingFriendRequestCount,
+            )
         },
     ) { padding ->
         DeckListBody(

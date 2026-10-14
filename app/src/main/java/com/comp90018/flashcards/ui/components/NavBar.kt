@@ -28,6 +28,7 @@ fun NavBar(
     onJoinGame: () -> Unit,
     onFriends: () -> Unit,
     modifier: Modifier = Modifier,
+    pendingFriendRequestCount: Int = 0,
 ) {
     val background = MaterialTheme.colorScheme.background
 
@@ -66,10 +67,7 @@ fun NavBar(
                 )
             }
             NavItem("Friends", selectedDestination == NavDestination.FRIENDS, onFriends) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_conversation),
-                    contentDescription = null,
-                )
+                FriendsNavIcon(pendingCount = pendingFriendRequestCount)
             }
         }
     }
