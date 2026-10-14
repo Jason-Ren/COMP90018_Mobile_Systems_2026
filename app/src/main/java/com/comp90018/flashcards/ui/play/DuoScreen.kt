@@ -169,7 +169,10 @@ internal fun ReadyContent(
                         "with the screen facing the other player, to start.",
                 textAlign = TextAlign.Center,
             )
-            Text(text = "Lower it to pause. You can also tap Start to play manually.")
+            Text(
+                text = "Lower it to pause. You can also tap Start to play manually.",
+                textAlign = TextAlign.Center,
+            )
         }
         Button(onClick = onStart) { Text("Start") }
     }

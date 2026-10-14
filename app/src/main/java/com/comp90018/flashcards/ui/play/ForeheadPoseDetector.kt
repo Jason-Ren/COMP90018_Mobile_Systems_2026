@@ -25,6 +25,9 @@ class ForeheadPoseDetector(
     private var lastTimestampNs = 0L
     private var listening = false
 
+    /** True when a usable sensor exists; known immediately, before registration. */
+    val hasSensor: Boolean get() = sensor != null
+
     /** False when no sensor exists or registration fails; the screen still offers manual Start. */
     fun start(): Boolean {
         if (listening) return true
