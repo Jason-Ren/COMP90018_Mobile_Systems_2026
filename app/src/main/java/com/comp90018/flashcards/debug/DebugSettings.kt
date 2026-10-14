@@ -12,7 +12,7 @@ import javax.inject.Singleton
  * DEBUG ONLY: set this to false to hide every emulator mode feature at once. The tickbox on the main
  * screen disappears and the emulator mode stays off, so the app behaves like the real thing.
  */
-const val DEBUG_TOOLS_ENABLED = true
+const val DEBUG_TOOLS_ENABLED = false
 
 /**
  * DEBUG ONLY: switches for trying things out without a second phone. In memory, so they reset
