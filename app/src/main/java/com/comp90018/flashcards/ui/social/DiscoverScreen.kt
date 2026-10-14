@@ -2,7 +2,7 @@ package com.comp90018.flashcards.ui.social
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Clear
@@ -21,6 +21,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.comp90018.flashcards.ui.components.NavBar
 import com.comp90018.flashcards.ui.components.NavDestination
+import com.comp90018.flashcards.ui.components.SegmentedListGap
+import com.comp90018.flashcards.ui.components.SegmentedListSectionGap
 import com.comp90018.flashcards.ui.deck.PublicDeckRow
 import com.comp90018.flashcards.ui.deck.matchingPublicSearch
 
@@ -77,33 +79,13 @@ private fun DiscoverPanel(
     var search by rememberSaveable { mutableStateOf("") }
     LazyColumn(
         contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = bottomInset + 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(SegmentedListGap),
     ) {
-        item { SharedDeckCode(onOpenDeck = onOpenDeck) }
         item {
-            Row(
-                Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    "Public decks",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                IconButton(
-                    onClick = viewModel::refresh,
-                    enabled = !task.busy,
-                    colors =
-                        IconButtonDefaults.iconButtonColors(
-                            contentColor = MaterialTheme.colorScheme.primary,
-                        ),
-                ) {
-                    Icon(Icons.Default.Refresh, contentDescription = "Refresh")
-                }
-            }
-            SocialStatus(task)
-            DiscoverSearchField(query = search, onQueryChange = { search = it })
+            Box(Modifier.padding(bottom = SegmentedListSectionGap)) { SharedDeckCode(onOpenDeck = onOpenDeck) }
+        }
+        item {
+            DiscoverHeader(task = task, search = search, onSearch = { search = it }, onRefresh = viewModel::refresh)
         }
         val visible = decks.matchingPublicSearch(search)
         if (visible.isEmpty() && !task.busy && task.error == null) {
@@ -117,13 +99,52 @@ private fun DiscoverPanel(
                 )
             }
         }
-        items(visible, key = { it.deckId }) { deck ->
+        itemsIndexed(visible, key = { _, deck -> deck.deckId }) { index, deck ->
             PublicDeckRow(
                 deck = deck,
                 ownedByMe = deck.ownerId == viewModel.userId,
+                index = index,
+                count = visible.size,
                 onOpenDeck = onOpenDeck,
             )
         }
+    }
+}
+
+@Composable
+private fun DiscoverHeader(
+    task: SocialTaskState,
+    search: String,
+    onSearch: (String) -> Unit,
+    onRefresh: () -> Unit,
+) {
+    Column(
+        Modifier.padding(bottom = SegmentedListSectionGap),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(top = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                "Public decks",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.SemiBold,
+            )
+            IconButton(
+                onClick = onRefresh,
+                enabled = !task.busy,
+                colors =
+                    IconButtonDefaults.iconButtonColors(
+                        contentColor = MaterialTheme.colorScheme.primary,
+                    ),
+            ) {
+                Icon(Icons.Default.Refresh, contentDescription = "Refresh")
+            }
+        }
+        SocialStatus(task)
+        DiscoverSearchField(query = search, onQueryChange = onSearch)
     }
 }
 

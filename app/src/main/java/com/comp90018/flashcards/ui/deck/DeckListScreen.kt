@@ -1,11 +1,9 @@
 package com.comp90018.flashcards.ui.deck
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
@@ -34,6 +32,9 @@ import com.comp90018.flashcards.data.local.model.DeckWithCardCount
 import com.comp90018.flashcards.debug.DEBUG_TOOLS_ENABLED
 import com.comp90018.flashcards.ui.components.NavBar
 import com.comp90018.flashcards.ui.components.NavDestination
+import com.comp90018.flashcards.ui.components.SegmentedListGap
+import com.comp90018.flashcards.ui.components.SegmentedListItem
+import com.comp90018.flashcards.ui.components.SegmentedListSectionGap
 
 /**
  * Shows list of users decks
@@ -165,17 +166,21 @@ private fun DeckListBody(
             Box(modifier = Modifier.weight(1f)) {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(SegmentedListGap),
                     contentPadding = PaddingValues(top = 16.dp, bottom = bottomInset + 16.dp),
                 ) {
-                    items(decks, key = { it.deck.deckId }) { item ->
+                    itemsIndexed(decks, key = { _, item -> item.deck.deckId }) { index, item ->
                         DeckItem(
                             deck = item.deck,
                             cardCount = item.cardCount,
+                            index = index,
+                            count = decks.size,
                             onOpenClick = { onNavigateToDeck(item.deck.deckId) },
                         )
                     }
-                    item(key = "deck_count") { DeckCountFooter(decks.size) }
+                    item(key = "deck_count") {
+                        Box(Modifier.padding(top = SegmentedListSectionGap)) { DeckCountFooter(decks.size) }
+                    }
                 }
 
                 Box(
@@ -305,30 +310,21 @@ private fun CreateDeckDialog(
 fun DeckItem(
     deck: DeckEntity,
     cardCount: Int,
+    index: Int,
+    count: Int,
     onOpenClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Card(
-        modifier = modifier.fillMaxWidth().clickable { onOpenClick() },
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-    ) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(
-                text = deck.name,
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                text = pluralStringResource(R.plurals.deck_card_count, cardCount, cardCount),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
+    SegmentedListItem(
+        index = index,
+        count = count,
+        onClick = onOpenClick,
+        modifier = modifier,
+        headlineContent = {
+            Text(deck.name, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        },
+        supportingContent = {
+            Text(pluralStringResource(R.plurals.deck_card_count, cardCount, cardCount))
+        },
+    )
 }

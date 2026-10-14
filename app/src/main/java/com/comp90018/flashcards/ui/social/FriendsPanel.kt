@@ -3,7 +3,7 @@ package com.comp90018.flashcards.ui.social
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Check
@@ -26,9 +26,11 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.comp90018.flashcards.data.social.SocialProfile
 import com.comp90018.flashcards.data.social.SocialRequest
+import com.comp90018.flashcards.ui.components.SegmentedListGap
+import com.comp90018.flashcards.ui.components.SegmentedListItem
+import com.comp90018.flashcards.ui.components.SegmentedListSectionGap
 
 private val AcceptGreen = Color(0xFF66BB6A)
-private val CardRowPadding = PaddingValues(start = 12.dp, top = 8.dp, end = 4.dp, bottom = 8.dp)
 
 @Composable
 internal fun FriendsPanel(
@@ -43,13 +45,15 @@ internal fun FriendsPanel(
     val status = task.copy(error = task.error.takeUnless { addedLast })
     LazyColumn(
         contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = bottomInset + 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(SegmentedListGap),
     ) {
         if (status.busy || status.error != null || status.message != null) {
             item {
-                FriendsStatus(status, initialLoad = !state.loaded) {
-                    addedLast = false
-                    viewModel.refresh()
+                Box(Modifier.padding(bottom = SegmentedListSectionGap)) {
+                    FriendsStatus(status, initialLoad = !state.loaded) {
+                        addedLast = false
+                        viewModel.refresh()
+                    }
                 }
             }
         }
@@ -105,13 +109,14 @@ private fun LazyListScope.friendRequests(
     enabled: Boolean,
     onRespond: (String, String) -> Unit,
 ) {
-    item { SectionHeader("Requests · ${state.incoming.size + state.outgoing.size}") }
-    if (state.incoming.isEmpty() && state.outgoing.isEmpty()) item { Text("No pending requests.") }
-    items(state.incoming, key = { "in_${it.id}" }) { request ->
-        FriendRequestCard(request, true, enabled, onRespond)
+    val count = state.incoming.size + state.outgoing.size
+    item { SectionHeader("Requests · $count") }
+    if (count == 0) item { Text("No pending requests.") }
+    itemsIndexed(state.incoming, key = { _, request -> "in_${request.id}" }) { index, request ->
+        FriendRequestItem(request, true, index, count, enabled, onRespond)
     }
-    items(state.outgoing, key = { "out_${it.id}" }) { request ->
-        FriendRequestCard(request, false, enabled, onRespond)
+    itemsIndexed(state.outgoing, key = { _, request -> "out_${request.id}" }) { index, request ->
+        FriendRequestItem(request, false, state.incoming.size + index, count, enabled, onRespond)
     }
 }
 
@@ -122,17 +127,20 @@ private fun LazyListScope.friends(
 ) {
     item { SectionHeader("Friends · ${state.friends.size}") }
     if (state.friends.isEmpty()) item { Text("Add a friend by username to start sharing decks.") }
-    items(state.friends, key = { it.user.id }) { friend ->
-        OutlinedCard(Modifier.fillMaxWidth()) {
-            Row(Modifier.padding(CardRowPadding), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.weight(1f)) { ProfileLabel(friend.user) }
+    itemsIndexed(state.friends, key = { _, friend -> friend.user.id }) { index, friend ->
+        SegmentedListItem(
+            index = index,
+            count = state.friends.size,
+            headlineContent = { ProfileName(friend.user) },
+            supportingContent = { ProfileUsername(friend.user) },
+            trailingContent = {
                 TextButton(
                     onClick = { onRemove(friend.user) },
                     enabled = enabled,
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
                 ) { Text("Remove") }
-            }
-        }
+            },
+        )
     }
 }
 
@@ -154,7 +162,7 @@ private fun SectionHeader(text: String) {
         text,
         style = MaterialTheme.typography.headlineSmall,
         fontWeight = FontWeight.SemiBold,
-        modifier = Modifier.padding(top = 8.dp),
+        modifier = Modifier.padding(top = SegmentedListSectionGap, bottom = SegmentedListSectionGap - SegmentedListGap),
     )
 }
 
@@ -223,34 +231,42 @@ private fun FriendUsernameField(
 }
 
 @Composable
-private fun FriendRequestCard(
+private fun FriendRequestItem(
     request: SocialRequest,
     incoming: Boolean,
+    index: Int,
+    count: Int,
     enabled: Boolean,
     onRespond: (String, String) -> Unit,
 ) {
     val profile = if (incoming) request.sender else request.recipient
-    OutlinedCard(Modifier.fillMaxWidth()) {
-        Row(Modifier.padding(CardRowPadding), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                ProfileLabel(profile)
-                Text(
-                    if (incoming) "Wants to be friends" else "Request sent",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+    SegmentedListItem(
+        index = index,
+        count = count,
+        headlineContent = { ProfileName(profile) },
+        supportingContent = {
+            Text(
+                "@${profile.username} · ${if (incoming) "Wants to be friends" else "Request sent"}",
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        },
+        trailingContent = {
+            Row {
+                if (incoming) {
+                    RespondButton(Icons.Default.Check, "Accept", AcceptGreen, enabled) {
+                        onRespond(request.id, "accept")
+                    }
+                }
+                RespondButton(
+                    Icons.Default.Close,
+                    if (incoming) "Decline" else "Cancel request",
+                    MaterialTheme.colorScheme.error,
+                    enabled,
+                ) { onRespond(request.id, if (incoming) "decline" else "cancel") }
             }
-            if (incoming) {
-                RespondButton(Icons.Default.Check, "Accept", AcceptGreen, enabled) { onRespond(request.id, "accept") }
-            }
-            RespondButton(
-                Icons.Default.Close,
-                if (incoming) "Decline" else "Cancel request",
-                MaterialTheme.colorScheme.error,
-                enabled,
-            ) { onRespond(request.id, if (incoming) "decline" else "cancel") }
-        }
-    }
+        },
+    )
 }
 
 @Composable
@@ -271,9 +287,11 @@ private fun RespondButton(
 }
 
 @Composable
-internal fun ProfileLabel(profile: SocialProfile) {
-    Column {
-        Text(profile.displayName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-        Text("@${profile.username}", style = MaterialTheme.typography.bodyMedium)
-    }
+private fun ProfileName(profile: SocialProfile) {
+    Text(profile.displayName, maxLines = 1, overflow = TextOverflow.Ellipsis)
+}
+
+@Composable
+private fun ProfileUsername(profile: SocialProfile) {
+    Text("@${profile.username}", maxLines = 1, overflow = TextOverflow.Ellipsis)
 }
