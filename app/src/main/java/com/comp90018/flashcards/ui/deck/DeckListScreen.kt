@@ -232,6 +232,7 @@ private fun DeckListTopBar(
 ) {
     var debugMenuOpen by remember { mutableStateOf(false) }
     TopAppBar(
+        modifier = Modifier.padding(top = 8.dp),
         title = {
             Text("My Decks", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
         },
