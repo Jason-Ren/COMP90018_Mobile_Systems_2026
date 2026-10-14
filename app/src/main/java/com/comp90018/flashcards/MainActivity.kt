@@ -200,7 +200,7 @@ private fun NavGraphBuilder.deckPlayRoutes(navController: NavHostController) {
             },
             onOpenSource = { deckId -> navController.navigate("deck/$deckId") },
             onOpenLocal = { deckId -> navController.navigate("deck/$deckId") },
-            onFriends = { navController.navigate("community/true") },
+            onFriends = { navController.navigate("friends") },
         )
     }
     composable(

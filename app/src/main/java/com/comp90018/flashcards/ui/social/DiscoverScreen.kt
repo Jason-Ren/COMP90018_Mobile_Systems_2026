@@ -192,7 +192,15 @@ internal fun SharedDeckCode(onOpenDeck: (String) -> Unit) {
             ),
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("Have a friend's deck code?", style = MaterialTheme.typography.titleMedium)
+            Text(
+                "Add a friend's deck",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = "Paste their shared code to add a copy to your decks.",
+                style = MaterialTheme.typography.bodyMedium,
+            )
             OutlinedTextField(
                 value = code,
                 onValueChange = {
