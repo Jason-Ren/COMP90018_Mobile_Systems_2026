@@ -1,6 +1,7 @@
 package com.comp90018.flashcards.ui.lobby
 
 import com.comp90018.flashcards.data.p2p.ConnectionState
+import com.comp90018.flashcards.debug.DEBUG_TOOLS_ENABLED
 import com.comp90018.flashcards.debug.DebugSettings
 import com.comp90018.flashcards.testutil.FakeConnectionController
 import com.comp90018.flashcards.testutil.MainDispatcherRule
@@ -13,6 +14,8 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
@@ -23,6 +26,9 @@ class LobbyEmulatorModeTest {
 
     private val connection = FakeConnectionController()
     private val debug = DebugSettings().also { it.setEmulatorMode(true) }
+
+    @Before
+    fun requireDebugTools() = assumeTrue(DEBUG_TOOLS_ENABLED)
 
     private fun TestScope.viewModel(): HostLobbyViewModel {
         val vm = HostLobbyViewModel(connection, debug)

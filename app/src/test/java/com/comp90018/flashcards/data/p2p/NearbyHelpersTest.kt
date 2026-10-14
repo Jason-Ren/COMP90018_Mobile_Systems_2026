@@ -54,7 +54,7 @@ class NearbyHelpersTest {
 
     @Test
     fun `every missing permission code asks for permissions`() {
-        val expected = "Nearby access isn't allowed\nOpen Settings, allow Location and try again"
+        val expected = "Nearby devices or Location is turned off\nOpen Settings, turn on permissions and try again"
 
         listOf(8029, 8032, 8036, 8039).forEach { assertEquals("code $it", expected, reasonFor(it)) }
     }

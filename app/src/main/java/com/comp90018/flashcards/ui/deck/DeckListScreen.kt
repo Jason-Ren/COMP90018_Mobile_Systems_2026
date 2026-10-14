@@ -88,7 +88,7 @@ fun DeckListScreen(
             )
             // Keep the FAB above the list for both touch and accessibility traversal.
             CreateDeckFab(
-                onCreate = { android.util.Log.d("DeckFabCheck", "pressed"); showDialog = true },
+                onCreate = { showDialog = true },
                 modifier =
                     Modifier
                         .align(Alignment.BottomEnd)
@@ -102,7 +102,7 @@ fun DeckListScreen(
     if (showDialog) {
         NewDeckDialog(
             onCreate = viewModel::createDeck,
-            onDismiss = { android.util.Log.d("DeckFabCheck", "dismissed"); showDialog = false },
+            onDismiss = { showDialog = false },
         )
     }
 }
