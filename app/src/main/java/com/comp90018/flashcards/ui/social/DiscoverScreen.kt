@@ -195,11 +195,11 @@ internal fun SharedDeckCode(onOpenDeck: (String) -> Unit) {
             Text(
                 "Add a friend's deck",
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.SemiBold,
             )
             Text(
                 text = "Paste their shared code to add a copy to your decks.",
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.bodyMedium,
             )
             OutlinedTextField(
                 value = code,
