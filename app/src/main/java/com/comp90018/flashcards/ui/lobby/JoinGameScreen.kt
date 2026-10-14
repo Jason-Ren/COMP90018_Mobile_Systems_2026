@@ -86,7 +86,12 @@ fun JoinGameScreen(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text("Join Clash") },
+                modifier = Modifier.padding(top = 8.dp),
+                title = { Text(
+                    text = "Join Clash",
+                    style = MaterialTheme.typography.headlineLarge,
+                    fontWeight = FontWeight.Bold,
+                ) },
                 actions = {
                     helpTip(
                         topic = HelpTopic.MultiSetupHelp,

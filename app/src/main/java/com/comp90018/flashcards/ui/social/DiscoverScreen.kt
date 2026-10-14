@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -32,7 +33,13 @@ fun DiscoverScreen(
     Scaffold(
         modifier = modifier,
         topBar = {
-            TopAppBar(title = { Text("Discover") })
+            TopAppBar(
+                modifier = Modifier.padding(top = 8.dp),
+                    title = { Text(
+                    text = "Discover",
+                    style = MaterialTheme.typography.headlineLarge,
+                    fontWeight = FontWeight.Bold,
+            ) })
         },
         bottomBar = {
             NavBar(NavDestination.DISCOVER, onCommunity, onHome, onJoinGame, onFriends)

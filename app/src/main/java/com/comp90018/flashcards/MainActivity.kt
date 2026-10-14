@@ -37,7 +37,6 @@ import com.comp90018.flashcards.ui.deck.ChooseModeScreen
 import com.comp90018.flashcards.ui.deck.DeckListScreen
 import com.comp90018.flashcards.ui.deck.DeckPageScreen
 import com.comp90018.flashcards.ui.help.HelpTopic
-import com.comp90018.flashcards.ui.help.helpTip
 import com.comp90018.flashcards.ui.lobby.GameSetupViewModel
 import com.comp90018.flashcards.ui.lobby.GuestLobbyScreen
 import com.comp90018.flashcards.ui.lobby.HostLobbyScreen

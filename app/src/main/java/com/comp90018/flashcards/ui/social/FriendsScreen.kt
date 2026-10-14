@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.font.FontWeight
 import com.comp90018.flashcards.ui.components.NavBar
 import com.comp90018.flashcards.ui.components.NavDestination
 
@@ -19,7 +21,15 @@ fun FriendsScreen(
     Scaffold(
         modifier = modifier,
         topBar = {
-            TopAppBar(title = { Text("Friends") })
+            TopAppBar(
+                modifier = Modifier.padding(top = 8.dp),
+                title = { Text(
+                    text = "Friends",
+                    style = MaterialTheme.typography.headlineLarge,
+                    fontWeight = FontWeight.Bold,
+                    )
+                }
+            )
         },
         bottomBar = {
             NavBar(NavDestination.FRIENDS, onCommunity, onHome, onJoinGame, onFriends)

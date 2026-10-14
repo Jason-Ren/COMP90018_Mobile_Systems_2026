@@ -56,7 +56,6 @@ fun DeckListScreen(
                 onAccount = onAccount,
                 emulatorMode = emulatorMode,
                 onEmulatorModeChange = viewModel::setEmulatorMode,
-                onCommunity = onCommunity,
             )
         },
         bottomBar = {
@@ -172,7 +171,6 @@ private fun DeckListTopBar(
     onAccount: () -> Unit,
     emulatorMode: Boolean,
     onEmulatorModeChange: (Boolean) -> Unit,
-    onCommunity: () -> Unit,
 ) {
     TopAppBar(
         title = {},
@@ -191,7 +189,6 @@ private fun DeckListTopBar(
                 Checkbox(checked = emulatorMode, onCheckedChange = onEmulatorModeChange)
                 Text("[DEBUG] Emulator mode", style = MaterialTheme.typography.labelSmall)
             }
-            TextButton(onClick = onCommunity) { Text("Community") }
             IconButton(
                 onClick = onAccount,
                 modifier = Modifier.padding(top = 12.dp, end = 12.dp),
